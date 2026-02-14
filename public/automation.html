@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>업무 자동화 치트키 - AI Insight</title>
+    <title>업무 자동화 꿀팁 - AI Insight</title>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 
@@ -20,42 +20,46 @@
     <main class="inner">
         <article class="post-content">
             <header class="post-header">
-                <span class="category"><i class="fa-solid fa-briefcase"></i> 오빠두엑셀 요약</span>
-                <h1>"아직도 VLOOKUP 쓰세요?"<br>AI로 3초 만에 엑셀 끝내는 법</h1>
-                <p class="post-meta">오빠두엑셀 & 일잘러들의 비법 노트</p>
+                <span class="category"><i class="fa-solid fa-lightbulb"></i> 프롬프트 꿀팁</span>
+                <h1>AI에게 일 잘 시키는<br>프롬프트 공식 3가지</h1>
+                <p class="post-meta">개떡같이 말해도 찰떡같이 알아듣게 만드는 법</p>
             </header>
             
             <div class="post-body">
-                <p>오빠두엑셀 채널에서 늘 강조하는 것이 있습니다. <strong>"엑셀은 도구일 뿐, 노가다 하지 마라."</strong> ChatGPT와 코파일럿을 활용해 야근을 없애는 방법을 정리했습니다.</p>
+                <p>AI코딩밸리에서 소개한 <strong>'실패하지 않는 프롬프트 작성법'</strong>입니다. AI가 자꾸 엉뚱한 소리를 한다면 이 3가지를 체크해보세요.</p>
 
-                <h2>1. 함수, 이제 외우지 마세요 (ChatGPT 활용)</h2>
-                <p>복잡한 수식이 필요할 때, 네이버에 검색하지 말고 ChatGPT에게 상황을 설명하세요.</p>
-                <div class="highlight-box">
-                    <strong>💡 프롬프트 예시</strong>
-                    <p>"A열에는 제품명, B열에는 판매량이 있어. 판매량이 100 이상인 제품만 뽑아서 C열에 표시하는 엑셀 수식 짜줘."</p>
+                <h2>1. 구체적인 상황(Context)을 줘라</h2>
+                <p>대뜸 "마케팅 문구 써줘"라고 하면 AI는 당황합니다. 배경을 설명해주세요.</p>
+                <div class="comparison-container">
+                    <div class="comparison-box bad">
+                        <h4>❌ 나쁜 예</h4>
+                        <p>"다이어트 약 홍보 문구 써줘."</p>
+                    </div>
+                    <div class="comparison-box good">
+                        <h4>⭕ 좋은 예</h4>
+                        <p>"나는 2030 여성을 타겟으로 하는 다이어트 보조제 마케터야. 인스타그램에 올릴 감성적이고 짧은 홍보 문구 3가지를 이모티콘 섞어서 써줘."</p>
+                    </div>
                 </div>
-                <p>이렇게 물어보면 <code>=IF(B2>=100, A2, "")</code> 같은 수식을 1초 만에 짜줍니다. 복사해서 붙여넣기만 하세요.</p>
 
-                <h2>2. 엑셀 안으로 들어온 AI: 'GPT for Excel'</h2>
-                <p>엑셀 창을 왔다 갔다 하기도 귀찮다면? <strong>확장 프로그램</strong>을 설치하세요.</p>
+                <h2>2. 출력 형식(Output Format)을 지정해라</h2>
+                <p>줄글로 길게 늘어놓는 게 싫다면, 원하는 형식을 콕 집어 말하세요.</p>
                 <ul>
-                    <li><strong>설치법:</strong> 엑셀 홈 화면 → 추가 기능 → 'GPT for Excel' 검색 및 추가.</li>
-                    <li><strong>사용법:</strong> <code>=GPT("이 리뷰의 감정을 긍정/부정으로 분류해줘", A1)</code></li>
+                    <li>"표(Table)로 정리해 줘."</li>
+                    <li>"핵심 내용만 3줄 요약해 줘."</li>
+                    <li>"파이썬 코드로 작성해 줘."</li>
                 </ul>
-                <p>함수처럼 GPT를 불러와서 수천 개의 데이터를 한 번에 처리할 수 있습니다.</p>
 
-                <h2>3. MS Copilot (코파일럿): 엑셀로 PPT 만들기</h2>
-                <p>마이크로소프트 365를 쓴다면 코파일럿은 필수입니다. 엑셀 표를 드래그하고 코파일럿 버튼을 누른 뒤 <strong>"이 데이터로 PPT 만들어줘"</strong>라고 하면, 디자인까지 입혀진 프레젠테이션이 완성됩니다.</p>
-                
+                <h2>3. 예시(Few-shot)를 보여줘라</h2>
+                <p>가장 강력한 방법입니다. "이런 식으로 해줘"라고 예시를 하나만 보여주면 퀄리티가 200% 올라갑니다.</p>
+                <blockquote>
+                    "이메일 답장을 쓸 건데, 아래 내 말투를 흉내 내서 작성해 줘.<br>
+                    (예시: 안녕하세요! 자료 잘 받았습니다. 검토해보고 연락드릴게요~ 감사합니다!)"
+                </blockquote>
+
                 <hr>
                 
-                <h3>🚀 결론: 데이터 분석은 AI에게, 판단은 사람이.</h3>
-                <p>단순 반복 작업에 시간을 쓰지 마세요. 그 시간에 데이터가 무엇을 의미하는지 해석하는 능력을 기르는 것이 AI 시대의 생존 전략입니다.</p>
-            </div>
-
-            <div class="ad-banner">
-                <span class="ad-label">Sponsored</span>
-                <p>여기에 구글 애드센스 코드를 넣으세요</p>
+                <h3>💡 보너스: 긴 영상 3초 요약 팁</h3>
+                <p>1시간짜리 해외 유튜브 강의, 언제 다 보나요? <strong>Lilys AI(릴리스)</strong>나 <strong>Gemini</strong>를 쓰세요. 유튜브 링크만 붙여넣으면 타임라인별 요약 노트와 블로그 글까지 써줍니다.</p>
             </div>
 
             <div class="post-footer">
