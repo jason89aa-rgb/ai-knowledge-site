@@ -1,4 +1,5 @@
-User-agent: *
+User-agent: Yeti
 Allow: /
 
-Sitemap: https://ai-all.co.kr/sitemap.xml
+User-agent: *
+Allow: /
