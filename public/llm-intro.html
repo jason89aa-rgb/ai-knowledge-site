@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="거대언어모델(LLM)의 정의, 작동 원리, 그리고 프롬프트 엔지니어링 기초까지. 초보자를 위한 완벽 가이드.">
-    <title>LLM이란 무엇인가? - AI Insight</title>
+    <meta name="description" content="거�??�어모델(LLM)???�의, ?�동 ?�리, 그리�??�롬?�트 ?��??�어�?기초까�?. 초보?��? ?�한 ?�벽 가?�드.">
+    <title>LLM?��? 무엇?��?? - AI Insight</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
@@ -19,9 +19,9 @@
             <div class="logo"><a href="index.html">AI Insight</a></div>
             <nav>
                 <ul>
-                    <li><a href="index.html#tips">AI 설명/꿀팁</a></li>
-                    <li><a href="index.html#tools">최신 AI 툴</a></li>
-                    <li><a href="index.html#study">AI 학습법</a></li>
+                    <li><a href="index.html#tips">AI ?�명/꿀??/a></li>
+                    <li><a href="index.html#tools">최신 AI ??/a></li>
+                    <li><a href="index.html#study">AI ?�습�?/a></li>
                 </ul>
             </nav>
         </div>
@@ -30,63 +30,63 @@
     <main class="container">
         <article class="post-content">
             <header class="post-header">
-                <span class="category">AI 기초 지식</span>
-                <h1>LLM(거대언어모델)이란 무엇인가?</h1>
-                <p class="post-meta">2024.02.15 · 5분 분량</p>
+                <span class="category">AI 기초 지??/span>
+                <h1>LLM(거�??�어모델)?��? 무엇?��??</h1>
+                <p class="post-meta">2024.02.15 · 5�?분량</p>
             </header>
             
             <div class="post-body">
-                <p>ChatGPT, Claude, Gemini... 요즘 뉴스에서 매일 들리는 이름들이죠? 이 인공지능들을 관통하는 하나의 핵심 기술이 바로 <strong>LLM (Large Language Model)</strong>입니다.</p>
+                <p>ChatGPT, Claude, Gemini... ?�즘 ?�스?�서 매일 ?�리???�름?�이�? ???�공지?�들??관?�하???�나???�심 기술??바로 <strong>LLM (Large Language Model)</strong>?�니??</p>
 
-                <h2>1. LLM 정의: 아주 똑똑한 '단어 이어말하기' 선수</h2>
-                <p>LLM을 가장 쉽게 설명하면 <strong>"다음에 올 단어를 기가 막히게 잘 맞히는 프로그램"</strong>입니다.</p>
-                <p>수많은 책, 인터넷 글, 대화 데이터를 학습해서 문맥을 이해하고, 가장 자연스러운 문장을 만들어냅니다. 단순히 검색 결과를 보여주는 게 아니라, 학습한 내용을 바탕으로 <strong>새로운 문장을 생성(Generative)</strong>한다는 점이 핵심입니다.</p>
+                <h2>1. LLM ?�의: ?�주 ?�똑??'?�어 ?�어말하�? ?�수</h2>
+                <p>LLM??가???�게 ?�명?�면 <strong>"?�음?????�어�?기�? 막히�???맞히???�로그램"</strong>?�니??</p>
+                <p>?�많?� �? ?�터??글, ?�???�이?��? ?�습?�서 문맥???�해?�고, 가???�연?�러??문장??만들?�냅?�다. ?�순??검??결과�?보여주는 �??�니?? ?�습???�용??바탕?�로 <strong>?�로??문장???�성(Generative)</strong>?�다???�이 ?�심?�니??</p>
 
                 <div class="highlight-box">
-                    <strong>💡 쉽게 비유하자면?</strong>
-                    <p>도서관의 모든 책을 읽은 천재가 있다고 상상해보세요. 이 천재에게 "옛날 옛적에..."라고 운을 떼면, 그동안 읽은 동화책 내용을 바탕으로 "호랑이가 담배 피우던 시절에..."라고 자연스럽게 이야기를 이어가는 것과 같습니다.</p>
+                    <strong>?�� ?�게 비유?�자�?</strong>
+                    <p>?�서관??모든 책을 ?��? 천재가 ?�다�??�상?�보?�요. ??천재?�게 "?�날 ?�적??.."?�고 ?�을 ?�면, 그동???��? ?�화�??�용??바탕?�로 "?�랑?��? ?�배 ?�우???�절??.."?�고 ?�연?�럽�??�야기�? ?�어가??것과 같습?�다.</p>
                 </div>
 
-                <h2>2. LLM은 어떻게 작동하나요?</h2>
-                <p>핵심 원리는 <strong>확률</strong>입니다. 모델은 문장을 이해하는 것이 아니라, 수치(Vector)로 계산합니다.</p>
+                <h2>2. LLM?� ?�떻�??�동?�나??</h2>
+                <p>?�심 ?�리??<strong>?�률</strong>?�니?? 모델?� 문장???�해?�는 것이 ?�니?? ?�치(Vector)�?계산?�니??</p>
                 <ul>
-                    <li><strong>입력:</strong> "오늘 점심 메뉴는"</li>
-                    <li><strong>계산:</strong> 학습 데이터에 따르면 '김치찌개(15%)', '햄버거(10%)', '짜장면(8%)'... 등의 확률을 계산합니다.</li>
-                    <li><strong>출력:</strong> 가장 적절한 단어를 선택해 문장을 완성합니다.</li>
+                    <li><strong>?�력:</strong> "?�늘 ?�심 메뉴??</li>
+                    <li><strong>계산:</strong> ?�습 ?�이?�에 ?�르�?'김치찌�?15%)', '?�버�?10%)', '짜장�?8%)'... ?�의 ?�률??계산?�니??</li>
+                    <li><strong>출력:</strong> 가???�절???�어�??�택??문장???�성?�니??</li>
                 </ul>
-                <p>이 과정이 1초에도 수천 번 일어나며 우리가 보는 매끄러운 답변이 완성되는 것이죠.</p>
+                <p>??과정??1초에???�천 �??�어?�며 ?�리가 보는 매끄?�운 ?��????�성?�는 것이�?</p>
 
-                <h2>3. 프롬프트 엔지니어링: AI와 대화하는 법</h2>
-                <p>LLM은 똑똑하지만, 사용자가 어떻게 질문하느냐에 따라 답변의 질이 하늘과 땅 차이입니다. 이를 <strong>프롬프트 엔지니어링</strong>이라고 합니다.</p>
+                <h2>3. ?�롬?�트 ?��??�어�? AI?� ?�?�하??�?/h2>
+                <p>LLM?� ?�똑?��?�? ?�용?��? ?�떻�?질문?�느?�에 ?�라 ?��???질이 ?�늘�???차이?�니?? ?��? <strong>?�롬?�트 ?��??�어�?/strong>?�라�??�니??</p>
                 
-                <h3>✅ 좋은 질문(프롬프트)의 3가지 공식</h3>
+                <h3>??좋�? 질문(?�롬?�트)??3가지 공식</h3>
                 <ol>
-                    <li><strong>페르소나 부여하기:</strong> "너는 10년 차 마케팅 전문가야."</li>
-                    <li><strong>구체적인 상황 설명:</strong> "20대 여성을 타겟으로 한 립스틱 광고 카피를 써줘."</li>
-                    <li><strong>출력 형식 지정:</strong> "표로 정리해 줘", "3줄 요약해 줘"</li>
+                    <li><strong>?�르?�나 부?�하�?</strong> "?�는 10??�?마�????�문가??"</li>
+                    <li><strong>구체?�인 ?�황 ?�명:</strong> "20?� ?�성???�겟으�???립스??광고 카피�??�줘."</li>
+                    <li><strong>출력 ?�식 지??</strong> "?�로 ?�리??�?, "3�??�약??�?</li>
                 </ol>
 
                 <hr>
 
-                <h3>🚀 10분 실습 챌린지: AI를 전문가로 만들기</h3>
-                <p>지금 바로 ChatGPT를 열고, 아래 Before/After 프롬프트를 각각 입력해서 결과물의 차이를 직접 느껴보세요.</p>
+                <h3>?? 10�??�습 챌린지: AI�??�문가�?만들�?/h3>
+                <p>지�?바로 ChatGPT�??�고, ?�래 Before/After ?�롬?�트�?각각 ?�력?�서 결과물의 차이�?직접 ?�껴보세??</p>
                 <div class="comparison-container">
                     <div class="comparison-box bad">
-                        <h4>❌ Before: 나쁜 질문</h4>
-                        <p>"인공지능에 대해 설명해줘."<br><em>(결과: 교과서처럼 추상적이고 재미없는 답변이 나옵니다.)</em></p>
+                        <h4>??Before: ?�쁜 질문</h4>
+                        <p>"?�공지?�에 ?�???�명?�줘."<br><em>(결과: 교과?�처??추상?�이�??��??�는 ?��????�옵?�다.)</em></p>
                     </div>
                     <div class="comparison-box good">
-                        <h4>⭕ After: 좋은 질문</h4>
-                        <p>"너는 IT 전문 기자야. 인공지능에 대해 전혀 모르는 중학생도 이해할 수 있도록, '아이언맨의 자비스'에 비유해서 쉽고 재밌게 설명해주는 기사 초안을 작성해줘."<br><em>(결과: 구체적인 페르소나와 예시 덕분에 훨씬 흥미롭고 이해하기 쉬운 글이 나옵니다.)</em></p>
+                        <h4>�?After: 좋�? 질문</h4>
+                        <p>"?�는 IT ?�문 기자?? ?�공지?�에 ?�???��? 모르??중학?�도 ?�해?????�도�? '?�이?�맨???�비????비유?�서 ?�고 ?�밌�??�명?�주??기사 초안???�성?�줘."<br><em>(결과: 구체?�인 ?�르?�나?� ?�시 ?�분???�씬 ?��?�?�� ?�해?�기 ?�운 글???�옵?�다.)</em></p>
                     </div>
                 </div>
 
-                <h2>마치며</h2>
-                <p>LLM은 이제 선택이 아닌 필수가 되었습니다. 두려워하지 말고, 내 업무와 일상에 어떻게 적용할지 고민해보세요. AI는 여러분의 일을 대체하는 것이 아니라, 여러분의 능력을 10배로 확장시켜 줄 도구니까요.</p>
+                <h2>마치�?/h2>
+                <p>LLM?� ?�제 ?�택???�닌 ?�수가 ?�었?�니?? ?�려?�하지 말고, ???�무?� ?�상???�떻�??�용?��? 고�??�보?�요. AI???�러분의 ?�을 ?�체하??것이 ?�니?? ?�러분의 ?�력??10배로 ?�장?�켜 �??�구?�까??</p>
             </div>
 
             <div class="post-footer">
-                <a href="index.html" class="btn-back">← 메인으로 돌아가기</a>
+                <a href="index.html" class="btn-back">??메인?�로 ?�아가�?/a>
             </div>
         </article>
     </main>
@@ -94,9 +94,9 @@
     <footer>
         <div class="container">
             <div class="footer-links">
-                <a href="about.html">사이트 소개</a>
-                <a href="privacy.html">개인정보처리방침</a>
-                <a href="contact.html">문의하기</a>
+                <a href="about.html">?�이???�개</a>
+                <a href="privacy.html">개인?�보처리방침</a>
+                <a href="contact.html">문의?�기</a>
             </div>
             <p>&copy; 2024 AI Insight. All rights reserved.</p>
         </div>
