@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>할루시네이션과 RAG의 진화 - AI ALL</title>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1012734614251637" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .post-content { max-width: 900px; margin: 40px auto; padding: 20px; line-height: 1.9; color: #334155; font-family: 'Noto Sans KR', sans-serif; }
+        .post-header { border-bottom: 3px solid #f59e0b; padding-bottom: 25px; margin-bottom: 40px; }
+        .post-header h1 { font-size: 2.4rem; color: #0f172a; margin-bottom: 15px; letter-spacing: -0.02em; }
+        .category { color: #f59e0b; font-weight: 800; text-transform: uppercase; font-size: 1rem; display: block; margin-bottom: 10px; }
+        h2 { font-size: 1.8rem; color: #1e293b; margin-top: 50px; background: #fffbeb; padding: 10px 20px; border-radius: 8px; }
+        h3 { font-size: 1.4rem; color: #b45309; margin-top: 35px; }
+        .highlight-box { background: #fef3c7; border-left: 6px solid #f59e0b; padding: 25px; border-radius: 4px; margin: 30px 0; }
+    </style>
+</head>
+<body>
+    <article class="post-content">
+        <header class="post-header">
+            <span class="category">LLM Reliability & RAG</span>
+            <h1>[제12회 심층 칼럼] 거짓된 유창함의 극복: 할루시네이션(Hallucination)의 원인과 검색 증강 생성(RAG)의 진화</h1>
+            <p class="post-meta">AI-ALL 기술 분석팀 | 2026. 02. 18</p>
+        </header>
+        <div class="post-body">
+            <p>거대 언어 모델(LLM)이 범하는 가장 치명적인 오류는 '너무나 유창하게 거짓말을 한다'는 점입니다. 없는 판례를 지어내거나, 역사적 사실을 왜곡하는 이른바 '할루시네이션(Hallucination)' 현상은 생성형 AI가 산업 현장에 도입되는 것을 가로막는 가장 큰 장벽이었습니다. 2026년 현재, 우리는 모델의 파라미터 크기를 늘리는 경쟁에서 벗어나, 외부 지식을 실시간으로 주입하여 이 문제를 해결하는 RAG(Retrieval-Augmented Generation) 아키텍처의 고도화에 집중하고 있습니다.</p>
+            <h2>1. 할루시네이션의 본질: 압축된 지식의 손실</h2>
+            <p>LLM은 학습 과정에서 방대한 데이터를 신경망의 가중치(Weight) 형태로 압축하여 저장합니다. 이 과정에서 필연적으로 정보의 손실(Lossy Compression)이 발생하며, 모델은 기억나지 않는 세부 사항을 확률적으로 가장 그럴듯한 단어로 메우려 시도합니다. 이것이 바로 할루시네이션의 원리입니다. 즉, AI는 거짓말을 하려는 의도가 있는 것이 아니라, 불완전한 기억을 확률적으로 복원하려는 '성실한 오류'를 범하는 것입니다.</p>
+            <h2>2. 팩트의 닻을 내리다: RAG(검색 증강 생성)의 원리</h2>
+            <p>RAG는 LLM에게 "기억에 의존하지 말고, 오픈북 테스트를 보라"고 지시하는 것과 같습니다.</p>
+            <ul>
+                <li><strong>검색(Retrieval):</strong> 사용자가 질문을 하면, 모델은 먼저 벡터 데이터베이스(Vector DB)에서 관련성이 높은 최신 문서나 신뢰할 수 있는 정보를 검색합니다.</li>
+                <li><strong>증강(Augmented):</strong> 검색된 팩트 데이터를 프롬프트에 포함시켜 LLM에게 전달합니다.</li>
+                <li><strong>생성(Generation):</strong> LLM은 사전에 학습된 지식이 아닌, 눈앞에 주어진 '검색 결과'에 근거하여 답변을 생성합니다.</li>
+            </ul>
+            <h2>3. RAG의 진화: Advanced RAG와 하이브리드 검색</h2>
+            <p>초기 RAG가 단순한 키워드 매칭 수준이었다면, 2026년형 Advanced RAG는 문맥을 이해합니다.</p>
+            <div class="highlight-box">
+                <strong>하이브리드 검색(Hybrid Search):</strong> 키워드 기반의 BM25 알고리즘과 의미 기반의 벡터 검색(Dense Retrieval)을 결합하여, 전문 용어와 문맥적 뉘앙스를 동시에 잡아냅니다.<br><br>
+                <strong>리랭킹(Re-ranking):</strong> 검색된 문서들 중 답변 작성에 가장 중요한 정보 순서대로 다시 순위를 매겨 모델에 입력함으로써 정답률을 획기적으로 높입니다.
+            </div>
+            <h2>결론: 신뢰할 수 있는 지능을 향하여</h2>
+            <p>RAG 기술은 AI를 '창작 도구'에서 '지식 검색 도구'로 전환시키는 핵심 키(Key)입니다. 모델이 자신의 무지를 인정하고 외부의 정확한 정보를 참조할 수 있게 될 때, 비로소 AI는 환각에서 깨어나 신뢰할 수 있는 비즈니스 파트너가 될 것입니다.</p>
+        </div>
+    </article>
+</body>
+</html>
