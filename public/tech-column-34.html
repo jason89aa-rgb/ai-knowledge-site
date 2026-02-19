@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CXL(Compute Express Link)과 AI 인프라의 무한 확장성 - AI ALL</title>
+    <meta name="description" content="메모리 장벽을 허무는 차세대 인터페이스 CXL의 원리를 메모리 풀링, HBM과의 계층화 전략을 통해 심층 분석하고, AI 인프라의 미래를 조망합니다.">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1012734614251637" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<meta name="google-adsense-account" content="ca-pub-1012734614251637">
+</head>
+<body>
+    <header>
+        <div class="inner">
+            <div class="logo"><a href="index.html">AI-ALL<span class="dot">.</span></a></div>
+            <nav><ul><li><a href="index.html">홈으로</a></li></ul></nav>
+        </div>
+    </header>
+
+    <main class="inner">
+        <article class="post-content">
+            <header class="post-header">
+                <span class="category">Next-gen AI Infrastructure</span>
+                <h1>[제34회 심층 칼럼] 메모리 장벽의 붕괴: CXL(Compute Express Link)과 AI 인프라의 무한 확장성</h1>
+                <p class="post-meta">AI-ALL 기술 분석팀 | 2026. 02. 19</p>
+            </header>
+            <div class="post-body">
+                <p>AI 모델의 파라미터 수가 조 단위를 넘어서면서, 프로세서의 연산 능력보다 데이터를 주고받는 '메모리 대역폭'과 '용량'이 지능의 속도를 결정짓는 시대가 되었습니다. 현재의 서버 구조는 CPU당 꽂을 수 있는 메모리 슬롯이 제한된 <strong>'메모리 벽(Memory Wall)'</strong>에 가로막혀 있습니다. 이를 돌파하기 위해 탄생한 차세대 인터페이스 CXL은 개별 장치에 종속되었던 메모리를 풀(Pool) 형태로 공유하게 함으로써, 데이터센터 전체를 하나의 거대한 컴퓨터처럼 작동하게 만들고 있습니다.</p>
+                <h2>1. 폰 노이만의 한계를 넘어서: CXL의 3가지 핵심 프로토콜</h2>
+                <p>CXL은 PCIe 5.0/6.0 물리 계층을 기반으로 하면서도, 세 가지 고유 프로토콜을 통해 장치 간 '캐시 일관성(Cache Coherency)'을 보장합니다.</p>
+                <ul>
+                    <li><strong>CXL.io:</strong> 장치 탐색 및 구성 등 기존 PCIe와 유사한 기본 통신을 담당합니다.</li>
+                    <li><strong>CXL.cache:</strong> 호스트(CPU)의 메모리를 가속기가 저지연으로 접근할 수 있게 하여 캐시 효율을 극대화합니다.</li>
+                    <li><strong>CXL.mem:</strong> 핵심적인 기능으로, CPU가 가속기에 장착된 메모리나 외부 메모리 풀을 마치 자신의 로컬 메모리처럼 직접 주소를 지정해 사용할 수 있게 합니다.</li>
+                </ul>
+                <h2>2. 메모리 풀링(Memory Pooling): 자원 효율의 극대화</h2>
+                <p>전통적인 서버 환경에서는 특정 CPU가 메모리를 남겨도 다른 CPU가 이를 빌려 쓸 수 없었습니다(Stranded Memory). CXL은 메모리 풀링 기술을 통해 유휴 메모리를 중앙 집중화합니다.</p>
+                <div class="highlight-box">
+                    <strong>동적 할당:</strong> AI 학습 시에는 대용량 메모리를 특정 GPU 노드에 집중 할당하고, 추론 시에는 여러 에이전트 노드로 분산 배치하는 식의 유연한 자원 관리가 가능해집니다.<br>
+                    <strong>TCO(총 소유 비용) 절감:</strong> 물리적인 메모리 증설 없이도 기존 자원의 활용률을 높여 데이터센터 운영 비용을 획기적으로 낮춥니다.
+                </div>
+                <h2>3. HBM과의 공생: 속도(HBM)와 용량(CXL)의 이중주</h2>
+                <p>흔히 CXL을 HBM의 경쟁자로 오해하지만, 2026년의 AI 아키텍처는 두 기술의 <strong>'계층화(Tiering)'</strong>를 지향합니다.</p>
+                <ul>
+                    <li><strong>Hot Data (HBM):</strong> 즉각적인 연산이 필요한 데이터는 GPU 바로 옆의 HBM에서 초고속으로 처리합니다.</li>
+                    <li><strong>Warm/Cold Data (CXL):</strong> 대규모 모델의 가중치나 벡터 데이터베이스 등 방대한 용량이 필요한 데이터는 CXL 기반의 확장 메모리 풀에 저장하여 병목 현상을 완화합니다.</li>
+                </ul>
+                <h2>4. 2026년 시장의 주인공: CXL 3.1과 패브릭(Fabric)</h2>
+                <p>최신 CXL 3.1 규격은 '패브릭' 개념을 도입하여 수천 개의 노드를 유기적으로 연결합니다. 이는 개별 서버 단위를 넘어 데이터센터 전체가 하나의 거대한 가상 메모리 공간을 공유하는 <strong>'컴포저블 인프라(Composable Infrastructure)'</strong>의 완성을 의미합니다. 삼성전자와 SK하이닉스가 CXL 전용 컨트롤러를 탑재한 CMM(CXL Memory Module) 양산에 박차를 가하는 이유도 바로 여기에 있습니다.</p>
+                <h2>결론: 거대 지능을 뒷받침하는 거대 메모리</h2>
+                <p>CXL은 단순한 연결 표준이 아닙니다. 지능의 크기가 메모리의 용량에 의해 제한받지 않도록 하는 '인프라의 민주화'입니다. 메모리 장벽이 사라진 자리에 더 크고 정교한 AI 모델이 자유롭게 유영하게 될 때, 우리는 비로소 진정한 의미의 범용 인공지능(AGI)에 한 걸음 더 다가설 수 있을 것입니다.</p>
+            </div>
+            <div class="post-footer">
+                <a href="in-depth-analysis.html" class="btn-secondary">목록으로 돌아가기</a>
+                <a href="index.html" class="btn-primary">홈으로</a>
+            </div>
+        </article>
+    </main>
+    <footer>
+        <div class="inner">
+            <p>&copy; 2026 AI-ALL. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>
