@@ -1,99 +1,275 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>https://ai-all.co.kr/2026-ai-ecosystem-report.html</loc>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
     <loc>https://ai-all.co.kr/about.html</loc>
-    <lastmod>2026-02-15</lastmod>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/ai-tool-comparison.html</loc>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/ai-tool-recommendations.html</loc>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/automation-page1.html</loc>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/automation-page2.html</loc>
+    <lastmod>2026-02-21</lastmod>
   </url>
   <url>
     <loc>https://ai-all.co.kr/automation.html</loc>
-    <lastmod>2026-02-15</lastmod>
+    <lastmod>2026-02-21</lastmod>
   </url>
   <url>
     <loc>https://ai-all.co.kr/case-studies.html</loc>
-    <lastmod>2026-02-15</lastmod>
+    <lastmod>2026-02-21</lastmod>
   </url>
   <url>
     <loc>https://ai-all.co.kr/contact.html</loc>
-    <lastmod>2026-02-15</lastmod>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/gemini-code-assist-guide.html</loc>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/gemini-guide.html</loc>
+    <lastmod>2026-02-21</lastmod>
   </url>
   <url>
     <loc>https://ai-all.co.kr/guide-blog-writing.html</loc>
-    <lastmod>2026-02-15</lastmod>
+    <lastmod>2026-02-21</lastmod>
   </url>
   <url>
     <loc>https://ai-all.co.kr/guide-copyright.html</loc>
-    <lastmod>2026-02-15</lastmod>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/hbm4-and-ai-chips.html</loc>
+    <lastmod>2026-02-21</lastmod>
   </url>
   <url>
     <loc>https://ai-all.co.kr/image-ai-tips.html</loc>
-    <lastmod>2026-02-15</lastmod>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/in-depth-analysis.html</loc>
+    <lastmod>2026-02-21</lastmod>
   </url>
   <url>
     <loc>https://ai-all.co.kr/index.html</loc>
-    <lastmod>2026-02-15</lastmod>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/learning-journey.html</loc>
+    <lastmod>2026-02-21</lastmod>
   </url>
   <url>
     <loc>https://ai-all.co.kr/llm-intro.html</loc>
-    <lastmod>2026-02-15</lastmod>
+    <lastmod>2026-02-21</lastmod>
   </url>
   <url>
     <loc>https://ai-all.co.kr/nlp-sentiment-analysis.html</loc>
-    <lastmod>2026-02-15</lastmod>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/partnership.html</loc>
+    <lastmod>2026-02-21</lastmod>
   </url>
   <url>
     <loc>https://ai-all.co.kr/privacy.html</loc>
-    <lastmod>2026-02-15</lastmod>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/prompt-secret.html</loc>
+    <lastmod>2026-02-21</lastmod>
   </url>
   <url>
     <loc>https://ai-all.co.kr/roadmap.html</loc>
-    <lastmod>2026-02-15</lastmod>
+    <lastmod>2026-02-21</lastmod>
   </url>
   <url>
     <loc>https://ai-all.co.kr/study-step1.html</loc>
-    <lastmod>2026-02-15</lastmod>
+    <lastmod>2026-02-21</lastmod>
   </url>
   <url>
     <loc>https://ai-all.co.kr/study-step2.html</loc>
-    <lastmod>2026-02-15</lastmod>
+    <lastmod>2026-02-21</lastmod>
   </url>
   <url>
     <loc>https://ai-all.co.kr/study-step3.html</loc>
-    <lastmod>2026-02-15</lastmod>
+    <lastmod>2026-02-21</lastmod>
   </url>
   <url>
     <loc>https://ai-all.co.kr/tech-column-01.html</loc>
-    <lastmod>2026-02-15</lastmod>
+    <lastmod>2026-02-21</lastmod>
   </url>
   <url>
     <loc>https://ai-all.co.kr/tech-column-02.html</loc>
-    <lastmod>2026-02-15</lastmod>
+    <lastmod>2026-02-21</lastmod>
   </url>
   <url>
     <loc>https://ai-all.co.kr/tech-column-03.html</loc>
-    <lastmod>2026-02-15</lastmod>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/tech-column-05.html</loc>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/tech-column-07.html</loc>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/tech-column-09.html</loc>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/tech-column-10.html</loc>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/tech-column-12.html</loc>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/tech-column-13.html</loc>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/tech-column-14.html</loc>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/tech-column-15.html</loc>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/tech-column-16.html</loc>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/tech-column-17.html</loc>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/tech-column-18.html</loc>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/tech-column-19.html</loc>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/tech-column-20.html</loc>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/tech-column-21.html</loc>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/tech-column-22.html</loc>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/tech-column-23.html</loc>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/tech-column-24.html</loc>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/tech-column-25.html</loc>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/tech-column-26.html</loc>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/tech-column-27.html</loc>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/tech-column-28.html</loc>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/tech-column-29.html</loc>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/tech-column-30.html</loc>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/tech-column-31.html</loc>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/tech-column-32.html</loc>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/tech-column-33.html</loc>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/tech-column-34.html</loc>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/tech-column-35.html</loc>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/tech-column-36.html</loc>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/terms.html</loc>
+    <lastmod>2026-02-21</lastmod>
   </url>
   <url>
     <loc>https://ai-all.co.kr/tips.html</loc>
-    <lastmod>2026-02-15</lastmod>
+    <lastmod>2026-02-21</lastmod>
   </url>
   <url>
     <loc>https://ai-all.co.kr/tool-claude.html</loc>
-    <lastmod>2026-02-15</lastmod>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/tool-cursor.html</loc>
+    <lastmod>2026-02-21</lastmod>
   </url>
   <url>
     <loc>https://ai-all.co.kr/tool-gemini.html</loc>
-    <lastmod>2026-02-15</lastmod>
+    <lastmod>2026-02-21</lastmod>
   </url>
   <url>
     <loc>https://ai-all.co.kr/tool-perplexity.html</loc>
-    <lastmod>2026-02-15</lastmod>
+    <lastmod>2026-02-21</lastmod>
   </url>
   <url>
     <loc>https://ai-all.co.kr/tools.html</loc>
-    <lastmod>2026-02-15</lastmod>
+    <lastmod>2026-02-21</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/top3-ai-tools.html</loc>
+    <lastmod>2026-02-21</lastmod>
   </url>
   <url>
     <loc>https://ai-all.co.kr/welcome.html</loc>
-    <lastmod>2026-02-15</lastmod>
+    <lastmod>2026-02-21</lastmod>
   </url>
 </urlset>
