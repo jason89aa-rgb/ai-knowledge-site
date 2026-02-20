@@ -3,55 +3,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 자동화 가이드 - AI ALL</title>
-    <meta name="description" content="AI를 활용한 업무 자동화 가이드를 제공합니다. 엑셀, PPT 활용법 등 실전 자동화 팁을 확인하세요.">
+    <title>Step 2: 노코드 자동화 - AI-ALL 학습 로드맵</title>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1012734614251637" crossorigin="anonymous"></script>
-<meta name="google-adsense-account" content="ca-pub-1012734614251637">
+    <meta name="google-adsense-account" content="ca-pub-1012734614251637">
 </head>
 <body>
-
     <header>
         <div class="inner">
-            <div class="logo"><a href="index.html">AI-ALL<span class="dot">.</span></a></div>
-            <nav><ul><li><a href="index.html">홈으로</a></li></ul></nav>
+            <div class="logo">
+                <a href="index.html">AI-ALL<span class="dot">.</span></a>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="tips.html">AI 꿀팁</a></li>
+                    <li><a href="in-depth-analysis.html">심층 분석</a></li>
+                    <li><a href="tools.html">추천 툴</a></li>
+                    <li><a href="roadmap.html">학습 로드맵</a></li>
+                    <li><a href="learning-journey.html">나의 학습 여정</a></li>
+                </ul>
+            </nav>
         </div>
     </header>
 
-    <main class="inner">
-        <section id="automation-list" class="section">
-            <div class="section-header" style="text-align: center; margin-bottom: 50px;">
-                <h1><i class="fa-solid fa-bolt"></i> AI 자동화 가이드</h1>
-                <p>업무 효율을 극대화하는 실전 AI 자동화 팁을 확인하세요.</p>
-            </div>
-            
-            <div class="grid-container">
-                <article class="card">
-                    <div class="icon-box" style="background:#e0f7fa; color:#00838f;">
-                        <i class="fa-solid fa-file-excel"></i>
-                    </div>
-                    <h3>엑셀 데이터 분석, ChatGPT에 3분 만에 시키는 법</h3>
-                    <p>AI를 활용하여 엑셀 데이터를 분석하고 업무를 자동화하는 실전 가이드입니다.</p>
-                    <a href="automation-page1.html" class="link-text">자세히 보기 <i class="fa-solid fa-arrow-right"></i></a>
-                </article>
+    <main>
+        <section class="section">
+            <div class="inner">
+                <div class="post-header" style="margin-bottom: 40px; text-align: left;">
+                    <span class="badge-pill" style="margin-bottom: 15px; display: inline-block;">Step 02</span>
+                    <h1>중급: 노코드 워크플로우 자동화 (n8n 기반 파이프라인)</h1>
+                    <p class="subtitle" style="font-size: 1.2rem; color: #64748b; margin-top: 10px;">"인간은 결정을 내리고, 반복 작업은 파이프라인이 처리한다."</p>
+                </div>
+                
+                <div class="post-content">
+                    <p>비싼 월구독료를 내는 Zapier를 졸업하고, 무한한 분기 처리와 확장이 가능한 오픈소스 자동화 툴 'n8n'을 이용해 나만의 24시간 백그라운드 비서를 구축합니다.</p>
 
-                <article class="card">
-                    <div class="icon-box" style="background:#fefce8; color:#ca8a04;">
-                        <i class="fa-solid fa-briefcase"></i>
+                    <div class="step-detail-card" style="background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-bottom: 30px;">
+                        <h3 style="color: #4338ca; margin-bottom: 15px;">1. 자동화의 심장, 웹훅(Webhook)과 트리거(Trigger) 이해하기</h3>
+                        <p><strong>개념:</strong> 다른 앱에서 이벤트가 발생했을 때(이메일 수신, 폼 제출 등) n8n으로 신호를 보내는 방식.</p>
+                        <p style="margin-top: 10px;"><strong>실전 적용:</strong> 특정 발신자에게서 이메일이 오거나, 구글 폼으로 새로운 제안서가 접수되었을 때 즉시 n8n 워크플로우를 작동시키는 실시간 트리거 세팅 방법.</p>
                     </div>
-                    <h3>직장인 AI 생존 비법: 엑셀과 PPT, 칼퇴를 부르는 실전 AI 활용법</h3>
-                    <p>일상과 업무에서 엑셀과 PPT에 AI를 더해 업무 효율을 높이는 초간단 실전 팁을 소개합니다.</p>
-                    <a href="automation-page2.html" class="link-text">자세히 보기 <i class="fa-solid fa-arrow-right"></i></a>
-                </article>
+
+                    <div class="step-detail-card" style="background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-bottom: 30px;">
+                        <h3 style="color: #4338ca; margin-bottom: 15px;">2. AI API 다이렉트 연동: 비정형 데이터의 정형화</h3>
+                        <p><strong>개념:</strong> 텍스트 덩어리를 AI 모듈(OpenAI, Gemini API)에 통과시켜 핵심 데이터만 발라내는 작업.</p>
+                        <p style="margin-top: 10px;"><strong>실전 적용:</strong> 매일 아침 수집되는 수십 개의 영문 기술 뉴스레터를 n8n으로 끌어온 뒤, LLM 노드를 통과시켜 '경쟁사 동향', '신기술 발표' 등 카테고리를 자동 분류하고 3줄로 한국어 요약을 생성하는 파이프라인.</p>
+                    </div>
+
+                    <div class="step-detail-card" style="background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-bottom: 30px;">
+                        <h3 style="color: #4338ca; margin-bottom: 15px;">3. IF/Switch 노드를 활용한 지능형 분기(Routing) 처리</h3>
+                        <p><strong>개념:</strong> 데이터의 성격이나 AI의 판단 결과에 따라 데이터가 흘러가는 길을 다르게 나누는 로직 설계.</p>
+                        <p style="margin-top: 10px;"><strong>실전 적용:</strong> AI가 분석한 고객 문의 내용이 '단순 불만'이면 고객 센터 슬랙(Slack) 채널로 즉시 알림을 보내고, '기술적 버그 리포트'이면 개발팀의 노션(Notion) 데이터베이스나 Jira 티켓으로 자동 생성되도록 경로를 나누는 방법.</p>
+                    </div>
+
+                    <div class="step-detail-card" style="background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-bottom: 30px;">
+                        <h3 style="color: #4338ca; margin-bottom: 15px;">4. 에러 핸들링(Error Handling)과 API 통신 (HTTP Request)</h3>
+                        <p><strong>개념:</strong> 실무 자동화의 핵심. 서버가 다운되거나 AI가 엉뚱한 답변을 냈을 때 파이프라인이 죽지 않게 만드는 방어 로직.</p>
+                        <p style="margin-top: 10px;"><strong>실전 적용:</strong> n8n 내장 모듈에 없는 사내 시스템이나 외부 API(예: 공공데이터포털)를 HTTP Request 노드로 직접 호출하는 방법과, 에러 발생 시 지정된 관리자에게 텔레그램으로 경고를 보내는 Error Trigger 구축.</p>
+                    </div>
+                </div>
+
+                <div class="navigation-buttons" style="display: flex; justify-content: space-between; margin-top: 50px;">
+                    <a href="study-step1.html" class="btn-secondary">&larr; 이전 단계: 프롬프트 엔지니어링</a>
+                    <a href="study-step3.html" class="btn-primary">다음 단계: RAG & 파인튜닝 &rarr;</a>
+                </div>
             </div>
         </section>
     </main>
 
     <footer class="site-footer">
         <div class="inner">
-            <p>&copy; 2026 AI-ALL. All rights reserved.</p>
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <h3>AI-ALL<span class="dot">.</span></h3>
+                    <p>복잡한 AI 기술을 누구나 쉽게 이해하고 활용할 수 있도록 돕는 지식 허브입니다.</p>
+                    <div class="social-icons">
+                        <a href="#"><i class="fa-brands fa-youtube"></i></a>
+                        <a href="#"><i class="fa-brands fa-twitter"></i></a>
+                        <a href="#"><i class="fa-brands fa-instagram"></i></a>
+                    </div>
+                </div>
+                
+                <div class="footer-col">
+                    <h4>바로가기</h4>
+                    <ul>
+                        <li><a href="tips.html">AI 꿀팁</a></li>
+                        <li><a href="tools.html">툴 리뷰</a></li>
+                        <li><a href="roadmap.html">학습 로드맵</a></li>
+                        <li><a href="about.html">소개 (About)</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h4>리소스</h4>
+                    <ul>
+                        <li><a href="https://openai.com" target="_blank">OpenAI</a></li>
+                        <li><a href="https://gemini.google.com" target="_blank">Google Gemini</a></li>
+                        <li><a href="https://claude.ai" target="_blank">Anthropic Claude</a></li>
+                        <li><a href="https://www.midjourney.com" target="_blank">Midjourney</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h4>지원 및 정책</h4>
+                    <ul>
+                        <li><a href="contact.html">문의하기</a></li>
+                        <li><a href="privacy.html">개인정보처리방침</a></li>
+                        <li><a href="terms.html">이용약관</a></li>
+                        <li><a href="partnership.html">제휴 제안</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2026 AI-ALL. All rights reserved. Powered by Jason's AI Lab.</p>
+            </div>
         </div>
     </footer>
 </body>
