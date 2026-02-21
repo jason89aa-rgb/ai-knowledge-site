@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Header from "@/components/Header";
+import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
-  title: "AI Learning Site",
-  description: "Your go-to place for learning about AI tools.",
+  title: "AI Learning Hub",
+  description: "An automated AI learning hub with curated content.",
 };
 
 export default function RootLayout({
@@ -13,10 +13,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body>
-        <Header />
-        <main>{children}</main>
+    <html lang="en" className="dark">
+      <body className={cn("min-h-screen bg-background font-sans antialiased")}>
+        {children}
       </body>
     </html>
   );
