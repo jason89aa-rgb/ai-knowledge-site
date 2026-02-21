@@ -2,8 +2,6 @@ import { getCategories, getPostsByCategory } from '@/lib/posts';
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
-export const dynamicParams = false;
-
 export async function generateStaticParams() {
   const categories = getCategories();
   return categories.map((category) => ({

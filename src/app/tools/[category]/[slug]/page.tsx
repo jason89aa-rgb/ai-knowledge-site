@@ -1,8 +1,6 @@
 import { getAllPostParams, getPostData } from '@/lib/posts';
 import { compileMDX } from 'next-mdx-remote/rsc';
 
-export const dynamicParams = false;
-
 export async function generateStaticParams() {
   const paths = getAllPostParams();
   return paths;

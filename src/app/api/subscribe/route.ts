@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { Resend } from "resend";
 import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "edge";
@@ -25,7 +24,6 @@ export async function POST(request: Request) {
        return NextResponse.json({ error: "서버 설정 오류가 발생했습니다." }, { status: 500 });
     }
 
-    const resend = new Resend(resendApiKey);
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
     // 2. Insert into Supabase (Stricter error handling as requested)
@@ -39,8 +37,14 @@ export async function POST(request: Request) {
       }, { status: 500 });
     }
 
-    // 3. Send Welcome Email via Resend
-    const { error: emailError } = await resend.emails.send({
+    // 3. Send Welcome Email via Resend using raw fetch (100% Edge Compatible)
+    const emailRes = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${resendApiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
         from: "AI Learning Hub <onboarding@resend.dev>",
         to: [email],
         subject: "Welcome to AI Learning Hub!",
@@ -51,20 +55,33 @@ export async function POST(request: Request) {
             <p>최신 AI 툴 리뷰, 프롬프트 팁, 가이드를 이메일로 보내드릴게요.</p>
             <p>앞으로 유익한 소식 기대해 주세요!</p>
         </div>
-        `,
+        `
+      })
     });
 
-    if (emailError) {
-        console.error("🔥 Resend Error:", emailError);
+    if (!emailRes.ok) {
+        const errorData = await emailRes.text();
+        console.error("🔥 Resend Error:", errorData);
         return NextResponse.json({ error: "환영 이메일 발송 중 오류가 발생했습니다." }, { status: 500 });
     }
 
-    // 4. Add to Resend Audience (Contacts)
-    const { error: contactError } = await resend.contacts.create({
+    // 4. Add to Resend Audience (Contacts) using raw fetch
+    // Note: Resend contacts API requires audience_id usually, but if the SDK allowed it without, it might be using default.
+    // If it fails, we just log it as before.
+    const contactRes = await fetch('https://api.resend.com/contacts', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${resendApiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
         email: email,
+        audience_id: process.env.RESEND_AUDIENCE_ID || undefined // Optional, if you have one
+      })
     });
 
-    if (contactError) {
+    if (!contactRes.ok) {
+        const contactError = await contactRes.text();
         console.error("🔥 Resend Contact Error:", contactError);
     }
 
