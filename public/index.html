@@ -372,14 +372,54 @@
                 <div class="newsletter-content">
                     <h2>📬 매주 AI 꿀팁을 받아보세요</h2>
                     <p>가장 핫한 AI 뉴스와 실전 프롬프트 가이드를 이메일로 보내드립니다.<br>스팸은 보내지 않습니다. 언제든 구독 취소 가능합니다.</p>
-                    <form class="newsletter-form" onsubmit="alert('구독 신청이 완료되었습니다! (데모)'); return false;">
-                        <input type="email" placeholder="이메일 주소를 입력하세요" required>
-                        <button type="submit">무료 구독하기</button>
+                    <form id="newsletter-form" class="newsletter-form" onsubmit="handleSubscribe(event)">
+                        <input type="email" id="newsletter-email" placeholder="이메일 주소를 입력하세요" required>
+                        <button type="submit" id="newsletter-submit">무료 구독하기</button>
                     </form>
+                    <p id="newsletter-message" style="margin-top: 10px; font-size: 0.9em;"></p>
                 </div>
             </div>
         </section>
     </main>
+
+    <script>
+        async function handleSubscribe(event) {
+            event.preventDefault();
+            const emailInput = document.getElementById('newsletter-email');
+            const submitButton = document.getElementById('newsletter-submit');
+            const messageEl = document.getElementById('newsletter-message');
+            
+            const email = emailInput.value;
+            submitButton.disabled = true;
+            submitButton.textContent = '처리 중...';
+            messageEl.textContent = '';
+            
+            try {
+                const response = await fetch('/api/newsletter', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    messageEl.style.color = '#10b981'; // green
+                    messageEl.textContent = '구독해주셔서 감사합니다! 편지함을 확인해 주세요.';
+                    emailInput.value = '';
+                } else {
+                    messageEl.style.color = '#ef4444'; // red
+                    messageEl.textContent = data.error || '오류가 발생했습니다. 다시 시도해 주세요.';
+                }
+            } catch (error) {
+                messageEl.style.color = '#ef4444';
+                messageEl.textContent = '통신 오류가 발생했습니다.';
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = '무료 구독하기';
+            }
+        }
+    </script>
 
     <footer class="site-footer">
         <div class="inner">
