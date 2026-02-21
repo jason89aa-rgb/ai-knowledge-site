@@ -14,10 +14,16 @@ export default async function PostPage({ params }: { params: { category: string,
   });
 
   return (
-    <article className="prose lg:prose-xl p-8">
-      <h1>{title}</h1>
-      <div className="text-gray-600">{date}</div>
-      {compiledContent}
-    </article>
+    <main className="container mx-auto px-4 py-12">
+      <article className="prose lg:prose-xl mx-auto">
+        <header className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-800">{title}</h1>
+          <p className="text-gray-500 mt-2">{date}</p>
+        </header>
+        <div className="text-lg">
+          {compiledContent}
+        </div>
+      </article>
+    </main>
   );
 }

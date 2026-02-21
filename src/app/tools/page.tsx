@@ -1,16 +1,28 @@
 import { getCategories } from '@/lib/posts';
 import Link from 'next/link';
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 export default function ToolsPage() {
   const categories = getCategories();
 
   return (
-    <main className="p-8">
-      <h1 className="text-3xl font-bold">AI Tools</h1>
-      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <main className="container mx-auto px-4 py-12">
+      <h1 className="text-3xl font-bold text-center text-gray-800 mb-8">
+        All AI Tools
+      </h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {categories.map((category) => (
-          <Link key={category} href={`/tools/${category}`} className="block p-4 border rounded-lg hover:bg-gray-100">
-            <h2 className="text-xl font-semibold capitalize">{category}</h2>
+          <Link 
+            key={category} 
+            href={`/tools/${category}`}
+            className="block"
+          >
+            <Card className="h-full hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle className="capitalize">{category}</CardTitle>
+                <CardDescription>Explore tutorials and guides for {category}.</CardDescription>
+              </CardHeader>
+            </Card>
           </Link>
         ))}
       </div>
