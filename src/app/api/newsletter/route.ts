@@ -28,8 +28,11 @@ export async function POST(request: Request) {
     const { error: dbError } = await supabase.from('subscribers').insert([{ email }]);
     
     if (dbError) {
+      if (dbError.code === '23505') {
+        return NextResponse.json({ error: "이미 구독 중인 이메일입니다." }, { status: 400 });
+      }
       console.error("🔥 Supabase Error:", dbError);
-      return NextResponse.json({ error: dbError.message }, { status: 500 });
+      return NextResponse.json({ error: "데이터베이스 저장 중 오류가 발생했습니다." }, { status: 500 });
     }
 
     // 3. Send Welcome Email via Resend (fetch API)
