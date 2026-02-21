@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
 
+// Trigger deployment to apply nodejs_compat flag
 export async function POST(request: Request) {
   try {
     const { email } = await request.json();
