@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createClient } from "@supabase/supabase-js";
 
+export const runtime = "edge";
+
 export async function POST(request: Request) {
   try {
     const { email } = await request.json();
