@@ -15,60 +15,66 @@ export async function POST(request: Request) {
     const { email } = await request.json();
 
     if (!email || typeof email !== "string") {
-      return NextResponse.json({ error: "Invalid email address" }, { status: 400 });
+      return NextResponse.json({ error: "유효한 이메일 주소를 입력해 주세요." }, { status: 400 });
     }
 
     // 1. Check environment variables
     if (!process.env.RESEND_API_KEY || !supabaseUrl || !supabaseAnonKey) {
        console.error("Missing environment variables for Resend or Supabase.");
-       // We'll return success in dev/demo environments if keys are missing just to show it "works" UI-wise,
-       // but ideally it should throw a 500 error.
-       // return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+       return NextResponse.json({ error: "서버 설정 오류가 발생했습니다." }, { status: 500 });
     }
 
-    // 2. Insert into Supabase (Assume table is called 'subscribers' with 'email' column)
-    // Commented out to prevent errors if the table doesn't exist yet, but this is the logic.
-    if (supabaseUrl && supabaseAnonKey) {
-        const { error: dbError } = await supabase
-            .from("subscribers")
-            .insert([{ email }]);
+    // 2. Insert into Supabase (Table: subscribers, Column: email)
+    const { error: dbError } = await supabase
+        .from("subscribers")
+        .insert([{ email }]);
 
-        if (dbError) {
-            // Check if it's a unique constraint violation (already subscribed)
-            if (dbError.code === "23505") {
-                return NextResponse.json({ error: "You are already subscribed!" }, { status: 400 });
-            }
-            console.error("Supabase Error:", dbError);
-            return NextResponse.json({ error: "Database error" }, { status: 500 });
+    if (dbError) {
+        // Check if it's a unique constraint violation (already subscribed)
+        if (dbError.code === "23505") {
+            return NextResponse.json({ error: "이미 구독 중인 이메일입니다." }, { status: 400 });
         }
+        
+        // Exact error logging requested by user
+        console.error("Supabase Error:", dbError);
+        return NextResponse.json({ error: "데이터베이스 저장 중 오류가 발생했습니다." }, { status: 500 });
     }
 
     // 3. Send Welcome Email via Resend
-    if (process.env.RESEND_API_KEY) {
-        const { error: emailError } = await resend.emails.send({
-            from: "AI Learning Hub <onboarding@resend.dev>", // Replace with your verified domain
-            to: [email],
-            subject: "Welcome to AI Learning Hub!",
-            html: `
-            <div style="font-family: sans-serif; max-w: 600px; margin: 0 auto;">
-                <h2>Welcome aboard! 🎉</h2>
-                <p>Thank you for subscribing to the AI Learning Hub newsletter.</p>
-                <p>You'll now receive our latest AI tool reviews, prompt tips, and step-by-step guides straight to your inbox.</p>
-                <p>Stay tuned!</p>
-            </div>
-            `,
-        });
+    const { error: emailError } = await resend.emails.send({
+        from: "AI Learning Hub <onboarding@resend.dev>", // Replace with your verified domain
+        to: [email],
+        subject: "Welcome to AI Learning Hub!",
+        html: `
+        <div style="font-family: sans-serif; max-w: 600px; margin: 0 auto;">
+            <h2>구독해주셔서 감사합니다! 🎉</h2>
+            <p>AI Learning Hub 뉴스레터 구독이 완료되었습니다.</p>
+            <p>최신 AI 툴 리뷰, 프롬프트 팁, 가이드를 이메일로 보내드릴게요.</p>
+            <p>앞으로 유익한 소식 기대해 주세요!</p>
+        </div>
+        `,
+    });
 
-        if (emailError) {
-            console.error("Resend Error:", emailError);
-            return NextResponse.json({ error: "Failed to send welcome email" }, { status: 500 });
-        }
+    if (emailError) {
+        console.error("Resend Error:", emailError);
+        // Even if email fails, we already saved to DB, but we return 500 as requested for "strict" handling
+        return NextResponse.json({ error: "환영 이메일 발송 중 오류가 발생했습니다." }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, message: "Subscribed successfully!" }, { status: 200 });
+    // 4. Add to Resend Audience (Contacts)
+    const { error: contactError } = await resend.contacts.create({
+        email: email,
+    });
+
+    if (contactError) {
+        console.error("Resend Contact Error:", contactError);
+        // We log the error but don't fail the whole request since they are already in DB and email was sent
+    }
+
+    return NextResponse.json({ success: true, message: "구독이 완료되었습니다!" }, { status: 200 });
 
   } catch (error) {
     console.error("Subscription Error:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ error: "내부 서버 오류가 발생했습니다." }, { status: 500 });
   }
 }
