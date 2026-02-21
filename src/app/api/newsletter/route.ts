@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-export const runtime = "edge";
+export const runtime = 'edge';
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   try {
@@ -16,29 +17,22 @@ export async function POST(request: Request) {
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
     if (!resendApiKey || !supabaseUrl || !supabaseAnonKey) {
-       console.error("🔥 Missing Environment Variables:", {
-           RESEND_API_KEY: !!resendApiKey,
-           NEXT_PUBLIC_SUPABASE_URL: !!supabaseUrl,
-           NEXT_PUBLIC_SUPABASE_ANON_KEY: !!supabaseAnonKey
-       });
+       console.error("🔥 Missing Environment Variables");
        return NextResponse.json({ error: "서버 설정 오류가 발생했습니다." }, { status: 500 });
     }
 
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-    // 2. Insert into Supabase (Stricter error handling as requested)
-    const { data, error } = await supabase.from('subscribers').insert([{ email }]);
+    // 2. Insert into Supabase
+    const { error: dbError } = await supabase.from('subscribers').insert([{ email }]);
     
-    if (error) {
-      console.error("🔥 Supabase Insert Error Details:", error);
-      return NextResponse.json({ 
-        error: error.message,
-        code: error.code 
-      }, { status: 500 });
+    if (dbError) {
+      console.error("🔥 Supabase Error:", dbError);
+      return NextResponse.json({ error: dbError.message }, { status: 500 });
     }
 
-    // 3. Send Welcome Email via Resend using raw fetch (100% Edge Compatible)
-    const emailRes = await fetch('https://api.resend.com/emails', {
+    // 3. Send Welcome Email via Resend (fetch API)
+    await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${resendApiKey}`,
@@ -59,36 +53,20 @@ export async function POST(request: Request) {
       })
     });
 
-    if (!emailRes.ok) {
-        const errorData = await emailRes.text();
-        console.error("🔥 Resend Error:", errorData);
-        return NextResponse.json({ error: "환영 이메일 발송 중 오류가 발생했습니다." }, { status: 500 });
-    }
-
-    // 4. Add to Resend Audience (Contacts) using raw fetch
-    // Note: Resend contacts API requires audience_id usually, but if the SDK allowed it without, it might be using default.
-    // If it fails, we just log it as before.
-    const contactRes = await fetch('https://api.resend.com/contacts', {
+    // 4. Add to Resend Audience (Contacts)
+    fetch('https://api.resend.com/contacts', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${resendApiKey}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        email: email,
-        audience_id: process.env.RESEND_AUDIENCE_ID || undefined // Optional, if you have one
-      })
-    });
-
-    if (!contactRes.ok) {
-        const contactError = await contactRes.text();
-        console.error("🔥 Resend Contact Error:", contactError);
-    }
+      body: JSON.stringify({ email })
+    }).catch(err => console.error("🔥 Contact Error:", err));
 
     return NextResponse.json({ success: true, message: "구독이 완료되었습니다!" }, { status: 200 });
 
   } catch (error: any) {
-    console.error("🔥 Critical Subscription Error:", error);
+    console.error("🔥 Critical Error:", error);
     return NextResponse.json({ error: error.message || "내부 서버 오류가 발생했습니다." }, { status: 500 });
   }
 }
