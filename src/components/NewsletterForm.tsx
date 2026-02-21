@@ -29,11 +29,11 @@ export function NewsletterForm() {
       }
 
       setStatus("success");
-      setMessage("Thank you for subscribing! Check your inbox for a welcome email.");
+      setMessage("구독해주셔서 감사합니다! 편지함을 확인해 주세요.");
       setEmail("");
     } catch (error: any) {
       setStatus("error");
-      setMessage(error.message || "An unexpected error occurred");
+      setMessage(error.message || "오류가 발생했습니다. 다시 시도해 주세요.");
     }
   };
 
@@ -42,7 +42,7 @@ export function NewsletterForm() {
       <div className="flex w-full max-w-sm items-center space-x-2">
         <input
           type="email"
-          placeholder="Enter your email"
+          placeholder="이메일 주소를 입력하세요"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -50,7 +50,7 @@ export function NewsletterForm() {
           className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         />
         <Button type="submit" disabled={status === "loading"}>
-          {status === "loading" ? "Subscribing..." : "Subscribe"}
+          {status === "loading" ? "처리 중..." : "무료 구독하기"}
         </Button>
       </div>
       {message && (
