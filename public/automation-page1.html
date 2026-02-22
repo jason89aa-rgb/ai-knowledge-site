@@ -45,11 +45,27 @@
             <div id="google_translate_element" style="margin-left: 20px; display: flex; align-items: center; z-index: 1000;"></div>
         </div>
     </header>
+    <style>
+        /* 구글 번역기 스타일 조정: 1열로 정렬 및 가독성 개선 */
+        .goog-te-menu-frame {
+            max-height: 400px !important;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+        }
+        .goog-te-menu2 {
+            max-width: 250px !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+        }
+        .goog-te-menu2-item div, .goog-te-menu2-item:link div, .goog-te-menu2-item:visited div, .goog-te-menu2-item:active div {
+            padding: 8px 20px !important;
+        }
+    </style>
     <script type="text/javascript">
         function googleTranslateElementInit() {
             new google.translate.TranslateElement({
-                pageLanguage: 'ko', 
-                layout: google.translate.TranslateElement.InlineLayout.SIMPLE, 
+                pageLanguage: 'ko',
+                // SIMPLE 레이아웃은 모바일 친화적이며 1열 드롭다운에 가깝게 동작합니다.
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
                 autoDisplay: false
             }, 'google_translate_element');
         }
