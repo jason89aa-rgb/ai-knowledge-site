@@ -41,8 +41,20 @@
         <div class="inner">
             <div class="logo"><a href="index.html">AI Insight<span class="dot">.</span></a></div>
             <nav><ul><li><a href="index.html#tips">목록으로</a></li></ul></nav>
+            <!-- Google Translate Widget -->
+            <div id="google_translate_element" style="margin-left: 20px; display: flex; align-items: center; z-index: 1000;"></div>
         </div>
     </header>
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'ko', 
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE, 
+                autoDisplay: false
+            }, 'google_translate_element');
+        }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 
     <main class="inner">
         <article class="post-content">
