@@ -46,31 +46,40 @@
         </div>
     </header>
     <style>
-        /* 구글 번역기 스타일 조정: 1열로 정렬 및 가독성 개선 */
-        .goog-te-menu-frame {
-            max-height: 400px !important;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+        /* 네이티브 select 디자인을 깔끔하게 유지하기 위한 스타일 */
+        #google_translate_element select {
+            padding: 6px 10px;
+            border-radius: 4px;
+            border: 1px solid #e2e8f0;
+            font-size: 14px;
+            background-color: #f8fafc;
+            color: #334155;
+            cursor: pointer;
+            outline: none;
         }
-        .goog-te-menu2 {
-            max-width: 250px !important;
-            overflow-y: auto !important;
-            overflow-x: hidden !important;
+        #google_translate_element select:hover {
+            border-color: #cbd5e1;
         }
-        .goog-te-menu2-item div, .goog-te-menu2-item:link div, .goog-te-menu2-item:visited div, .goog-te-menu2-item:active div {
-            padding: 8px 20px !important;
+        /* 구글 번역 기본 텍스트 및 로고 가리기 (선택사항) */
+        .goog-te-gadget {
+            font-size: 0px !important;
+            color: transparent !important;
+        }
+        .goog-te-gadget .goog-te-combo {
+            margin: 0 !important;
         }
     </style>
     <script type="text/javascript">
         function googleTranslateElementInit() {
             new google.translate.TranslateElement({
                 pageLanguage: 'ko',
-                // SIMPLE 레이아웃은 모바일 친화적이며 1열 드롭다운에 가깝게 동작합니다.
-                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+                /* 레이아웃 옵션을 지우면 네이티브 드롭다운(1열)으로 깔끔하게 표시됩니다 */
                 autoDisplay: false
             }, 'google_translate_element');
         }
     </script>
-    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+    <!-- hl=en 파라미터를 추가하여 국가명을 영어로 강제 출력 -->
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit&hl=en"></script>
 
     <main class="inner">
         <article class="post-content">
