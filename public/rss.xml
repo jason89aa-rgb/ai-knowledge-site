@@ -6,13 +6,34 @@
     <description>AI 툴 소개, 학습 로드맵, 프롬프트 엔지니어링 팁을 제공하는 AI 전문 지식 허브입니다.</description>
     <language>ko</language>
     <atom:link href="https://ai-all.co.kr/rss.xml" rel="self" type="application/rss+xml" />
-    <lastBuildDate>Tue, 24 Feb 2026 16:00:47 GMT</lastBuildDate>
+    <lastBuildDate>Tue, 24 Feb 2026 16:27:03 GMT</lastBuildDate>
     <item>
       <title><![CDATA[심층 분석 칼럼 - AI ALL]]></title>
       <link>https://ai-all.co.kr/in-depth-analysis.html</link>
       <description><![CDATA[AI-ALL의 심층 분석 칼럼 목록입니다. AI 기술의 최신 동향과 심도 있는 분석을 만나보세요.]]></description>
-      <pubDate>Sun, 22 Feb 2026 16:31:57 GMT</pubDate>
+      <pubDate>Tue, 24 Feb 2026 16:25:32 GMT</pubDate>
       <guid>https://ai-all.co.kr/in-depth-analysis.html</guid>
+    </item>
+    <item>
+      <title><![CDATA[프롬프트 엔지니어링의 본질: 질문이 스펙이 되는 시대 - AI ALL]]></title>
+      <link>https://ai-all.co.kr/tech-column-42.html</link>
+      <description><![CDATA[코딩 열풍이 지고]]></description>
+      <pubDate>Tue, 24 Feb 2026 16:25:08 GMT</pubDate>
+      <guid>https://ai-all.co.kr/tech-column-42.html</guid>
+    </item>
+    <item>
+      <title><![CDATA[내가 만든 AI 이미지, 진짜 내 것일까? AI 저작권 가이드 - AI ALL]]></title>
+      <link>https://ai-all.co.kr/tech-column-41.html</link>
+      <description><![CDATA[생성형 AI로 만든 결과물의 상업적 이용 가능 여부와 저작권 귀속 문제에 대해 법적, 철학적 관점에서 심도 있게 분석합니다.]]></description>
+      <pubDate>Tue, 24 Feb 2026 16:25:08 GMT</pubDate>
+      <guid>https://ai-all.co.kr/tech-column-41.html</guid>
+    </item>
+    <item>
+      <title><![CDATA['구글링'이라는 단어가 사라진다? AI 검색의 시대 - AI ALL]]></title>
+      <link>https://ai-all.co.kr/tech-column-40.html</link>
+      <description><![CDATA[지난 20년간 이어진 구글 검색의 제국이 흔들리고 있습니다.]]></description>
+      <pubDate>Tue, 24 Feb 2026 16:25:08 GMT</pubDate>
+      <guid>https://ai-all.co.kr/tech-column-40.html</guid>
     </item>
     <item>
       <title><![CDATA[AI 활용 꿀팁 - AI ALL]]></title>
@@ -125,27 +146,6 @@
       <description><![CDATA[메모리 장벽을 허무는 차세대 인터페이스 CXL의 원리를 메모리 풀링, HBM과의 계층화 전략을 통해 심층 분석하고, AI 인프라의 미래를 조망합니다.]]></description>
       <pubDate>Sun, 22 Feb 2026 15:52:14 GMT</pubDate>
       <guid>https://ai-all.co.kr/tech-column-34.html</guid>
-    </item>
-    <item>
-      <title><![CDATA[High-NA EUV와 2나노 시대 AI 칩의 물리적 임계점 돌파 - AI ALL]]></title>
-      <link>https://ai-all.co.kr/tech-column-35.html</link>
-      <description><![CDATA[차세대 노광 장비 High-NA EUV가 2나노 이하 AI 칩을 구현하는 원리를 광학적 혁신, 공정 효율화 관점에서 심층 분석하고, 파운드리 시장의 미래를 조망합니다.]]></description>
-      <pubDate>Sun, 22 Feb 2026 15:52:14 GMT</pubDate>
-      <guid>https://ai-all.co.kr/tech-column-35.html</guid>
-    </item>
-    <item>
-      <title><![CDATA[SDV 시대 AI 인포테인먼트와 Automotive OLED 시너지 - AI ALL]]></title>
-      <link>https://ai-all.co.kr/tech-column-32.html</link>
-      <description><![CDATA[소프트웨어 중심 자동차(SDV) 시대의 AI 인포테인먼트와 Tandem OLED 기술이 만드는 지능형 콕핏의 미래를 분석합니다.]]></description>
-      <pubDate>Sun, 22 Feb 2026 15:52:14 GMT</pubDate>
-      <guid>https://ai-all.co.kr/tech-column-32.html</guid>
-    </item>
-    <item>
-      <title><![CDATA[테슬라 4680 배터리와 AI 기반 소재·공정 최적화 - AI ALL]]></title>
-      <link>https://ai-all.co.kr/tech-column-33.html</link>
-      <description><![CDATA[테슬라 4680 배터리의 혁신을 AI 기반 소재 역설계, 공정 최적화, 그리고 실시간 배터리 관리 시스템(BMS)을 통해 심층 분석하며 지능형 에너지의 미래를 다룹니다.]]></description>
-      <pubDate>Sun, 22 Feb 2026 15:52:14 GMT</pubDate>
-      <guid>https://ai-all.co.kr/tech-column-33.html</guid>
     </item>
   </channel>
 </rss>
