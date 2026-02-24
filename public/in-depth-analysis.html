@@ -108,296 +108,380 @@
                 <h1>심층 분석 칼럼</h1>
                 <p>AI 기술의 최신 동향과 심도 있는 분석을 만나보세요.</p>
             </div>
+
+            <!-- 카테고리 필터 버튼 추가 -->
+            <div class="filter-container">
+                <button class="filter-btn active" data-filter="all">전체</button>
+                <button class="filter-btn" data-filter="trend">산업 트렌드</button>
+                <button class="filter-btn" data-filter="tech">기술 분석</button>
+                <button class="filter-btn" data-filter="ethics">AI 윤리/역량</button>
+            </div>
+
+            <style>
+                .filter-container {
+                    display: flex;
+                    justify-content: center;
+                    gap: 10px;
+                    margin-bottom: 40px;
+                    flex-wrap: wrap;
+                }
+                .filter-btn {
+                    background-color: #ffffff;
+                    border: 1px solid #e2e8f0;
+                    padding: 8px 20px;
+                    border-radius: 50px;
+                    font-size: 0.95rem;
+                    font-weight: 600;
+                    color: #64748b;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                }
+                .filter-btn:hover {
+                    border-color: #2563eb;
+                    color: #2563eb;
+                }
+                .filter-btn.active {
+                    background-color: #2563eb;
+                    border-color: #2563eb;
+                    color: #ffffff;
+                }
+                /* 필터링 애니메이션 */
+                .card {
+                    transition: opacity 0.4s ease, transform 0.4s ease;
+                }
+                .card.hidden {
+                    display: none;
+                    opacity: 0;
+                    transform: translateY(20px);
+                }
+            </style>
+
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    const filterBtns = document.querySelectorAll('.filter-btn');
+                    const cards = document.querySelectorAll('.card');
+
+                    filterBtns.forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            const filter = btn.getAttribute('data-filter');
+
+                            // 버튼 활성화 상태 변경
+                            filterBtns.forEach(b => b.classList.remove('active'));
+                            btn.classList.add('active');
+
+                            // 카드 필터링
+                            cards.forEach(card => {
+                                const category = card.getAttribute('data-category');
+                                
+                                if (filter === 'all' || category === filter) {
+                                    card.style.display = 'flex';
+                                    setTimeout(() => {
+                                        card.style.opacity = '1';
+                                        card.style.transform = 'translateY(0)';
+                                    }, 10);
+                                } else {
+                                    card.style.opacity = '0';
+                                    card.style.transform = 'translateY(20px)';
+                                    setTimeout(() => {
+                                        card.style.display = 'none';
+                                    }, 400);
+                                }
+                            });
+                        });
+                    });
+                });
+            </script>
+
             <div class="grid-container" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
                 
-                <article class="card">
+                <article class="card" data-category="ethics">
                     <div class="card-content">
                         <h3>[제42회] 프롬프트 엔지니어링의 본질: '코딩' 대신 '질문'이 최고의 스펙이 되는 시대</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 25</p>
                         <a href="tech-column-42.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="ethics">
                     <div class="card-content">
                         <h3>[제41회] 내가 만든 AI 이미지, 진짜 내 것일까? 생성형 AI가 쏘아 올린 저작권 대혼란</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 25</p>
                         <a href="tech-column-41.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="trend">
                     <div class="card-content">
                         <h3>[제40회] '구글링'이라는 단어가 사라진다? 대화형 AI가 붕괴시키는 검색 엔진의 제국</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 25</p>
                         <a href="tech-column-40.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="tech">
                     <div class="card-content">
                         <h3>[제39회] 자율주행의 뇌를 깨우다: '엣지 AI'와 '디지털 트윈' 기술의 완벽한 융합</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 22</p>
                         <a href="tech-column-39.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="trend">
                     <div class="card-content">
                         <h3>[제38회] 차세대 디스플레이 제조 공정을 혁신하는 AI: 완벽한 수율을 향한 끝없는 도전</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 22</p>
                         <a href="tech-column-38.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="trend">
                     <div class="card-content">
                         <h3>[제37회] 글로벌 특허 전쟁, AI는 어떻게 강력한 '창과 방패'가 되는가?</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 22</p>
                         <a href="tech-column-37.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="tech">
                     <div class="card-content">
                         <h3>[제36회] 지능형 빛의 적층: Primary RGB Tandem 2.0과 AI 기반 픽셀 최적화의 기술적 융합</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 19</p>
                         <a href="tech-column-36.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="tech">
                     <div class="card-content">
                         <h3>[제35회] 빛의 조각: High-NA EUV와 2나노 시대 AI 칩의 물리적 임계점 돌파</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 19</p>
                         <a href="tech-column-35.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="tech">
                     <div class="card-content">
                         <h3>[제34회] 메모리 장벽의 붕괴: CXL(Compute Express Link)과 AI 인프라의 무한 확장성</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 19</p>
                         <a href="tech-column-34.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="trend">
                     <div class="card-content">
                         <h3>[제33회] 에너지의 지능적 제어: 테슬라 4680 배터리와 AI 기반 소재·공정 최적화의 미학</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 19</p>
                         <a href="tech-column-33.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="trend">
                     <div class="card-content">
                         <h3>[제32회] 바퀴 달린 인공지능: SDV 시대의 AI 인포테인먼트와 하이엔드 Automotive OLED의 시너지</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 19</p>
                         <a href="tech-column-32.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="trend">
                     <div class="card-content">
                         <h3>[제31회] 픽셀의 완벽주의: LGD OLED 수율을 혁신하는 AI 생산 체계와 '하이디(Hi-D)' 아키텍처</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 19</p>
                         <a href="tech-column-31.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="trend">
                     <div class="card-content">
                         <h3>[제30회] 지능형 헬스가디언: 웨어러블 데이터와 PH-LLM이 여는 초개인화 예방 의학</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 19</p>
                         <a href="tech-column-30.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="trend">
                     <div class="card-content">
                         <h3>[제29회] 지능형 전력망의 혈류: AI 스마트 그리드와 수요 유연성(Demand Flexibility) 아키텍처</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 19</p>
                         <a href="tech-column-29.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="trend">
                     <div class="card-content">
                         <h3>[제28회] 지능으로 부활하는 신약: AI 기반 약물 재창출(Drug Repurposing)의 알고리즘과 경제학</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 19</p>
                         <a href="tech-column-28.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="tech">
                     <div class="card-content">
                         <h3>[제27회] 바벨탑의 붕괴: 제로 레이턴시(Zero Latency) AI 통역과 스트리밍 지능의 진화</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 19</p>
                         <a href="tech-column-27.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="ethics">
                     <div class="card-content">
                         <h3>[제26회] 지능의 소유권: 생성형 AI와 저작권의 충돌, 그리고 '데이터 공정 이용'의 재정의</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 19</p>
                         <a href="tech-column-26.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="ethics">
                     <div class="card-content">
                         <h3>[제25회] 지능형 위협의 진화: 생성형 AI 기반 사이버 공격과 자율 방어 체계의 격돌</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 19</p>
                         <a href="tech-column-25.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="tech">
                     <div class="card-content">
                         <h3>[제24회] 뇌를 닮은 실리콘: 뉴로모픽 컴퓨팅과 스파이킹 신경망(SNN)의 공학적 실재</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 19</p>
                         <a href="tech-column-24.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="ethics">
                     <div class="card-content">
                         <h3>[제23회] 데이터 주권의 수호자: 연합 학습(Federated Learning)과 프라이버시 보존형 지능</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 19</p>
                         <a href="tech-column-23.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="tech">
                     <div class="card-content">
                         <h3>[제22회] 지능의 이중주: 신경 기호 인공지능(Neuro-symbolic AI)과 논리적 추론의 복원</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 19</p>
                         <a href="tech-column-22.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="tech">
                     <div class="card-content">
                         <h3>[제21회] 물질의 연금술: AI 역설계(Inverse Design)가 주도하는 신소재 발견의 패러다임 시프트</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 19</p>
                         <a href="tech-column-21.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="tech">
                     <div class="card-content">
                         <h3>[제20회] 지능의 압축: 온디바이스 AI를 위한 양자화와 지식 증류</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 19</p>
                         <a href="tech-column-21.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="tech">
                     <div class="card-content">
                         <h3>[제19회] 엣지에서의 추론: TinyML과 경량화 기술이 만드는 '사물 지능(AIoT)'의 세계</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 19</p>
                         <a href="tech-column-20.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="tech">
                     <div class="card-content">
                         <h3>[제18회] 연산의 경계 붕괴: 양자 기계 학습(QML)의 기술적 실체와 지능의 도약</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 19</p>
                         <a href="tech-column-19.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="tech">
                     <div class="card-content">
                         <h3>[제17회] 레이블 없는 학습: 자기지도학습(Self-Supervised Learning)과 데이터 효율성의 극대화</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 19</p>
                         <a href="tech-column-18.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="tech">
                     <div class="card-content">
                         <h3>[제16회] 창의성의 기하학: 잠재 공간(Latent Space)의 보간과 외삽이 만드는 '새로운' 세계</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 19</p>
                         <a href="tech-column-17.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="ethics">
                     <div class="card-content">
                         <h3>[제15회] 계산된 영혼: 통합 정보 이론(IIT)과 전역 작업 공간 이론으로 본 AI 의식의 실체</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 18</p>
                         <a href="tech-column-16.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="tech">
                     <div class="card-content">
                         <h3>[제14회] 지능의 속도와 효율: 실리콘을 넘어선 광학 컴퓨팅(Optical Computing)의 서막</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 18</p>
                         <a href="tech-column-15.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="tech">
                     <div class="card-content">
                         <h3>[제13회] 지능의 감각 통합: 멀티모달(Multimodal) 아키텍처와 임베딩 정렬의 미학</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 18</p>
                         <a href="tech-column-14.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="ethics">
                     <div class="card-content">
                         <h3>[제12회] 지능의 방패: 적대적 공격(Adversarial Attack)의 메커니즘과 강건한 AI 보안 설계</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 18</p>
                         <a href="tech-column-13.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="tech">
                     <div class="card-content">
                         <h3>[제11회] 거짓된 유창함의 극복: 할루시네이션(Hallucination)의 원인과 검색 증강 생성(RAG)의 진화</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 18</p>
                         <a href="tech-column-12.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="tech">
                     <div class="card-content">
                         <h3>[제10회] 보는 눈에서 생각하는 눈으로: VLM의 시각적 문해력과 인과관계 추론의 실체</h3>
                         <p>전문 에디터 J | 2026. 02. 17</p>
                         <a href="tech-column-18.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="tech">
                     <div class="card-content">
                         <h3>[제9회] 지능의 새로운 차원: 양자 컴퓨팅이 딥러닝의 전역 최적화 문제를 해결하는 법</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 16</p>
                         <a href="tech-column-20.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="tech">
                     <div class="card-content">
                         <h3>[제8회] 클라우드로부터의 독립: NPU 아키텍처 진화가 이끄는 온디바이스 AI 초격차 전략</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 16</p>
                         <a href="tech-column-19.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="trend">
                     <div class="card-content">
                         <h3>[제7회] 물리적 지능의 완성: 휴머노이드 로봇이 중력과 마찰력을 이기고 '인간답게' 걷는 방법</h3>
                         <p>AI-ALL 로보틱스 분석팀 | 2026. 02. 16</p>
                         <a href="tech-column-10.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="trend">
                     <div class="card-content">
                         <h3>[제6회] 시간을 재구성하는 알고리즘: 인공지능이 고대 문헌의 파편에서 역사의 맥락을 복원하는 방법</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 16</p>
                         <a href="tech-column-09.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="trend">
                     <div class="card-content">
                         <h3>[제5회] 지능의 동력원: AI 데이터센터 전력 수급을 위한 SMR 도입과 액체 냉각 설계의 공학적 정합성</h3>
                         <p>AI-ALL 인프라 분석팀 | 2026. 02. 16</p>
                         <a href="tech-column-07.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="ethics">
                     <div class="card-content">
                         <h3>[제4회] 지능을 가두는 창과 방패: RLHF 정렬의 기술적 한계와 2026년형 보안 아키텍처</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 16</p>
                         <a href="tech-column-05.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="tech">
                     <div class="card-content">
                         <h3>[제3회] 단순 실행을 넘어 사고하는 AI: 에이전트 워크플로우 설계의 핵심 원칙</h3>
                         <p>AI 기술 분석팀 | 2026. 02. 15</p>
                         <a href="tech-column-03.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="tech">
                     <div class="card-content">
                         <h3>[제2회] SLM과 온디바이스 AI: 파라미터가 전부가 아니다!</h3>
                         <p>전문 에디터 J | 2026. 02. 15</p>
                         <a href="tech-column-02.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                <article class="card">
+                <article class="card" data-category="trend">
                     <div class="card-content">
                         <h3>[제1회] 2026 AI 에이전트 시대: 단순 챗봇을 넘어 '자율적 행동'의 시대로</h3>
                         <p>전문 에디터 J | 2026. 02. 15</p>
