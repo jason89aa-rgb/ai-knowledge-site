@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://ai-all.co.kr/</loc>
-    <lastmod>2026-03-03</lastmod>
+    <lastmod>2026-03-04</lastmod>
   </url>
   <url>
     <loc>https://ai-all.co.kr/2026-ai-ecosystem-report.html</loc>
@@ -293,16 +293,32 @@
     <lastmod>2026-02-22</lastmod>
   </url>
   <url>
+    <loc>https://ai-all.co.kr/tool-gamma.html</loc>
+    <lastmod>2026-03-03</lastmod>
+  </url>
+  <url>
     <loc>https://ai-all.co.kr/tool-gemini.html</loc>
     <lastmod>2026-02-22</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/tool-heygen.html</loc>
+    <lastmod>2026-03-03</lastmod>
   </url>
   <url>
     <loc>https://ai-all.co.kr/tool-perplexity.html</loc>
     <lastmod>2026-02-22</lastmod>
   </url>
   <url>
+    <loc>https://ai-all.co.kr/tool-v0.html</loc>
+    <lastmod>2026-03-03</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/tool-vrew.html</loc>
+    <lastmod>2026-03-03</lastmod>
+  </url>
+  <url>
     <loc>https://ai-all.co.kr/tools.html</loc>
-    <lastmod>2026-02-22</lastmod>
+    <lastmod>2026-03-03</lastmod>
   </url>
   <url>
     <loc>https://ai-all.co.kr/top3-ai-tools.html</loc>

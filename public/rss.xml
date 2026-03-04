@@ -6,7 +6,35 @@
     <description>AI 툴 소개, 학습 로드맵, 프롬프트 엔지니어링 팁을 제공하는 AI 전문 지식 허브입니다.</description>
     <language>ko</language>
     <atom:link href="https://ai-all.co.kr/rss.xml" rel="self" type="application/rss+xml" />
-    <lastBuildDate>Tue, 03 Mar 2026 15:59:14 GMT</lastBuildDate>
+    <lastBuildDate>Wed, 04 Mar 2026 14:32:53 GMT</lastBuildDate>
+    <item>
+      <title><![CDATA[v0.dev 리뷰: 프롬프트로 UI를 생성하는 AI - AI ALL]]></title>
+      <link>https://ai-all.co.kr/tool-v0.html</link>
+      <description><![CDATA[Vercel의 v0.dev는 프롬프트 한 줄로 고퀄리티 React 컴포넌트를 생성하여 디자이너와 프론트엔드 개발자의 역할을 동시에 수행합니다.]]></description>
+      <pubDate>Tue, 03 Mar 2026 16:39:49 GMT</pubDate>
+      <guid>https://ai-all.co.kr/tool-v0.html</guid>
+    </item>
+    <item>
+      <title><![CDATA[Vrew 리뷰: 영상 편집을 문서 작업처럼 쉽게 - AI ALL]]></title>
+      <link>https://ai-all.co.kr/tool-vrew.html</link>
+      <description><![CDATA[Vrew(브루)는 영상 편집을 워드 문서 편집하듯 쉽게 만들어주는 혁신적인 툴입니다. 텍스트 기반 컷 편집으로 영상 제작 시간을 90% 단축하세요.]]></description>
+      <pubDate>Tue, 03 Mar 2026 16:39:48 GMT</pubDate>
+      <guid>https://ai-all.co.kr/tool-vrew.html</guid>
+    </item>
+    <item>
+      <title><![CDATA[HeyGen 리뷰: 얼굴 없는 1인 크리에이터의 완성 - AI ALL]]></title>
+      <link>https://ai-all.co.kr/tool-heygen.html</link>
+      <description><![CDATA[HeyGen(헤이젠)은 내 얼굴과 목소리를 대신할 AI 아바타를 생성하여, 카메라 울렁증 없이 유튜브 수익화를 가능하게 합니다.]]></description>
+      <pubDate>Tue, 03 Mar 2026 16:39:48 GMT</pubDate>
+      <guid>https://ai-all.co.kr/tool-heygen.html</guid>
+    </item>
+    <item>
+      <title><![CDATA[Gamma AI 리뷰: 기획-디자인-배포 원스톱 자동화 - AI ALL]]></title>
+      <link>https://ai-all.co.kr/tool-gamma.html</link>
+      <description><![CDATA[Gamma(감마)는 아이디어를 논리적 구조로 잡아주고, 인터랙티브한 웹 형태로 배포하는 혁명적인 문서 플랫폼입니다. 프레젠테이션 제작의 고통을 끝내보세요.]]></description>
+      <pubDate>Tue, 03 Mar 2026 16:39:48 GMT</pubDate>
+      <guid>https://ai-all.co.kr/tool-gamma.html</guid>
+    </item>
     <item>
       <title><![CDATA[심층 분석 칼럼 - AI ALL]]></title>
       <link>https://ai-all.co.kr/in-depth-analysis.html</link>
@@ -118,34 +146,6 @@
       <description><![CDATA[Perplexity 리뷰 - AI-ALL - 인공지능 전문 지식 허브 AI-ALL에서 확인하세요.]]></description>
       <pubDate>Sun, 22 Feb 2026 15:52:14 GMT</pubDate>
       <guid>https://ai-all.co.kr/tool-perplexity.html</guid>
-    </item>
-    <item>
-      <title><![CDATA[Claude 3.5 Sonnet 리뷰 - AI-ALL]]></title>
-      <link>https://ai-all.co.kr/tool-claude.html</link>
-      <description><![CDATA[Claude 3.5 Sonnet 리뷰 - AI-ALL - 인공지능 전문 지식 허브 AI-ALL에서 확인하세요.]]></description>
-      <pubDate>Sun, 22 Feb 2026 15:52:14 GMT</pubDate>
-      <guid>https://ai-all.co.kr/tool-claude.html</guid>
-    </item>
-    <item>
-      <title><![CDATA[커서 AI (Cursor) 리뷰: 코딩 패러다임을 바꾼 AI 에디터 - AI ALL]]></title>
-      <link>https://ai-all.co.kr/tool-cursor.html</link>
-      <description><![CDATA[VS Code 기반 AI 네이티브 에디터 커서 AI(Cursor) 리뷰입니다. Cmd + K와 코드베이스 전체 참조 기능을 통해 개발자가 코딩하는 방식의 혁신을 분석합니다.]]></description>
-      <pubDate>Sun, 22 Feb 2026 15:52:14 GMT</pubDate>
-      <guid>https://ai-all.co.kr/tool-cursor.html</guid>
-    </item>
-    <item>
-      <title><![CDATA[Primary RGB Tandem 2.0과 AI 기반 픽셀 최적화 - AI ALL]]></title>
-      <link>https://ai-all.co.kr/tech-column-36.html</link>
-      <description><![CDATA[LG디스플레이의 Primary RGB Tandem 2.0 OLED 기술과 AI 기반 픽셀 및 전력 제어 알고리즘이 만나 구현하는 지능형 디스플레이의 미래를 심층 분석합니다.]]></description>
-      <pubDate>Sun, 22 Feb 2026 15:52:14 GMT</pubDate>
-      <guid>https://ai-all.co.kr/tech-column-36.html</guid>
-    </item>
-    <item>
-      <title><![CDATA[CXL(Compute Express Link)과 AI 인프라의 무한 확장성 - AI ALL]]></title>
-      <link>https://ai-all.co.kr/tech-column-34.html</link>
-      <description><![CDATA[메모리 장벽을 허무는 차세대 인터페이스 CXL의 원리를 메모리 풀링, HBM과의 계층화 전략을 통해 심층 분석하고, AI 인프라의 미래를 조망합니다.]]></description>
-      <pubDate>Sun, 22 Feb 2026 15:52:14 GMT</pubDate>
-      <guid>https://ai-all.co.kr/tech-column-34.html</guid>
     </item>
   </channel>
 </rss>
