@@ -28,8 +28,16 @@ export function getPostsByCategory(category: string) {
   return allPostsData.sort((a, b) => {
     if (a.date < b.date) {
       return 1;
-    } else {
+    } else if (a.date > b.date) {
       return -1;
+    } else {
+      if (a.title < b.title) {
+        return -1;
+      } else if (a.title > b.title) {
+        return 1;
+      } else {
+        return 0;
+      }
     }
   });
 }
