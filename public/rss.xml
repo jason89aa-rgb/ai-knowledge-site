@@ -6,13 +6,20 @@
     <description>AI 툴 소개, 학습 로드맵, 프롬프트 엔지니어링 팁을 제공하는 AI 전문 지식 허브입니다.</description>
     <language>ko</language>
     <atom:link href="https://ai-all.co.kr/rss.xml" rel="self" type="application/rss+xml" />
-    <lastBuildDate>Mon, 09 Mar 2026 15:06:05 GMT</lastBuildDate>
+    <lastBuildDate>Mon, 09 Mar 2026 15:24:00 GMT</lastBuildDate>
     <item>
       <title><![CDATA[심층 분석 칼럼 - AI ALL]]></title>
       <link>https://ai-all.co.kr/in-depth-analysis.html</link>
       <description><![CDATA[AI-ALL의 심층 분석 칼럼 목록입니다. AI 기술의 최신 동향과 심도 있는 분석을 만나보세요.]]></description>
-      <pubDate>Mon, 09 Mar 2026 15:05:47 GMT</pubDate>
+      <pubDate>Mon, 09 Mar 2026 15:23:44 GMT</pubDate>
       <guid>https://ai-all.co.kr/in-depth-analysis.html</guid>
+    </item>
+    <item>
+      <title><![CDATA['지식의 사유화'가 시작됐다: 빅테크의 AI 특허 전쟁과 낭만적 오픈소스의 잔혹한 종말 - AI ALL]]></title>
+      <link>https://ai-all.co.kr/tech-column-41.html</link>
+      <description><![CDATA[글로벌 빅테크들은 알고리즘의 우위 대신]]></description>
+      <pubDate>Mon, 09 Mar 2026 15:23:44 GMT</pubDate>
+      <guid>https://ai-all.co.kr/tech-column-41.html</guid>
     </item>
     <item>
       <title><![CDATA['중간'이 사라지는 공포: AI가 촉발한 화이트칼라의 붕괴와 '인간 API' 계급 사회의 도래 - AI ALL]]></title>
@@ -139,13 +146,6 @@
       <description><![CDATA[LG디스플레이의 AI 생산 체계와 제조 특화 AI 어시스턴트 하이디(Hi-D)가 OLED 수율을 극대화하는 기술적 원리를 분석합니다.]]></description>
       <pubDate>Sun, 08 Mar 2026 11:46:14 GMT</pubDate>
       <guid>https://ai-all.co.kr/tech-column-31.html</guid>
-    </item>
-    <item>
-      <title><![CDATA[AI 기반 약물 재창출(Drug Repurposing)의 알고리즘과 경제학 - AI ALL]]></title>
-      <link>https://ai-all.co.kr/tech-column-28.html</link>
-      <description><![CDATA[AI를 활용하여 기존 약물의 새로운 가치를 발견하는 약물 재창출의 원리를 지식 그래프, 가상 스크리닝을 통해 심층 분석하고, 신약 개발의 경제적 효과를 다룹니다.]]></description>
-      <pubDate>Sun, 08 Mar 2026 11:46:14 GMT</pubDate>
-      <guid>https://ai-all.co.kr/tech-column-28.html</guid>
     </item>
   </channel>
 </rss>
