@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-PDQ055YSZT"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  
+  // 전 세계(한국 등): 기본 동의 허용 (0% 측정 문제 해결)
+  gtag('consent', 'default', {
+    'ad_storage': 'granted',
+    'ad_user_data': 'granted',
+    'ad_personalization': 'granted',
+    'analytics_storage': 'granted'
+  });
+
+  // EEA(유럽) + 영국 + 스위스: 기본 동의 거부 (개인정보 보호 규정 준수)
+  gtag('consent', 'default', {
+    'ad_storage': 'denied',
+    'ad_user_data': 'denied',
+    'ad_personalization': 'denied',
+    'analytics_storage': 'denied',
+    'region': ['AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'IS', 'LI', 'NO', 'GB', 'CH']
+  });
+  gtag('js', new Date());
+
+  gtag('config', 'G-PDQ055YSZT');
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Make(Integromat) 기반 AI 자동화 파이프라인 구축의 모든 것 - AI ALL</title>
+    <meta property="og:description" content="단순 프롬프트 입력을 넘어, Make와 OpenAI API를 결합하여 백그라운드에서 돌아가는 지능형 무인 자동화 파이프라인 구축 비법을 소개합니다.">
+    <meta property="og:title" content="Make(Integromat) 기반 AI 자동화 파이프라인 구축의 모든 것 - AI ALL">
+    <meta name="description" content="단순 프롬프트 입력을 넘어, Make와 OpenAI API를 결합하여 백그라운드에서 돌아가는 지능형 무인 자동화 파이프라인 구축 비법을 소개합니다.">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1012734614251637" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<meta name="google-adsense-account" content="ca-pub-1012734614251637">
+    <link rel="canonical" href="https://ai-all.co.kr/guide-make-automation.html">
+</head>
+<body>
+    <header>
+        <div class="inner">
+            <div class="logo"><a href="index.html">AI-ALL<span class="dot">.</span></a></div>
+            <nav>
+                <ul>
+                    <li><a href="tips.html">AI 꿀팁</a></li>
+                    <li><a href="in-depth-analysis.html">심층 분석</a></li>
+                    <li><a href="tools.html">추천 툴</a></li>
+                    <li><a href="roadmap.html">학습 로드맵</a></li>
+                    <li><a href="learning-journey.html">나의 학습 여정</a></li>
+                    <li><a href="about.html">소개</a></li>
+                    <li><a href="sitemap.html">사이트맵</a></li>
+                </ul>
+            </nav>
+            <!-- Google Translate Widget -->
+            <div id="google_translate_element" style="margin-left: 20px; display: flex; align-items: center; z-index: 1000;"></div>
+        </div>
+    </header>
+    <style>
+        /* 네이티브 select 디자인을 깔끔하게 유지하기 위한 스타일 */
+        #google_translate_element select {
+            padding: 6px 10px;
+            border-radius: 4px;
+            border: 1px solid #e2e8f0;
+            font-size: 14px;
+            background-color: #f8fafc;
+            color: #334155;
+            cursor: pointer;
+            outline: none;
+        }
+        #google_translate_element select:hover {
+            border-color: #cbd5e1;
+        }
+        /* 구글 번역 기본 텍스트 및 로고 가리기 (선택사항) */
+        .goog-te-gadget {
+            font-size: 0px !important;
+            color: transparent !important;
+        }
+        .goog-te-gadget .goog-te-combo {
+            margin: 0 !important;
+        }
+    </style>
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'ko',
+                /* 레이아웃 옵션을 지우면 네이티브 드롭다운(1열)으로 깔끔하게 표시됩니다 */
+                autoDisplay: false
+            }, 'google_translate_element');
+        }
+    </script>
+    <!-- hl=en 파라미터를 추가하여 국가명을 영어로 강제 출력 -->
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit&hl=en"></script>
+
+    <main class="inner">
+
+    <!-- Google AdSense: ai-all-main-top -->
+    <div style="margin-bottom: 30px; text-align: center;">
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1012734614251637" crossorigin="anonymous"></script>
+        <!-- ai-all-main-top -->
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-1012734614251637"
+             data-ad-slot="6867902771"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+        <script>
+             (adsbygoogle = window.adsbygoogle || []).push({});
+        </script>
+    </div>
+
+        <article class="post-content">
+            <header class="post-header">
+                <span class="category">AI Automation & Workflow</span>
+                <h1>[AI 사용 꿀팁] API와 웹훅(Webhook)으로 완성하는 궁극의 무인화<br><span style="font-size: 1.2rem; color: #64748b;">Make(Integromat) 기반 AI 자동화 파이프라인 구축의 모든 것</span></h1>
+                <p class="post-meta">AI-ALL 기술 분석팀 | 2026. 03. 13</p>
+            </header>
+            <div class="post-body">
+                <p>지금까지의 AI 활용이 챗GPT 프롬프트 창에 질문을 입력하고 답변을 기다리는 '수동적' 단계에 머물렀다면, 이제는 AI가 인간의 개입 없이 스스로 데이터를 수집하고 가공하여 배포하는 <strong>'백그라운드 무인 자동화'</strong>로 넘어가야 할 때입니다.</p>
+                <p>자피어(Zapier)가 초보자를 위한 훌륭한 툴이긴 하지만, 복잡한 분기 처리와 대규모 데이터 통신에서는 비용과 기능의 한계에 부딪힙니다. 오늘 ai-all.co.kr에서는 글로벌 최고 수준의 노코드 자동화 툴인 <strong>Make(구 Integromat)</strong>와 OpenAI API를 결합하여, 실무에서 즉시 돌아가는 '지능형 뉴스레터 및 리서치 자동화 파이프라인'을 구축하는 심화 워크플로우를 해부합니다.</p>
+
+                <h2>① 트리거(Trigger)와 데이터 수집의 고도화: RSS와 HTTP 모듈</h2>
+                <p>자동화의 첫 단계는 AI에게 먹이를 줄 '데이터 파이프라인'을 설계하는 것입니다.</p>
+                <p>Make의 시나리오 에디터에서 단순한 이메일 수신을 트리거로 잡지 마십시오. 타겟팅하는 해외 산업 매체나 경쟁사의 RSS 피드를 트리거로 설정하거나, HTTP 모듈을 사용해 특정 API 엔드포인트를 주기적으로 찌르는(Polling) 방식을 사용해야 합니다.</p>
+                <div class="highlight-box" style="background-color: #f8fafc; border-left: 5px solid #3b82f6; padding: 20px; margin: 25px 0; border-radius: 4px;">
+                    <strong>💡 실전 아키텍처:</strong><br>
+                    매일 아침 7시, Make의 HTTP 모듈이 글로벌 특허청 데이터베이스나 테크크런치의 최신 기사 목록을 JSON 형태로 긁어옵니다. 이때 'Text Parser' 모듈을 활용해 수백 줄의 HTML 코드 속에서 우리가 정확히 분석해야 할 본문 텍스트(Body Text) 덩어리만 정교하게 발췌(Extract)하는 전처리 작업이 필수적입니다. 이 전처리가 완벽해야 다음 단계에서 API 비용(Token)이 낭비되지 않습니다.
+                </div>
+
+                <h2>② OpenAI API 통신과 프롬프트 엔지니어링의 시스템화</h2>
+                <p>긁어온 원시 데이터(Raw Data)는 이제 Make의 'OpenAI(ChatGPT)' 모듈로 전달됩니다. 여기서 챗봇과 대화하듯 프롬프트를 짜면 안 됩니다. 시스템 프롬프트(System Prompt)를 활용해 AI에게 명확한 '페르소나와 출력 규격'을 강제해야 합니다.</p>
+                <div class="highlight-box" style="background-color: #f8fafc; border-left: 5px solid #10b981; padding: 20px; margin: 25px 0; border-radius: 4px;">
+                    <strong>💡 JSON 강제 출력 세팅:</strong><br>
+                    "너는 20년 차 수석 산업 애널리스트야. 입력된 영문 기사를 읽고, 1) 한글 3줄 요약, 2) 이 기술이 시장에 미칠 비즈니스 임팩트, 3) 관련 핵심 키워드 5가지를 반드시 유효한 JSON 포맷({"summary": "...", "impact": "...", "keywords": [...]})으로만 반환해."<br><br>
+                    * 이렇게 출력 형태를 JSON으로 고정(JSON Mode 활성화)하면, Make의 다음 모듈에서 이 데이터를 변수(Variable)로 깔끔하게 쪼개어 받을 수 있습니다. 텍스트가 뭉개지거나 형식이 틀어져 전체 자동화가 멈추는 치명적인 에러를 원천 차단하는 고급 기술입니다.
+                </div>
+
+                <h2>③ 라우터(Router)를 활용한 조건부 분기 및 최종 배포</h2>
+                <p>분석이 끝난 데이터는 목적에 맞게 흩뿌려져야 합니다. Make의 가장 강력한 무기인 <strong>라우터(Router)</strong>를 사용해 데이터의 성격에 따라 길을 나누십시오.</p>
+                <div class="highlight-box" style="background-color: #f8fafc; border-left: 5px solid #f59e0b; padding: 20px; margin: 25px 0; border-radius: 4px;">
+                    <strong>💡 지능적 배포망 설계:</strong><br>
+                    OpenAI가 분석한 결과값 중 '비즈니스 임팩트 점수'가 80점 이상인 1급 중요 정보는 슬랙(Slack) 모듈을 통해 팀원들의 업무 채널에 즉시 알람을 울립니다. 80점 미만의 일반 정보는 노션(Notion) 데이터베이스 모듈로 조용히 보내져 아카이빙됩니다.<br><br>
+                    최종적으로 매주 금요일 오후, 노션에 쌓인 이번 주 데이터들을 또 다른 OpenAI 모듈이 통째로 읽어 들여 유려한 문장의 '주간 트렌드 리포트'로 합성한 뒤, 메일침프(Mailchimp)나 스티비 모듈을 통해 구독자들에게 자동 발송합니다.
+                </div>
+                
+                <hr>
+                <p>이러한 파이프라인을 한 번 구축해 두면, 당신이 잠든 사이에도 수천 건의 해외 문헌과 데이터가 AI의 두뇌를 거쳐 정제된 인사이트로 변환됩니다. 이것이 2026년 하이엔드 지식 근로자가 일하는 진짜 방식입니다.</p>
+            </div>
+            
+            <!-- Google AdSense: ai-all-article-footer -->
+            <div style="margin: 40px 0;">
+                <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1012734614251637" crossorigin="anonymous"></script>
+                <!-- ai-all-article-footer -->
+                <ins class="adsbygoogle"
+                     style="display:block"
+                     data-ad-client="ca-pub-1012734614251637"
+                     data-ad-slot="3002002897"
+                     data-ad-format="auto"
+                     data-full-width-responsive="true"></ins>
+                <script>
+                     (adsbygoogle = window.adsbygoogle || []).push({});
+                </script>
+            </div>
+            <div class="post-footer">
+                <a href="tips.html" class="btn-secondary">목록으로 돌아가기</a>
+                <a href="index.html" class="btn-primary">홈으로</a>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="inner">
+            <p>&copy; 2026 AI-ALL. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Floating Sticky Sidebar Ad (Desktop Only) -->
+    <style>
+        .ai-sticky-ad {
+            display: none; /* Hidden on mobile by default */
+        }
+        @media (min-width: 1200px) {
+            .ai-sticky-ad {
+                display: block;
+                position: fixed;
+                top: 120px; /* Distance from top */
+                right: 20px; /* Distance from right edge */
+                width: 300px; /* Standard ad width */
+                z-index: 999;
+            }
+        }
+    </style>
+    <div class="ai-sticky-ad">
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1012734614251637" crossorigin="anonymous"></script>
+        <!-- ai-all-sidebar-sticky -->
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-1012734614251637"
+             data-ad-slot="1188200683"
+             data-ad-format="vertical"
+             data-full-width-responsive="true"></ins>
+        <script>
+             (adsbygoogle = window.adsbygoogle || []).push({});
+        </script>
+    </div>
+</body>
+
+</html>
