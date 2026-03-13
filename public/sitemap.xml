@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://ai-all.co.kr/</loc>
-    <lastmod>2026-03-09</lastmod>
+    <lastmod>2026-03-13</lastmod>
   </url>
   <url>
     <loc>https://ai-all.co.kr/2026-ai-ecosystem-report.html</loc>
@@ -61,6 +61,10 @@
     <lastmod>2026-03-08</lastmod>
   </url>
   <url>
+    <loc>https://ai-all.co.kr/guide-make-automation.html</loc>
+    <lastmod>2026-03-12</lastmod>
+  </url>
+  <url>
     <loc>https://ai-all.co.kr/guide-pdf-prompt-limit.html</loc>
     <lastmod>2026-02-22</lastmod>
   </url>
@@ -78,7 +82,7 @@
   </url>
   <url>
     <loc>https://ai-all.co.kr/in-depth-analysis.html</loc>
-    <lastmod>2026-03-09</lastmod>
+    <lastmod>2026-03-12</lastmod>
   </url>
   <url>
     <loc>https://ai-all.co.kr/learning-journey.html</loc>
@@ -110,7 +114,7 @@
   </url>
   <url>
     <loc>https://ai-all.co.kr/sitemap.html</loc>
-    <lastmod>2026-03-08</lastmod>
+    <lastmod>2026-03-13</lastmod>
   </url>
   <url>
     <loc>https://ai-all.co.kr/study-step1.html</loc>
@@ -257,12 +261,20 @@
     <lastmod>2026-03-09</lastmod>
   </url>
   <url>
+    <loc>https://ai-all.co.kr/tech-column-42.html</loc>
+    <lastmod>2026-03-12</lastmod>
+  </url>
+  <url>
+    <loc>https://ai-all.co.kr/tech-column-43.html</loc>
+    <lastmod>2026-03-13</lastmod>
+  </url>
+  <url>
     <loc>https://ai-all.co.kr/terms.html</loc>
     <lastmod>2026-03-08</lastmod>
   </url>
   <url>
     <loc>https://ai-all.co.kr/tips.html</loc>
-    <lastmod>2026-03-08</lastmod>
+    <lastmod>2026-03-13</lastmod>
   </url>
   <url>
     <loc>https://ai-all.co.kr/tool-claude.html</loc>
@@ -277,12 +289,16 @@
     <lastmod>2026-03-08</lastmod>
   </url>
   <url>
+    <loc>https://ai-all.co.kr/tool-ollama-lmstudio.html</loc>
+    <lastmod>2026-03-12</lastmod>
+  </url>
+  <url>
     <loc>https://ai-all.co.kr/tool-perplexity.html</loc>
     <lastmod>2026-03-08</lastmod>
   </url>
   <url>
     <loc>https://ai-all.co.kr/tools.html</loc>
-    <lastmod>2026-03-08</lastmod>
+    <lastmod>2026-03-12</lastmod>
   </url>
   <url>
     <loc>https://ai-all.co.kr/top3-ai-tools.html</loc>

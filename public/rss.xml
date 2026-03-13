@@ -6,13 +6,48 @@
     <description>AI 툴 소개, 학습 로드맵, 프롬프트 엔지니어링 팁을 제공하는 AI 전문 지식 허브입니다.</description>
     <language>ko</language>
     <atom:link href="https://ai-all.co.kr/rss.xml" rel="self" type="application/rss+xml" />
-    <lastBuildDate>Mon, 09 Mar 2026 15:24:00 GMT</lastBuildDate>
+    <lastBuildDate>Fri, 13 Mar 2026 14:57:45 GMT</lastBuildDate>
+    <item>
+      <title><![CDATA[AI 활용 꿀팁 - AI ALL]]></title>
+      <link>https://ai-all.co.kr/tips.html</link>
+      <description><![CDATA[AI 꿀팁과 실전 가이드 모음집입니다. 프롬프트 작성법부터 업무 자동화까지 실무에 바로 적용 가능한 인공지능 활용법을 제공합니다.]]></description>
+      <pubDate>Fri, 13 Mar 2026 14:54:08 GMT</pubDate>
+      <guid>https://ai-all.co.kr/tips.html</guid>
+    </item>
+    <item>
+      <title><![CDATA[[AI 사용 꿀팁] 100만 토큰의 지배자: Google AI Studio를 활용한 대규모 기술 문헌 및 특허 명세서 자동 분석 아키텍처 구축 - AI ALL]]></title>
+      <link>https://ai-all.co.kr/tech-column-43.html</link>
+      <description><![CDATA[Google AI Studio와 Gemini 1.5 Pro의 대규모 컨텍스트 윈도우를 활용하여 복잡한 기술 문헌과 특허 명세서를 정밀하게 분석하는 자동화 워크플로우를 설계하는 방법을 알아봅니다.]]></description>
+      <pubDate>Fri, 13 Mar 2026 14:53:30 GMT</pubDate>
+      <guid>https://ai-all.co.kr/tech-column-43.html</guid>
+    </item>
+    <item>
+      <title><![CDATA[Make(Integromat) 기반 AI 자동화 파이프라인 구축의 모든 것 - AI ALL]]></title>
+      <link>https://ai-all.co.kr/guide-make-automation.html</link>
+      <description><![CDATA[단순 프롬프트 입력을 넘어, Make와 OpenAI API를 결합하여 백그라운드에서 돌아가는 지능형 무인 자동화 파이프라인 구축 비법을 소개합니다.]]></description>
+      <pubDate>Thu, 12 Mar 2026 16:00:15 GMT</pubDate>
+      <guid>https://ai-all.co.kr/guide-make-automation.html</guid>
+    </item>
+    <item>
+      <title><![CDATA[Ollama & LM Studio 리뷰: 로컬 LLM의 시대 - AI-ALL]]></title>
+      <link>https://ai-all.co.kr/tool-ollama-lmstudio.html</link>
+      <description><![CDATA[클라우드 종속을 벗어난 완벽한 프라이버시, Ollama와 LM Studio로 내 PC에서 직접 AI를 구동하세요.]]></description>
+      <pubDate>Thu, 12 Mar 2026 15:56:03 GMT</pubDate>
+      <guid>https://ai-all.co.kr/tool-ollama-lmstudio.html</guid>
+    </item>
     <item>
       <title><![CDATA[심층 분석 칼럼 - AI ALL]]></title>
       <link>https://ai-all.co.kr/in-depth-analysis.html</link>
       <description><![CDATA[AI-ALL의 심층 분석 칼럼 목록입니다. AI 기술의 최신 동향과 심도 있는 분석을 만나보세요.]]></description>
-      <pubDate>Mon, 09 Mar 2026 15:23:44 GMT</pubDate>
+      <pubDate>Thu, 12 Mar 2026 15:52:16 GMT</pubDate>
       <guid>https://ai-all.co.kr/in-depth-analysis.html</guid>
+    </item>
+    <item>
+      <title><![CDATA[데이터 주권의 무기화와 GPU 쇄국정책: '소버린 AI(Sovereign AI)'가 촉발한 글로벌 디지털 냉전 - AI ALL]]></title>
+      <link>https://ai-all.co.kr/tech-column-42.html</link>
+      <description><![CDATA[2026년 현재, 주요 강대국과 글로벌 메가 코퍼레이션들은 미국의 인공지능 종속에서 벗어나기 위해 자국만의 독자적인 거대언어모델과 컴퓨팅 인프라를 구축하는]]></description>
+      <pubDate>Thu, 12 Mar 2026 15:52:16 GMT</pubDate>
+      <guid>https://ai-all.co.kr/tech-column-42.html</guid>
     </item>
     <item>
       <title><![CDATA['지식의 사유화'가 시작됐다: 빅테크의 AI 특허 전쟁과 낭만적 오픈소스의 잔혹한 종말 - AI ALL]]></title>
@@ -71,13 +106,6 @@
       <guid>https://ai-all.co.kr/tool-claude.html</guid>
     </item>
     <item>
-      <title><![CDATA[AI 활용 꿀팁 - AI ALL]]></title>
-      <link>https://ai-all.co.kr/tips.html</link>
-      <description><![CDATA[AI 꿀팁과 실전 가이드 모음집입니다. 프롬프트 작성법부터 업무 자동화까지 실무에 바로 적용 가능한 인공지능 활용법을 제공합니다.]]></description>
-      <pubDate>Sun, 08 Mar 2026 11:46:14 GMT</pubDate>
-      <guid>https://ai-all.co.kr/tips.html</guid>
-    </item>
-    <item>
       <title><![CDATA[차세대 디스플레이 제조 공정을 혁신하는 AI - AI ALL]]></title>
       <link>https://ai-all.co.kr/tech-column-38.html</link>
       <description><![CDATA[딥러닝 기반 머신 비전이 바꾸는 패널 불량 검출의 패러다임. 디스플레이 수율을 향상시키는 예지 보전과 AI 비전 기술을 심층 분석합니다.]]></description>
@@ -118,34 +146,6 @@
       <description><![CDATA[테슬라 4680 배터리의 혁신을 AI 기반 소재 역설계, 공정 최적화, 그리고 실시간 배터리 관리 시스템(BMS)을 통해 심층 분석하며 지능형 에너지의 미래를 다룹니다.]]></description>
       <pubDate>Sun, 08 Mar 2026 11:46:14 GMT</pubDate>
       <guid>https://ai-all.co.kr/tech-column-33.html</guid>
-    </item>
-    <item>
-      <title><![CDATA[CXL(Compute Express Link)과 AI 인프라의 무한 확장성 - AI ALL]]></title>
-      <link>https://ai-all.co.kr/tech-column-34.html</link>
-      <description><![CDATA[메모리 장벽을 허무는 차세대 인터페이스 CXL의 원리를 메모리 풀링, HBM과의 계층화 전략을 통해 심층 분석하고, AI 인프라의 미래를 조망합니다.]]></description>
-      <pubDate>Sun, 08 Mar 2026 11:46:14 GMT</pubDate>
-      <guid>https://ai-all.co.kr/tech-column-34.html</guid>
-    </item>
-    <item>
-      <title><![CDATA[SDV 시대 AI 인포테인먼트와 Automotive OLED 시너지 - AI ALL]]></title>
-      <link>https://ai-all.co.kr/tech-column-32.html</link>
-      <description><![CDATA[소프트웨어 중심 자동차(SDV) 시대의 AI 인포테인먼트와 Tandem OLED 기술이 만드는 지능형 콕핏의 미래를 분석합니다.]]></description>
-      <pubDate>Sun, 08 Mar 2026 11:46:14 GMT</pubDate>
-      <guid>https://ai-all.co.kr/tech-column-32.html</guid>
-    </item>
-    <item>
-      <title><![CDATA[웨어러블 데이터와 PH-LLM이 여는 초개인화 예방 의학 - AI ALL]]></title>
-      <link>https://ai-all.co.kr/tech-column-30.html</link>
-      <description><![CDATA[실시간 생체 신호를 해석하는 PH-LLM(Personal Health LLM)과 웨어러블 데이터를 통해 질병을 미리 예측하고 관리하는 초개인화 예방 의학의 시대를 심층 분석합니다.]]></description>
-      <pubDate>Sun, 08 Mar 2026 11:46:14 GMT</pubDate>
-      <guid>https://ai-all.co.kr/tech-column-30.html</guid>
-    </item>
-    <item>
-      <title><![CDATA[OLED 수율 혁신: LGD 하이디(Hi-D) AI 아키텍처 분석 - AI ALL]]></title>
-      <link>https://ai-all.co.kr/tech-column-31.html</link>
-      <description><![CDATA[LG디스플레이의 AI 생산 체계와 제조 특화 AI 어시스턴트 하이디(Hi-D)가 OLED 수율을 극대화하는 기술적 원리를 분석합니다.]]></description>
-      <pubDate>Sun, 08 Mar 2026 11:46:14 GMT</pubDate>
-      <guid>https://ai-all.co.kr/tech-column-31.html</guid>
     </item>
   </channel>
 </rss>
