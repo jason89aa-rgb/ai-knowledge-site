@@ -6,7 +6,14 @@
     <description>AI 툴 소개, 학습 로드맵, 프롬프트 엔지니어링 팁을 제공하는 AI 전문 지식 허브입니다.</description>
     <language>ko</language>
     <atom:link href="https://ai-all.co.kr/rss.xml" rel="self" type="application/rss+xml" />
-    <lastBuildDate>Fri, 13 Mar 2026 14:57:45 GMT</lastBuildDate>
+    <lastBuildDate>Fri, 13 Mar 2026 15:16:01 GMT</lastBuildDate>
+    <item>
+      <title><![CDATA[Elicit & SciSpace 심층 분석: 의미론적 리서치 엔진 - AI ALL]]></title>
+      <link>https://ai-all.co.kr/tool-elicit-scispace.html</link>
+      <description><![CDATA[단순한 키워드 매칭을 넘어, 논문과 특허 문헌 속에 담긴 과학적 맥락을 통째로 이해하는 AI 리서치 엔진인 Elicit과 SciSpace에 대해 알아봅니다.]]></description>
+      <pubDate>Fri, 13 Mar 2026 15:13:06 GMT</pubDate>
+      <guid>https://ai-all.co.kr/tool-elicit-scispace.html</guid>
+    </item>
     <item>
       <title><![CDATA[AI 활용 꿀팁 - AI ALL]]></title>
       <link>https://ai-all.co.kr/tips.html</link>
@@ -139,13 +146,6 @@
       <description><![CDATA[LLM 기반 선행문헌 검색과 로열티 산정의 과학적 접근. 글로벌 특허 소송전에서 생성형 AI가 판도를 바꾸는 방식을 심층 분석합니다.]]></description>
       <pubDate>Sun, 08 Mar 2026 11:46:14 GMT</pubDate>
       <guid>https://ai-all.co.kr/tech-column-37.html</guid>
-    </item>
-    <item>
-      <title><![CDATA[테슬라 4680 배터리와 AI 기반 소재·공정 최적화 - AI ALL]]></title>
-      <link>https://ai-all.co.kr/tech-column-33.html</link>
-      <description><![CDATA[테슬라 4680 배터리의 혁신을 AI 기반 소재 역설계, 공정 최적화, 그리고 실시간 배터리 관리 시스템(BMS)을 통해 심층 분석하며 지능형 에너지의 미래를 다룹니다.]]></description>
-      <pubDate>Sun, 08 Mar 2026 11:46:14 GMT</pubDate>
-      <guid>https://ai-all.co.kr/tech-column-33.html</guid>
     </item>
   </channel>
 </rss>
