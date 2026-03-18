@@ -436,3 +436,12 @@ blockquote {
     .ads-wrapper-top { min-height: 250px; }
     .ads-wrapper-bottom { min-height: 800px; } /* 모바일에서는 멀티플렉스가 세로로 길어짐 */
 }
+
+/* ---------------------------------------------------
+   [Giscus] 댓글창 레이아웃 최적화
+   --------------------------------------------------- */
+.giscus {
+    max-width: 800px; /* 사이트 본문 너비에 맞게 조절하세요 */
+    margin: 60px auto 40px auto; /* 위 60px, 아래 40px 여백으로 숨통 틔우기 */
+    padding: 0 20px;
+}
