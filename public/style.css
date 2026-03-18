@@ -418,21 +418,21 @@ blockquote {
     min-height: 280px; /* 데스크톱 기본 배너 높이 */
     margin: 20px auto; 
     text-align: center; 
+    display: block;
     width: 100%;
-    overflow: hidden;
 }
 .ads-wrapper-mid { 
     min-height: 250px; /* 인피드/콘텐츠 내 광고 높이 */
     margin: 30px auto; 
     text-align: center; 
+    display: block;
     width: 100%;
-    overflow: hidden;
 }
 .ads-wrapper-bottom { 
     min-height: 600px; /* 멀티플렉스(바둑판) 광고는 높이가 큽니다 */
     margin: 40px auto; 
+    display: block;
     width: 100%;
-    overflow: hidden;
 }
 
 /* 모바일 환경 최적화 */
