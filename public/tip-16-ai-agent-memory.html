@@ -126,20 +126,7 @@
 <p><strong>RAG의 한계:</strong> RAG는 '외부 지식(Fact)'을 검색해 오는 기술일 뿐입니다. 사용자가 "저번에 내가 지시했던 톤앤매너대로 이번 보고서도 써줘"라고 말했을 때, RAG는 과거 대화의 미묘한 '맥락(Context)'을 가져오지 못합니다.</p>
 <p><strong>Stateful 에이전트의 필요성:</strong> 진정한 메모리 시스템은 사용자와의 상호작용 속에서 발생하는 '상태(State)'와 '선호도(Preference)'를 지속적으로 추출하고 업데이트해야 합니다. "이 사용자는 결론을 먼저 말하는 두괄식 보고서를 선호함", "지난달 마케팅 예산이 삭감되어 보수적인 전략을 원함"과 같은 비정형적 맥락을 AI가 스스로 메타데이터화하여 저장해야 합니다.</p>
 
-            <!-- 본문 중간 인피드 광고 -->
-            <div class="ads-wrapper-mid">
-                <ins class="adsbygoogle"
-                     style="display:block; text-align:center;"
-                     data-ad-layout="in-article"
-                     data-ad-format="fluid"
-                     data-ad-client="ca-pub-1012734614251637"
-                     data-ad-slot="3002002897"></ins>
-                <script>
-                     (adsbygoogle = window.adsbygoogle || []).push({});
-                </script>
-            </div>
-
-<h2>② 기억의 외주화: Mem0와 Zep을 활용한 아키텍처</h2>
+            <h2>② 기억의 외주화: Mem0와 Zep을 활용한 아키텍처</h2>
 <p>이러한 한계를 극복하기 위해 등장한 것이 바로 Mem0(구 Embedchain)와 Zep 같은 AI 전용 메모리 레이어(Memory Layer) 프레임워크입니다. 이들은 LLM과 데이터베이스 사이에 위치하며 '기억의 관리자' 역할을 수행합니다.</p>
 <p><strong>기억의 추출(Extraction):</strong> 대화가 이루어질 때마다 백그라운드에서는 또 다른 소형 LLM이 작동합니다. 이 LLM은 사용자의 대화를 분석하여 "이 정보가 영구적으로 기억할 가치가 있는가?"를 판단하고, 중요한 개체(Entity)와 관계(Relationship)를 추출합니다.</p>
 <p><strong>하이브리드 저장소(Hybrid Storage):</strong> 추출된 기억은 단순한 벡터(Vector) 형태로만 저장되지 않습니다. Zep과 같은 프레임워크는 지식 그래프(Knowledge Graph)를 함께 사용하여 "사용자 A --(진행 중인 프로젝트)&rarr; B 마이그레이션 --(사용된 언어)&rarr; 파이썬"과 같이 기억들을 촘촘한 관계로 연결합니다.</p>
@@ -201,34 +188,6 @@
         </div>
     </footer>
 
-    <!-- Floating Sticky Sidebar Ad (Desktop Only) -->
-    <style>
-        .ai-sticky-ad {
-            display: none; /* Hidden on mobile by default */
-        }
-        @media (min-width: 1200px) {
-            .ai-sticky-ad {
-                display: block;
-                position: fixed;
-                top: 120px; /* Distance from top */
-                right: 20px; /* Distance from right edge */
-                width: 300px; /* Standard ad width */
-                z-index: 999;
-            }
-        }
-    </style>
-    <div class="ai-sticky-ad">
-        <!-- ai-all-sidebar-sticky -->
-        <ins class="adsbygoogle"
-             style="display:block"
-             data-ad-client="ca-pub-1012734614251637"
-             data-ad-slot="1188200683"
-             data-ad-format="vertical"
-             data-full-width-responsive="true"></ins>
-        <script>
-             (adsbygoogle = window.adsbygoogle || []).push({});
-        </script>
-    </div>
-</body>
+    </body>
 
 </html>
