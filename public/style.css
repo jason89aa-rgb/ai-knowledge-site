@@ -138,6 +138,18 @@ nav a:hover { color: var(--primary); }
 .link-text i { font-size: 0.8rem; transition: margin 0.2s; }
 .link-text:hover i { margin-left: 5px; }
 
+/* [AdSense 방어 코드] 구글 자동 광고가 포스트 목록(그리드) 내부에 삽입되어 레이아웃을 깨는 현상 방지 */
+.grid-container .google-auto-placed,
+.grid-container ins.adsbygoogle {
+    display: none !important;
+    height: 0 !important;
+    width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
 /* 5. 툴 리스트 스타일 */
 .tool-list { display: flex; flex-direction: column; gap: 20px; }
 .tool-card {
