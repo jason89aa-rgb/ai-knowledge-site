@@ -1,7 +1,7 @@
 import { all, first, nodeText, parseXml, value } from "./patent-xml";
 
 type Country = "KR" | "US" | "EP" | "CN" | "UPC" | "WO" | "JP" | "CA" | "AU" | "GB" | "DE" | "FR";
-type Patent = { country: Country; number: string; kind: string; type: "application" | "publication" | "grant" | "gazette" | "case" };
+type Patent = { country: Country; number: string; kind: string; type: "application" | "publication" | "grant" | "gazette" | "case"; ambiguousUsNumber?: boolean };
 type Link = { label: string; url: string };
 type Family = { country: string; application?: string; publication?: string; date?: string; relation: string };
 type Event = { date: string; title: string; detail?: string; id?: string };
@@ -10,7 +10,7 @@ export type Report = {
   country: Country; query: string; title: string; application?: string; publication?: string; grant?: string;
   filed?: string; published?: string; granted?: string; status?: string; applicants?: string; inventors?: string;
   abstract?: string; retrievedAt: string; links: Link[]; family: Family[]; events: Event[];
-  documents: Document[]; notes: string[]; source: string;
+  documents: Document[]; notes: string[]; source: string; linksOnly?: boolean;
 };
 
 export class PatentError extends Error {
@@ -39,8 +39,8 @@ export function normalizePatent(input: unknown, office: unknown, type: unknown):
     }
     return { country: "UPC", number: raw.replace(/\s/g, ""), kind: "", type: "case" };
   }
-  const prefix = raw.match(/^(KR|US|EP|CN|ZL|WO|JP|CA|AU|GB|DE|FR)(?=\s*[-\d]|\s*D\d|\s*RE\d|\s*PP\d)/)?.[1];
-  const detected = prefix === "ZL" ? "CN" : prefix;
+  const prefix = raw.match(/^(KR|USA?|EP|CN|ZL|WO|JP|CA|AU|GB|DE|FR)(?=\s*[-\d]|\s*D\d|\s*RE\d|\s*PP\d)/)?.[1];
+  const detected = prefix === "ZL" ? "CN" : prefix === "USA" ? "US" : prefix;
   const country = (office === "auto" || office === undefined ? detected ?? (/^\d{2}\//.test(raw) ? "US" : "KR") : office) as Country;
   if (!offices.includes(country) || (detected && country !== detected)) throw new PatentError("번호의 국가 코드와 선택한 관할을 확인해 주세요.", 400);
   const body = raw.slice(prefix?.length ?? 0).trim().replace(/[\s,/-]/g, "");
@@ -49,14 +49,17 @@ export function normalizePatent(input: unknown, office: unknown, type: unknown):
   let [, number, kind = ""] = match;
   if (country !== "US" && !/^\d+$/.test(number)) throw new PatentError("선택한 관할의 번호 형식을 확인해 주세요.", 400);
   if (country === "KR" && /^(10|20)\d{7}0000$/.test(number)) number = number.slice(0, 9);
+  const explicitType = ["application", "publication", "grant", "gazette"].includes(String(type));
+  const ambiguousUsNumber = country === "US" && detected === "US" && !explicitType && !kind &&
+    /^\d{8}$/.test(number) && !/[/,]/.test(raw);
   const inferred = country === "KR"
     ? (kind.startsWith("A") ? "publication" : kind.startsWith("B") || number.length === 9 ? "grant" : "application")
     : country === "US"
       ? (/^[BES]/.test(kind) || /^[A-Z]/.test(number) ? "grant"
         : kind || number.length === 11 ? "publication"
-        : number.length === 8 && (raw.includes("/") || !raw.includes(",")) ? "application" : "grant")
+        : number.length === 8 && !ambiguousUsNumber && (raw.includes("/") || !raw.includes(",")) ? "application" : "grant")
       : kind ? "publication" : (prefix === "ZL" || country === "EP" && number.length === 8 || country === "CN" && (number.length === 12 || body.includes("."))) ? "application" : "publication";
-  const selected = (["application", "publication", "grant", "gazette"].includes(String(type)) ? type : inferred) as Patent["type"];
+  const selected = (explicitType ? type : inferred) as Patent["type"];
   if (country === "KR" && (!/^(10|20)/.test(number) || (selected === "grant" ? number.length !== 9 : number.length !== 13))) {
     throw new PatentError("한국 출원·공개·공고번호는 13자리, 등록번호는 9자리입니다. 번호 유형을 확인해 주세요.", 400);
   }
@@ -67,7 +70,7 @@ export function normalizePatent(input: unknown, office: unknown, type: unknown):
     throw new PatentError("EP 출원번호는 검증 문자를 제외한 8자리, 공보번호는 7자리입니다.", 400);
   }
   if (selected === "gazette" && country !== "KR") throw new PatentError("공고 유형은 한국 번호에만 적용됩니다.", 400);
-  return { country, number, kind, type: selected };
+  return { country, number, kind, type: selected, ambiguousUsNumber };
 }
 
 function required(value: string | undefined, service: string) {
@@ -425,7 +428,9 @@ async function europeanData(p: Patent) {
   const type = p.type === "application" ? "application" : "publication";
   const stem = p.country + p.number;
   const ref = stem + (type === "publication" && p.kind ? "." + p.kind : "");
-  const address = `/${type}/epodoc/${ref}`;
+  const address = p.country === "US" && type === "publication" && p.kind
+    ? `/publication/docdb/US.${p.number}.${p.kind}`
+    : `/${type}/epodoc/${ref}`;
   const token = await opsToken();
   const [xml, family, register, legal] = await Promise.all([
     section(r, "서지", () => opsXml(token, `/published-data${address}/biblio`)),
@@ -479,14 +484,55 @@ async function europeanData(p: Patent) {
   return r;
 }
 
-export async function lookup(p: Patent) {
-  if (p.country === "KR") return korean(p);
-  if (p.country === "US") {
-    if (process.env.USPTO_API_KEY || p.type === "application" || !(process.env.EPO_OPS_KEY && process.env.EPO_OPS_SECRET)) return american(p);
-    const r = await europeanData(p);
-    r.notes.push("미국 공개 심사철의 자동 조회에는 USPTO ODP API 키가 필요합니다. 현재는 EPO가 제공하는 자료를 표시했습니다.");
+async function lookupUs(p: Patent) {
+  let odpProblem: string;
+  try {
+    return await american(p);
+  } catch (error) {
+    if (!(error instanceof PatentError)) throw error;
+    if (error.status === 404 && p.ambiguousUsNumber) {
+      return lookupUs({ ...p, type: "application", ambiguousUsNumber: false });
+    }
+    if (error.status < 500 && error.status !== 429) throw error;
+    odpProblem = error.message;
+  }
+
+  const r = report(p, "공식 열람처");
+  r.linksOnly = true;
+  r.notes.push(odpProblem);
+  const application = p.type === "application";
+  const query = (application ? "ap=" : "pn=") + r.query;
+  r.links = [
+    { label: "EPO Espacenet에서 검색 ↗", url: `https://worldwide.espacenet.com/patent/search?q=${encodeURIComponent(query)}` },
+    { label: "USPTO Patent Center ↗", url: application ? `https://patentcenter.uspto.gov/applications/${p.number}/ifw/docs` : "https://patentcenter.uspto.gov/" },
+  ];
+
+  if (application) {
+    r.notes.push("미국 출원번호로는 Patent Center에서 심사철을 확인할 수 있습니다. EPO 대체 조회에는 미국 공개번호나 등록번호를 입력해 주세요.");
     return r;
   }
+  if (!process.env.EPO_OPS_KEY || !process.env.EPO_OPS_SECRET) {
+    r.notes.push("EPO OPS도 설정되지 않았습니다. Espacenet에서 해당 특허를 찾아 Global Dossier의 공개 심사철을 열 수 있습니다.");
+    return r;
+  }
+
+  try {
+    const epo = await europeanData(p);
+    if (epo.title || epo.family.length || epo.events.length) {
+      epo.notes.push(odpProblem, "미국 심사문서 PDF 자동 수집은 USPTO ODP 연결이 필요합니다.");
+      return epo;
+    }
+    r.notes.push(...epo.notes);
+  } catch (error) {
+    if (!(error instanceof PatentError)) throw error;
+    r.notes.push(error.message);
+  }
+  return r;
+}
+
+export async function lookup(p: Patent) {
+  if (p.country === "KR") return korean(p);
+  if (p.country === "US") return lookupUs(p);
   if (p.country === "UPC") {
     const r = report(p, "Unified Patent Court");
     r.title = "UPC 사건 열람";
