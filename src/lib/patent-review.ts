@@ -100,7 +100,9 @@ async function request(url: URL | string, service: string, init: RequestInit = {
 
 function date(s: unknown) {
   const text = String(s ?? "");
-  return /^\d{8}$/.test(text) ? text.replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3") : text.slice(0, 10);
+  const compact = text.match(/^(\d{4})(\d{2})(\d{2})$/);
+  if (compact) return compact.slice(1).join("-");
+  return text.slice(0, 10).replace(/[./]/g, "-");
 }
 
 function recent<T extends { date: string }>(rows: T[]) {
@@ -126,15 +128,25 @@ const kipris = (number: string): Link => ({
 });
 
 async function krXml(path: string, params: Record<string, string>, modern = false) {
-  const key = required(process.env.KIPRIS_API_KEY, "KIPRISPlus");
+  const key = required(process.env.KIPRIS_API_KEY?.trim(), "KIPRISPlus");
   const url = new URL(path, krRoot);
   url.search = new URLSearchParams({ ...params, [modern ? "ServiceKey" : "accessKey"]: key }).toString();
-  const res = await request(url, "KIPRISPlus");
-  if (!res.ok) throw fail("KIPRISPlus", res.status);
+  const res = await request(url, "KIPRISPlus").catch(error => {
+    if (error instanceof PatentError && error.status === 502) throw new PatentError(error.message, 424);
+    throw error;
+  });
+  if (!res.ok) {
+    const reason = res.status === 401 || res.status === 403 ? "인증키 또는 상품 이용 권한을 확인해 주세요." : "기관 서버 응답을 확인해 주세요.";
+    throw new PatentError(`KIPRISPlus 응답 오류 (HTTP ${res.status}) · ${reason}`, 424);
+  }
   const xml = parseXml(await res.text());
   const code = value(xml, "resultCode") || value(xml, "returnReasonCode");
-  if (code && !/^(?:0+|SUCCESS)$/i.test(code) && code !== "03") throw fail("KIPRISPlus", ["22", "30", "31"].includes(code) ? 403 : 502);
-  if (!first(xml, "response") && !first(xml, "OpenAPI_ServiceResponse")) throw fail("KIPRISPlus", 502);
+  if (code && !/^(?:0+|SUCCESS)$/i.test(code) && code !== "03") {
+    const detail = /^\d{1,3}$/.test(code) ? ` (코드 ${code})` : "";
+    const reason = /^[23]\d$/.test(code) ? "인증키, 상품 권한 또는 호출 한도를 확인해 주세요." : "기관 API에서 요청을 처리하지 못했습니다.";
+    throw new PatentError(`KIPRISPlus 응답 오류${detail} · ${reason}`, 424);
+  }
+  if (!first(xml, "response") && !first(xml, "OpenAPI_ServiceResponse")) throw new PatentError("KIPRISPlus 응답을 해석하지 못했습니다.", 424);
   return xml;
 }
 
@@ -152,11 +164,11 @@ async function korean(p: Patent) {
       [parameter]: p.type === "grant" ? p.number + "0000" : p.number, docsStart: "1", docsCount: "10",
     });
     const found = all(xml, "PatentUtilityInfo").find(item => value(item, field).replace(/\D/g, "").slice(0, p.number.length) === p.number);
-    application = value(found, "ApplicationNumber");
+    application = value(found, "ApplicationNumber").replace(/[\s-]/g, "");
     if (!/^\d{13}$/.test(application)) throw fail(r.source, 404);
   }
   const biblio = await krXml(`/kipo-api/kipi/${krPublications}/getBibliographyDetailInfoSearch`, { applicationNumber: application }, true);
-  const b = all(biblio, "biblioSummaryInfo").find(node => value(node, "applicationNumber") === application);
+  const b = all(biblio, "biblioSummaryInfo").find(node => value(node, "applicationNumber").replace(/[\s-]/g, "") === application);
   if (!b) throw fail(r.source, 404);
   Object.assign(r, {
     application, title: value(b, "inventionTitle"), publication: value(b, "openNumber"), grant: value(b, "registerNumber"),
@@ -510,7 +522,7 @@ export async function officialPdf(country: unknown, application: unknown, id: un
   if (typeof application !== "string" || typeof id !== "string") throw new PatentError("문서 식별자를 확인해 주세요.", 400);
   if (country === "KR" && /^\d{13}$/.test(application) && /^\d{15}$/.test(id) && typeof code === "string" && Object.hasOwn(krDocuments, code)) {
     const xml = await krXml(`/openapi/rest/IntermediateDocument${code}Service/pdfInfoV2`, { applicationNumber: application, sendNumber: id });
-    const row = all(xml, "pdfInfoV2").find(item => value(item, "sendNumber") === id && value(item, "applicationNumber") === application);
+    const row = all(xml, "pdfInfoV2").find(item => value(item, "sendNumber") === id && value(item, "applicationNumber").replace(/[\s-]/g, "") === application);
     const path = value(row, "filePath");
     if (!path) throw fail("KIPRISPlus", 404);
     const url = new URL(path, krRoot);
