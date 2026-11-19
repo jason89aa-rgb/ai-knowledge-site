@@ -57,9 +57,20 @@
       });
     }
 
-    function tabulate(title, headers, rows, widths, size = 8) {
+    function tabulate(title, headers, rows, widths) {
       if (!rows.length) return;
-      const groups = chunks(rows, size);
+      const groups = [[]];
+      let available = 5;
+      for (const row of rows) {
+        const cells = row.map((value, i) => wrap(cleaned(value) || "—", Math.max(4, Math.floor((widths[i] - .2) * 5.2))));
+        const tallest = Math.max(...cells.map(cell => cell.length));
+        for (let offset = 0; offset < tallest; offset += 12) {
+          const height = Math.min(12, tallest - offset) * .26 + .15;
+          if (height > available) { groups.push([]); available = 5; }
+          groups.at(-1).push(cells.map(cell => cell.slice(offset, offset + 12).join("\n")));
+          available -= height;
+        }
+      }
       groups.forEach((group, index) => {
         const slide = page(title + (groups.length > 1 ? ` (${index + 1}/${groups.length})` : ""));
         slide.addTable([
@@ -68,9 +79,8 @@
             text: cleaned(value) || "—",
             options: { fill: { color: i % 2 ? "F1F5FA" : "FFFFFF" } },
           }))),
-        ], { x: .64, y: 1.34, w: 12.04, colW: widths, margin: [6, 8, 6, 8], fontFace, color: ink,
-          fontSize: 12, border: { color: "D9E4EE", pt: .5 }, autoPage: true, autoPageRepeatHeader: true,
-          autoPageSlideStartY: .65, autoPageCharWeight: .2, newSlideStartY: .65 });
+        ], { x: .64, y: 1.34, w: 12.04, colW: widths, margin: [4, 6, 4, 6], fontFace, color: ink,
+          fontSize: 12, border: { color: "D9E4EE", pt: .5 }, autoPage: false });
       });
     }
 

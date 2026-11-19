@@ -22,7 +22,7 @@ body { margin: 0; }
 .intro h1 { font-size: clamp(2rem, 5vw, 3.4rem); line-height: 1.15; letter-spacing: -.05em; margin: 0 0 13px; }
 .intro p { color: #d0e0f4; font-size: clamp(.94rem, 2vw, 1.13rem); margin: 0; }
 .workspace { margin-top: -39px; position: relative; }
-.panel { background: #fff; border: 1px solid var(--line); border-radius: 13px; padding: 24px; }
+.panel { background: #fff; border: 1px solid var(--line); border-radius: 13px; padding: 24px; min-width: 0; }
 #lookup { box-shadow: 0 12px 35px #163a6112; }
 .search-grid { display: grid; grid-template-columns: 1fr 1fr minmax(170px, 2fr) auto; gap: 12px; align-items: end; }
 label { display: block; font-size: .84rem; font-weight: 700; margin-bottom: 5px; }
