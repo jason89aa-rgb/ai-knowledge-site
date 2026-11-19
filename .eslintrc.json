@@ -1,0 +1,13 @@
+{
+  "root": true,
+  "extends": "next/core-web-vitals",
+  "ignorePatterns": [
+    "/.next/",
+    "/.vercel/",
+    "/out/",
+    "/build/",
+    "/next-env.d.ts",
+    "/public/patent-assets/",
+    "/public/patent-pptx.bundle.js"
+  ]
+}

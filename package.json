@@ -8,7 +8,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint . --ext .js,.mjs,.ts,.tsx"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.4",

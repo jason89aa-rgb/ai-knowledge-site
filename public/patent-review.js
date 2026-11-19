@@ -7,14 +7,15 @@ const facts = [
   ["status", "기관 표시 상태"], ["applicants", "출원인"], ["inventors", "발명자"],
 ];
 const examples = {
-  auto: "US 2014-0167116 A1", KR: "10-2023-0010262", US: "US 2014-0167116 A1", EP: "EP4286919A1",
+  auto: "EP4286919A1", KR: "10-2023-0010262", US: "US 2014-0167116 A1", EP: "EP4286919A1",
   CN: "CN101876751A", UPC: "UPC_CFI_123/2025", WO: "WO2023232483A1", JP: "JP2020123456A",
 };
 let current;
 let standaloneReport;
 let searchVersion = 0;
+let activeSearch;
 let processing = false;
-const useApi = () => by("lookup").elements.mode.value === "api";
+const isAutomaticMode = () => by("lookup").elements.mode.value === "api";
 const localTools = () => import("/patent-review-local.mjs");
 
 function el(tag, text = "", className = "") {
@@ -72,15 +73,15 @@ function button(label, fn, style = "secondary") {
   return element;
 }
 
-async function api(data) {
-  if (!useApi()) throw new Error("기관 API를 사용하려면 API 연결 사용을 선택해 주세요.");
+async function api(data, signal) {
+  if (!isAutomaticMode()) throw new Error("검색 설정에서 자동 조회 및 요약을 선택해 주세요.");
   const code = by("access").value;
   if (!code) throw new Error("팀 액세스 코드를 입력해 주세요.");
   const headers = { "X-Patent-Access": code };
   const form = data instanceof FormData;
   if (!form) headers["Content-Type"] = "application/json";
   const response = await fetch("/api/patent-review", {
-    method: "POST", headers, body: form ? data : JSON.stringify(data), cache: "no-store",
+    method: "POST", headers, body: form ? data : JSON.stringify(data), cache: "no-store", signal,
   });
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
@@ -93,6 +94,34 @@ async function readSummary(response) {
   const summary = await response.json();
   if (summary.error) throw new Error(summary.error);
   return summary;
+}
+
+async function readReview(response, onMessage) {
+  if (!response.body || !response.headers.get("content-type")?.includes("application/x-ndjson")) {
+    throw new Error("자동 리포트 서버에 연결하지 못했습니다.");
+  }
+  const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+  let buffer = "";
+  let complete = false;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const lines = (buffer + value).split("\n");
+      buffer = lines.pop();
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        const message = JSON.parse(line);
+        if (message.error) throw new Error(message.error);
+        if (message.type === "complete") complete = true;
+        else onMessage(message);
+      }
+    }
+    if (!complete || buffer.trim()) throw new Error("자동 조회 연결이 중간에 종료됐습니다. 다시 시도해 주세요.");
+  } finally {
+    await reader.cancel().catch(() => {});
+    reader.releaseLock();
+  }
 }
 
 function summaryCard(summary) {
@@ -130,13 +159,17 @@ function showSummaries(report) {
   const slot = by("summaries");
   if (current !== report || !slot) return;
   slot.replaceChildren(...report.summaries.map(summaryCard));
-  if (!report.summaries.length) slot.append(el("p", "아래에서 PDF를 선택해 문서 요약을 추가할 수 있습니다.", "muted"));
+  if (!report.summaries.length) {
+    const message = report.autoPending ? "공개 기록과 원문을 확인하고 있습니다."
+      : report.local ? "아래에서 PDF를 선택해 문서 요약을 추가할 수 있습니다." : "이 조회에서 생성된 요약이 없습니다.";
+    slot.append(el("p", message, "muted"));
+  }
 }
 
 function documentActions(report, doc) {
   if (!doc.downloadable || report.demo) return report.local ? "브라우저에서 처리" : "공식 열람처 참고";
   const wrapper = el("div", "", "document-actions");
-  wrapper.hidden = !useApi();
+  wrapper.hidden = !isAutomaticMode();
   const payload = { country: report.country, application: report.application, id: doc.id, code: doc.code };
   for (const [action, title] of [["download", "원문 PDF"], ["summarize", "Claude 요약"]]) {
     wrapper.append(button(title, async event => {
@@ -254,7 +287,10 @@ function show(report) {
   title.tabIndex = -1;
   identity.append(el("p", [report.country, report.query, report.source].filter(Boolean).join(" · "), "identity"), title,
     el("p", dateLabel(report.retrievedAt), "muted hint"));
-  head.append(identity, exportButton(report, "status"));
+  const ppt = exportButton(report, "status");
+  ppt.id = "report-export";
+  ppt.disabled = Boolean(report.autoPending);
+  head.append(identity, ppt);
   overview.append(head);
   const fields = el("dl", "", "facts");
   for (const [key, label] of facts) {
@@ -274,11 +310,11 @@ function show(report) {
     links.append(...report.links.map(link));
     overview.append(links);
   }
-  if (report.notes.length) {
-    const notes = el("ul", "", "notes");
-    notes.append(...report.notes.map(note => el("li", note)));
-    overview.append(notes);
-  }
+  const notes = el("ul", "", "notes");
+  notes.id = "report-notes";
+  notes.hidden = !report.notes.length;
+  notes.append(...report.notes.map(note => el("li", note)));
+  overview.append(notes);
   if (report.local && report.country !== "UPC") overview.append(manualEditor(report));
   area.append(overview);
 
@@ -299,7 +335,7 @@ function show(report) {
     docs.append(el("h2", `심사 문서 (${report.documents.length})`), table(
       ["날짜", "문서", "식별자", "원문 및 요약"],
       report.documents.map(doc => [doc.date, doc.title, doc.id, documentActions(report, doc)]),
-      "기관에서 받은 PDF를 아래에서 선택할 수 있습니다.",
+      report.local ? "기관에서 받은 PDF를 아래에서 선택할 수 있습니다." : "자동으로 가져올 수 있는 공개 원문이 없습니다. 위의 공식 열람처를 확인해 주세요.",
     ));
     area.append(family, history, docs);
   }
@@ -313,11 +349,12 @@ function show(report) {
 
 function updateMode() {
   const office = by("office").value;
-  const apiMode = useApi();
+  const apiMode = isAutomaticMode();
   by("number").placeholder = examples[office] ? "예: " + examples[office] : "국가 코드와 특허번호";
   by("numberType").disabled = office === "UPC";
-  by("search").textContent = office === "UPC" ? "사건 열람처 찾기" : apiMode ? "특허 조회" : "공식 열람처 찾기";
+  by("search").textContent = apiMode ? "리포트 만들기" : "공식 열람처 찾기";
   by("accessGroup").hidden = !apiMode;
+  by("manualUpload").hidden = apiMode;
   by("scanGroup").hidden = apiMode;
   by("pdf").multiple = !apiMode;
   by("fileLabel").textContent = apiMode ? "PDF 파일 · 최대 3.5 MiB" : "PDF 파일 · 파일당 최대 20 MiB";
@@ -330,7 +367,12 @@ function updateMode() {
 by("office").addEventListener("change", updateMode);
 by("lookup").querySelectorAll('[name="mode"]').forEach(mode => {
   mode.addEventListener("change", () => {
+    activeSearch?.abort();
     searchVersion++;
+    if (current?.autoPending) {
+      current.autoPending = false;
+      show(current);
+    }
     by("search").disabled = false;
     say("status", "");
     updateMode();
@@ -339,29 +381,70 @@ by("lookup").querySelectorAll('[name="mode"]').forEach(mode => {
 
 by("lookup").addEventListener("submit", async event => {
   event.preventDefault();
+  activeSearch?.abort();
+  const controller = new AbortController();
+  activeSearch = controller;
   const version = ++searchVersion;
   const control = by("search");
+  const apiMode = isAutomaticMode();
+  if (apiMode && !by("access").value) {
+    control.disabled = false;
+    say("status", "팀 액세스 코드를 입력해 주세요.", true);
+    by("access").focus();
+    return;
+  }
   control.disabled = true;
+  by("result").hidden = true;
+  current = undefined;
   const input = [by("number").value, by("office").value, by("numberType").value];
-  const apiMode = useApi();
+  let report;
   say("status", apiMode ? "공개 특허 데이터를 확인하고 있습니다." : "공식 열람처를 준비하고 있습니다.");
   try {
-    const report = apiMode
-      ? await (await api({ action: "lookup", number: input[0], country: input[1], numberType: input[2] })).json()
-      : (await localTools()).localReport(...input);
+    if (apiMode) {
+      const response = await api({ action: "review", number: input[0], country: input[1], numberType: input[2] }, controller.signal);
+      await readReview(response, message => {
+        if (searchVersion !== version) return;
+        if (message.type === "report") {
+          report = { ...message.report, summaries: [], autoPending: true };
+          show(report);
+        } else if (message.type === "progress") say("status", message.text);
+        else if (message.type === "summary" && report) {
+          report.summaries = report.summaries.filter(summary => !message.summary.id || summary.id !== message.summary.id);
+          report.summaries.push(message.summary);
+          showSummaries(report);
+        } else if (message.type === "note" && report) {
+          report.notes.push(message.text);
+          const notes = by("report-notes");
+          notes.hidden = false;
+          notes.append(el("li", message.text));
+        }
+      });
+      if (!report) throw new Error("조회 결과를 받지 못했습니다.");
+    } else {
+      report = { ...(await localTools()).localReport(...input), summaries: [] };
+      if (searchVersion === version) show(report);
+    }
     if (searchVersion !== version) return;
-    show({ ...report, summaries: [] });
     if (report.country === "KR" || report.country === "CN") by("scanLanguage").value = report.country === "KR" ? "kor" : "chi_sim";
     else by("scanLanguage").value = "eng";
-    say("status", apiMode ? "조회 결과를 표시했습니다." : "공식 열람처에서 원문 PDF를 내려받아 아래에서 선택하세요.");
+    say("status", apiMode ? `조회 완료 · 요약 ${report.summaries.length}건 · PowerPoint 다운로드 가능`
+      : "공식 열람처를 표시했습니다.");
   } catch (error) {
     if (searchVersion === version) say("status", error.message, true);
   } finally {
-    if (searchVersion === version) control.disabled = false;
+    if (searchVersion === version) {
+      control.disabled = false;
+      if (report?.autoPending) {
+        report.autoPending = false;
+        by("report-export").disabled = false;
+        showSummaries(report);
+      }
+    }
   }
 });
 
 by("example").addEventListener("click", () => {
+  activeSearch?.abort();
   searchVersion++;
   by("search").disabled = false;
   say("status", "");
@@ -388,7 +471,7 @@ by("example").addEventListener("click", () => {
 by("upload").addEventListener("submit", async event => {
   event.preventDefault();
   if (processing) return;
-  const apiMode = useApi();
+  const apiMode = isAutomaticMode();
   const files = Array.from(by("pdf").files);
   const limit = apiMode ? 3.5 : 20;
   if (!files.length || (apiMode && files.length !== 1) || files.length > 8 ||

@@ -24,8 +24,11 @@ body { margin: 0; }
 .workspace { margin-top: -39px; position: relative; }
 .panel { background: #fff; border: 1px solid var(--line); border-radius: 13px; padding: 24px; min-width: 0; }
 #lookup { box-shadow: 0 12px 35px #163a6112; }
-.search-grid { display: grid; grid-template-columns: 1fr 1fr minmax(170px, 2fr) auto; gap: 12px; align-items: end; }
-.mode-picker { display: flex; flex-wrap: wrap; gap: 8px 19px; border: 0; padding: 0; margin: 0 0 16px; }
+.search-grid { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: end; }
+.search-settings { margin-top: 14px; }
+.search-settings > summary { color: var(--accent); font-weight: 700; cursor: pointer; }
+.settings-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; max-width: 510px; margin-top: 10px; }
+.mode-picker { display: flex; flex-wrap: wrap; gap: 8px 19px; border: 0; padding: 0; margin: 12px 0 0; }
 .mode-picker legend { padding: 0; margin-bottom: 5px; font-size: .84rem; font-weight: 700; }
 .mode-picker label { display: flex; align-items: center; gap: 7px; margin: 0; }
 .mode-picker input { width: auto; height: auto; accent-color: var(--accent); }
@@ -94,9 +97,6 @@ td:first-child { white-space: nowrap; }
 .office-grid p { color: var(--muted); }
 .footer { color: var(--muted); font-size: .82rem; padding: 24px 0 35px; }
 @media (max-width: 760px) {
-  .search-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .search-grid > div:nth-child(3) { grid-column: 1 / -1; }
-  .search-grid > button { grid-column: 1 / -1; }
   .facts, .office-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 480px) {
@@ -104,6 +104,7 @@ td:first-child { white-space: nowrap; }
   .panel { padding: 15px; }
   .intro { padding: 38px 0 68px; }
   .wide { display: none; }
+  .search-grid { grid-template-columns: 1fr; }
   .report-head { flex-direction: column; align-items: stretch; }
   .manual-fields, .upload-options, .upload-options:has(#scanGroup[hidden]) { grid-template-columns: 1fr; }
   .search-footer button { flex: 0 0 auto; }
