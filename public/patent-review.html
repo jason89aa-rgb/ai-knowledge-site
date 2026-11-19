@@ -15,16 +15,18 @@
   <main>
     <section class="intro"><div class="shell">
       <h1>특허 심사 리포트</h1>
-      <p>특허번호로 공식 열람처를 찾고 심사 문서를 정리해<br class="wide"> PowerPoint 보고서로 내려받으세요.</p>
+      <p>특허번호를 입력하면 공개 특허 기록을 조회하고, 제공되는 주요 심사 문서를 Claude Opus 5.5가 요약합니다.</p>
     </div></section>
     <div class="shell workspace">
       <form id="lookup" class="panel">
-        <fieldset class="mode-picker">
-          <legend>사용 방식</legend>
-          <label><input type="radio" name="mode" value="local" checked> API 없이 사용</label>
-          <label><input type="radio" name="mode" value="api"> API 연결 사용</label>
-        </fieldset>
         <div class="search-grid">
+          <div><label for="number">특허 또는 UPC 사건 번호</label><input id="number" required maxlength="64" placeholder="예: EP4286919A1" autocomplete="off" spellcheck="false" aria-describedby="numberHint"></div>
+          <button id="search" class="primary" type="submit">리포트 만들기</button>
+        </div>
+        <p id="numberHint" class="muted hint">국가 코드와 번호를 입력하세요. 번호 유형이 모호하면 검색 설정에서 선택할 수 있습니다.</p>
+        <details class="search-settings">
+          <summary>검색 설정</summary>
+          <div class="settings-grid">
           <div><label for="office">관할</label><select id="office">
             <option value="auto">자동 감지</option><option value="KR">한국 · KR</option><option value="US">미국 · US</option>
             <option value="EP">유럽특허청 · EP</option><option value="CN">중국 · CN</option><option value="UPC">통합특허법원 · UPC</option>
@@ -35,19 +37,22 @@
             <option value="auto">자동 감지</option><option value="application">출원번호</option><option value="publication">공개번호</option>
             <option value="grant">등록번호</option><option value="gazette">공고번호 · KR</option>
           </select></div>
-          <div><label for="number">특허 또는 사건 번호</label><input id="number" required maxlength="64" placeholder="예: EP4286919A1" autocomplete="off" spellcheck="false" aria-describedby="numberHint"></div>
-          <button id="search" class="primary" type="submit">공식 열람처 찾기</button>
-        </div>
-        <p id="numberHint" class="muted hint">하이픈을 넣어도 됩니다. 한국 출원·공개번호가 같은 형태이면 번호 유형을 선택하세요.</p>
+          </div>
+          <fieldset class="mode-picker">
+            <legend>사용 방식</legend>
+            <label><input type="radio" name="mode" value="api" checked> 자동 조회 및 요약</label>
+            <label><input type="radio" name="mode" value="local"> 공식 열람처 및 수동 정리</label>
+          </fieldset>
+        </details>
         <div class="search-footer">
-          <div class="access" id="accessGroup" hidden><label for="access">팀 액세스 코드</label><input id="access" type="password" maxlength="200" autocomplete="current-password" placeholder="코드 입력"></div>
+          <div class="access" id="accessGroup"><label for="access">팀 액세스 코드</label><input id="access" type="password" maxlength="200" autocomplete="current-password" placeholder="코드 입력"></div>
           <button id="example" type="button" class="secondary">예시 보고서</button>
         </div>
       </form>
       <p id="status" class="status" role="status" aria-live="polite"></p>
       <section id="result" hidden aria-labelledby="report-title"></section>
 
-      <section class="panel upload" aria-labelledby="upload-title">
+      <section class="panel upload" id="manualUpload" aria-labelledby="upload-title" hidden>
         <div><h2 id="upload-title">PDF 문서 요약</h2><p class="muted" id="uploadHelp">공개 심사 PDF를 선택하면 이 브라우저에서 중요 문장을 원문과 페이지 번호로 뽑습니다. 파일은 서버로 전송되지 않습니다.</p></div>
         <form id="upload">
           <div class="upload-options">
