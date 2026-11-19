@@ -14,7 +14,7 @@ export type Report = {
 };
 
 export class PatentError extends Error {
-  constructor(message: string, public status = 502) { super(message); }
+  constructor(message: string, public status = 502, public retryAfter?: number) { super(message); }
 }
 
 const offices = ["KR", "US", "EP", "CN", "UPC", "WO", "JP", "CA", "AU", "GB", "DE", "FR"];
@@ -78,18 +78,24 @@ function required(value: string | undefined, service: string) {
 function fail(service: string, status: number): PatentError {
   if (status === 404) return new PatentError(`${service}에서 공개 자료를 찾지 못했습니다.`, 404);
   if (status === 401 || status === 403) return new PatentError(`${service} API 인증 또는 상품 이용 권한을 확인해 주세요.`);
-  if (status === 429) return new PatentError(`${service}의 호출 한도에 도달했습니다. 잠시 후 다시 시도해 주세요.`, 429);
   return new PatentError(`${service} 요청을 처리하지 못했습니다.`);
 }
 
 async function request(url: URL | string, service: string, init: RequestInit = {}, timeout = 18000) {
+  let response;
   try {
-    const response = await fetch(url, { ...init, cache: "no-store", redirect: "manual", signal: AbortSignal.timeout(timeout) });
+    response = await fetch(url, { ...init, cache: "no-store", redirect: "manual", signal: AbortSignal.timeout(timeout) });
     if (response.status >= 300 && response.status < 400) throw new Error("Unexpected upstream redirect");
-    return response;
   } catch {
     throw new PatentError(`${service} 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.`);
   }
+  if (response.status === 429) {
+    const header = response.headers.get("Retry-After")?.trim();
+    const seconds = header && (/^\d+$/.test(header) ? Number(header) : Math.ceil((Date.parse(header) - Date.now()) / 1000));
+    const retryAfter = typeof seconds === "number" && Number.isFinite(seconds) ? Math.max(0, seconds) : service === "USPTO ODP" ? 60 : undefined;
+    throw new PatentError(`${service}의 호출 한도에 도달했습니다. 잠시 후 다시 시도해 주세요.`, 429, retryAfter);
+  }
+  return response;
 }
 
 function date(s: unknown) {
