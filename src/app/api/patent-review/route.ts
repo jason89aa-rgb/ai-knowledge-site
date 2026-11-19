@@ -11,7 +11,7 @@ function failure(error: unknown) {
   return error instanceof PatentError ? error : new PatentError("특허 자료를 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.");
 }
 
-function streamSummary(summary: Promise<unknown>) {
+function streamSummary(summarize: () => Promise<unknown>) {
   let cancelled = false;
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
@@ -21,7 +21,7 @@ function streamSummary(summary: Promise<unknown>) {
         controller.enqueue(encoder.encode(JSON.stringify(result)));
         controller.close();
       };
-      void summary.then(finish, error => finish({ error: failure(error).message }));
+      void summarize().then(finish, error => finish({ error: failure(error).message }));
     },
     cancel() { cancelled = true; },
   });
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
       if (file.size > maxUpload) throw new PatentError("3.5 MiB 이하의 PDF를 올려 주세요.", 413);
       const bytes = new Uint8Array(await file.arrayBuffer());
       if (!isPdf(bytes)) throw new PatentError("유효한 PDF 파일을 올려 주세요.", 400);
-      return streamSummary(summarizePdf(bytes, file.name.slice(0, 180), "사용자 업로드"));
+      return streamSummary(() => summarizePdf(bytes, file.name.slice(0, 180), "사용자 업로드"));
     }
     if (!content.startsWith("application/json") || length > 8192) throw new PatentError("요청 형식을 확인해 주세요.", 400);
     const body = await request.json().catch(() => null);
@@ -60,9 +60,10 @@ export async function POST(request: Request) {
       return json(await lookup(normalizePatent(body.number, body.country, body.numberType)));
     }
     if (body?.action === "summarize") {
-      const summary = officialPdf(body.country, body.application, body.id, body.code, 12 * 1024 * 1024)
-        .then(document => summarizePdf(document.bytes, document.title, document.source));
-      return streamSummary(summary);
+      return streamSummary(async () => {
+        const document = await officialPdf(body.country, body.application, body.id, body.code, 12 * 1024 * 1024);
+        return summarizePdf(document.bytes, document.title, document.source);
+      });
     }
     if (body?.action === "download") {
       const document = await officialPdf(body.country, body.application, body.id, body.code, 4 * 1024 * 1024);
