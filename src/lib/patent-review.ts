@@ -153,6 +153,7 @@ async function krXml(path: string, params: Record<string, string>, modern = fals
 async function korean(p: Patent) {
   const r = report(p, "KIPRISPlus");
   let application = p.number;
+  let searchResult: XmlNode | undefined;
   if (p.type !== "application") {
     const configs = {
       publication: ["openNumberSearchInfo", "openNumber", "OpeningNumber"],
@@ -163,18 +164,36 @@ async function korean(p: Patent) {
     const xml = await krXml(`/openapi/rest/${krPublications}/${op}`, {
       [parameter]: p.type === "grant" ? p.number + "0000" : p.number, docsStart: "1", docsCount: "10",
     });
-    const found = all(xml, "PatentUtilityInfo").find(item => value(item, field).replace(/\D/g, "").slice(0, p.number.length) === p.number);
-    application = value(found, "ApplicationNumber").replace(/[\s-]/g, "");
+    searchResult = all(xml, "PatentUtilityInfo").find(item => value(item, field).replace(/\D/g, "").slice(0, p.number.length) === p.number);
+    application = value(searchResult, "ApplicationNumber").replace(/[\s-]/g, "");
     if (!/^\d{13}$/.test(application)) throw fail(r.source, 404);
   }
-  const biblio = await krXml(`/kipo-api/kipi/${krPublications}/getBibliographyDetailInfoSearch`, { applicationNumber: application }, true);
-  const b = all(biblio, "biblioSummaryInfo").find(node => value(node, "applicationNumber").replace(/[\s-]/g, "") === application);
-  if (!b) throw fail(r.source, 404);
+  let biblio: XmlNode | undefined;
+  let b: XmlNode | undefined;
+  try {
+    biblio = await krXml(`/kipo-api/kipi/${krPublications}/getBibliographyDetailInfoSearch`, { applicationNumber: application }, true);
+    b = all(biblio, "biblioSummaryInfo").find(node => value(node, "applicationNumber").replace(/[\s-]/g, "") === application);
+    if (!b) throw fail(r.source, 404);
+  } catch (error) {
+    if (!(error instanceof PatentError) || (error.status !== 424 && error.status !== 404)) throw error;
+    if (!searchResult) {
+      const matches = await krXml(`/openapi/rest/${krPublications}/applicationNumberSearchInfo`, {
+        applicationNumber: application, docsStart: "1", docsCount: "10",
+      }).catch(() => undefined);
+      searchResult = all(matches, "PatentUtilityInfo").find(node => value(node, "ApplicationNumber").replace(/[\s-]/g, "") === application);
+    }
+    if (!searchResult) throw error;
+    b = searchResult;
+    r.notes.push("서지상세 조회를 완료하지 못해 KIPRISPlus 출원번호 검색 결과의 서지를 표시합니다.");
+  }
   Object.assign(r, {
-    application, title: value(b, "inventionTitle"), publication: value(b, "openNumber"), grant: value(b, "registerNumber"),
-    filed: date(value(b, "applicationDate")), published: date(value(b, "openDate")), granted: date(value(b, "registerDate")),
-    status: value(b, "registerStatus") || value(b, "finalDisposal"), abstract: value(biblio, "astrtCont"),
-    applicants: all(biblio, "applicantInfo").map(node => value(node, "name")).filter(Boolean).join(", "),
+    application, title: value(b, "inventionTitle") || value(b, "InventionName"),
+    publication: value(b, "openNumber") || value(b, "OpeningNumber"), grant: value(b, "registerNumber") || value(b, "RegistrationNumber"),
+    filed: date(value(b, "applicationDate")), published: date(value(b, "openDate") || value(b, "OpeningDate")),
+    granted: date(value(b, "registerDate") || value(b, "RegistrationDate")),
+    status: value(b, "registerStatus") || value(b, "finalDisposal") || value(b, "RegistrationStatus"),
+    abstract: value(biblio, "astrtCont") || value(b, "Abstract"),
+    applicants: all(biblio, "applicantInfo").map(node => value(node, "name")).filter(Boolean).join(", ") || value(b, "Applicant"),
     inventors: all(biblio, "inventorInfo").map(node => value(node, "name")).filter(Boolean).join(", "),
   });
   r.links = [kipris(application), { label: "KIPRISPlus 데이터 안내", url: "https://plus.kipris.or.kr/portal/data/service/DBII_000000000000001/view.do" }];
