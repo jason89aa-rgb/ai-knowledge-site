@@ -47,7 +47,7 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 | CN 및 기타 지원 관할 | EPO OPS 서지, INPADOC 패밀리 및 제공 범위 내 법적 이벤트 | CNIPA, 해당 특허청 또는 Global Dossier에서 받아 업로드 |
 | UPC | 입력한 사건번호와 공개 결정·명령 열람처 표시 | UPC에서 공개 결정문을 받아 업로드 |
 
-Vercel 프로젝트의 **Settings → Environment Variables**에 아래 값을 서버용으로 설정하고 대상 환경을 다시 배포합니다. 로컬에서는 같은 이름을 `.env.local`에 설정한 후 `npm ci && npm run dev`를 실행합니다. 브라우저에는 팀 공유 코드만 입력합니다.
+운영 호스트의 프로젝트 설정에서 아래 값을 서버 환경 변수 또는 비밀로 등록하고 대상 환경을 다시 배포합니다. Cloudflare Pages는 **Settings → Variables and Secrets**, Vercel은 **Settings → Environment Variables**를 사용합니다. 로컬에서는 같은 이름을 `.env.local`에 설정한 후 `npm ci && npm run dev`를 실행합니다. 브라우저에는 팀 공유 코드만 입력합니다.
 
 | 변수 | 설정 |
 | --- | --- |

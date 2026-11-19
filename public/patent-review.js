@@ -84,6 +84,12 @@ async function api(data) {
   return response;
 }
 
+async function readSummary(response) {
+  const summary = await response.json();
+  if (summary.error) throw new Error(summary.error);
+  return summary;
+}
+
 function summaryCard(summary) {
   const item = el("article", "", "summary");
   item.append(el("h3", summary.title), el("small", [summary.source, summary.id, summary.model].filter(Boolean).join(" · ")), el("pre", summary.text));
@@ -135,7 +141,7 @@ function documentActions(report, doc) {
         const response = await api({ action, ...payload });
         if (action === "download") download(await response.blob(), `${report.country}-${doc.id}.pdf`);
         else {
-          const summary = { ...await response.json(), id: doc.id };
+          const summary = { ...await readSummary(response), id: doc.id };
           report.summaries = report.summaries.filter(item => item.id !== doc.id);
           report.summaries.push(summary);
           showSummaries(report);
@@ -309,7 +315,7 @@ by("upload").addEventListener("submit", async event => {
   say("uploadStatus", "선택한 PDF를 Claude로 요약하고 있습니다.");
   try {
     const response = await api(form);
-    const summary = await response.json();
+    const summary = await readSummary(response);
     if (report && !report.demo && current === report) {
       report.summaries.push(summary);
       showSummaries(report);
