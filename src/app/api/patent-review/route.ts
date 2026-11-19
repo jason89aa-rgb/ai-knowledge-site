@@ -48,7 +48,7 @@ export async function POST(request: Request) {
       if (length > maxUpload + 32768) throw new PatentError("3.5 MiB 이하의 PDF를 올려 주세요.", 413);
       const form = await request.formData().catch(() => { throw new PatentError("PDF를 다시 선택해 주세요.", 400); });
       const file = form.get("pdf");
-      if (!(file instanceof File)) throw new PatentError("요약할 PDF 파일을 선택해 주세요.", 400);
+      if (!file || typeof file === "string") throw new PatentError("요약할 PDF 파일을 선택해 주세요.", 400);
       if (file.size > maxUpload) throw new PatentError("3.5 MiB 이하의 PDF를 올려 주세요.", 413);
       const bytes = new Uint8Array(await file.arrayBuffer());
       if (!isPdf(bytes)) throw new PatentError("유효한 PDF 파일을 올려 주세요.", 400);
