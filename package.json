@@ -14,17 +14,22 @@
     "@radix-ui/react-slot": "^1.2.4",
     "@supabase/supabase-js": "^2.97.0",
     "@tailwindcss/typography": "^0.5.19",
+    "@tesseract.js-data/chi_sim": "1.0.0",
+    "@tesseract.js-data/eng": "1.0.0",
+    "@tesseract.js-data/kor": "1.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "gray-matter": "^4.0.3",
     "lucide-react": "^0.575.0",
     "next": "^14.2.24",
     "next-mdx-remote": "^6.0.0",
+    "pdfjs-dist": "6.2.108",
     "pptxgenjs": "4.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "tailwind-merge": "^3.4.0",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "tesseract.js": "7.0.0"
   },
   "devDependencies": {
     "@cloudflare/next-on-pages": "^1.13.16",

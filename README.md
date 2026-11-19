@@ -37,7 +37,11 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 ## 특허 심사 리포트
 
-`/patent-review.html`에서 출원·공개·등록번호를 검색합니다. 한국의 공고번호처럼 형식이 겹치거나 미국 등록번호가 8자리인 경우 번호 유형을 선택하세요. 패밀리 표의 지원 번호를 누르면 해당 관할의 기록을 다시 조회합니다. 원문을 요약한 뒤 **PowerPoint 내려받기**를 누르면 현재 보고서와 요약을 편집 가능한 PPTX로 저장합니다.
+`/patent-review.html`에서 출원·공개·등록번호를 입력합니다. 한국의 공고번호처럼 형식이 겹치거나 미국 등록번호가 8자리인 경우 번호 유형을 선택하세요. 원문을 요약한 뒤 **PowerPoint 내려받기**를 누르면 현재 보고서와 요약을 편집 가능한 PPTX로 저장합니다.
+
+기본값인 **API 없이 사용**에서는 공식 열람처 링크를 안내합니다. 미국 공개 심사철은 Global Dossier 또는 Espacenet의 Global Dossier 링크에서 확인할 수 있습니다. 기관에서 확인한 서지, 패밀리, 심사 이력을 직접 추가하고 PDF를 선택하면 브라우저가 주요 원문 문구와 페이지 번호를 발췌합니다. 서버에 PDF를 보내지 않습니다. 파일당 20 MiB 및 80쪽까지 읽으며, 영어·한국어·중국어 간체 이미지 PDF는 스캔 10쪽까지 문자 인식합니다. 문서는 원문의 언어로 발췌합니다.
+
+키를 설정했다면 **API 연결 사용**으로 전환하고 팀 액세스 코드를 입력합니다. 패밀리 표의 지원 번호를 누르면 해당 관할의 기록을 다시 조회합니다.
 
 | 관할 | 자동 조회 | 원문 열람 |
 | --- | --- | --- |
@@ -49,7 +53,7 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 운영 호스트의 프로젝트 설정에서 아래 값을 서버 환경 변수 또는 비밀로 등록하고 대상 환경을 다시 배포합니다. Cloudflare Pages는 **Settings → Variables and Secrets**, Vercel은 **Settings → Environment Variables**를 사용합니다. 로컬에서는 같은 이름을 `.env.local`에 설정한 후 `npm ci && npm run dev`를 실행합니다. 브라우저에는 팀 공유 코드만 입력합니다.
 
-Cloudflare Pages에서 기존 Next.js 어댑터를 실행하려면 **Settings → Functions → Compatibility flags**의 Preview 및 Production 환경에 `nodejs_compat`을 설정하고 재배포해야 합니다.
+Cloudflare Pages에서 **API 연결 사용**을 쓰려면 **Settings → Functions → Compatibility flags**의 Preview 및 Production 환경에 `nodejs_compat`을 설정하고 재배포해야 합니다. **API 없이 사용** 화면과 파일은 Pages의 정적 경로로 제공됩니다.
 
 | 변수 | 설정 |
 | --- | --- |
@@ -60,4 +64,4 @@ Cloudflare Pages에서 기존 Next.js 어댑터를 실행하려면 **Settings �
 | `ANTHROPIC_API_KEY` | Claude Messages API 키 |
 | `PATENT_CLAUDE_MODEL` | 선택 사항. 기본 모델은 `claude-haiku-5-5` |
 
-PDF 직접 업로드는 문서당 3.5 MiB까지 받습니다. 요약을 선택했을 때 해당 PDF가 Anthropic Messages API에 전달됩니다. 이 기능은 조회 기록, PDF, 요약을 사이트 저장소에 기록하지 않습니다. 예시 보고서 및 PPTX 다운로드는 키 설정 없이 확인할 수 있습니다.
+API 모드의 PDF 업로드는 문서당 3.5 MiB까지 받습니다. Claude 요약을 선택하면 해당 PDF가 Anthropic Messages API에 전달됩니다. 이 기능은 조회 기록, PDF, 요약을 사이트 저장소에 기록하지 않습니다.

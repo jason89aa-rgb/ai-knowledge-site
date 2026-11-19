@@ -15,10 +15,15 @@
   <main>
     <section class="intro"><div class="shell">
       <h1>특허 심사 리포트</h1>
-      <p>특허번호로 서지사항, 패밀리, 심사 기록을 확인하고<br class="wide"> 원문에 근거한 Claude 요약을 PowerPoint로 내려받으세요.</p>
+      <p>특허번호로 공식 열람처를 찾고 심사 문서를 정리해<br class="wide"> PowerPoint 보고서로 내려받으세요.</p>
     </div></section>
     <div class="shell workspace">
       <form id="lookup" class="panel">
+        <fieldset class="mode-picker">
+          <legend>사용 방식</legend>
+          <label><input type="radio" name="mode" value="local" checked> API 없이 사용</label>
+          <label><input type="radio" name="mode" value="api"> API 연결 사용</label>
+        </fieldset>
         <div class="search-grid">
           <div><label for="office">관할</label><select id="office">
             <option value="auto">자동 감지</option><option value="KR">한국 · KR</option><option value="US">미국 · US</option>
@@ -31,11 +36,11 @@
             <option value="grant">등록번호</option><option value="gazette">공고번호 · KR</option>
           </select></div>
           <div><label for="number">특허 또는 사건 번호</label><input id="number" required maxlength="64" placeholder="예: EP4286919A1" autocomplete="off" spellcheck="false" aria-describedby="numberHint"></div>
-          <button id="search" class="primary" type="submit">특허 조회</button>
+          <button id="search" class="primary" type="submit">공식 열람처 찾기</button>
         </div>
         <p id="numberHint" class="muted hint">하이픈을 넣어도 됩니다. 한국 출원·공개번호가 같은 형태이면 번호 유형을 선택하세요.</p>
         <div class="search-footer">
-          <div class="access"><label for="access">팀 액세스 코드</label><input id="access" type="password" maxlength="200" autocomplete="current-password" placeholder="코드 입력"></div>
+          <div class="access" id="accessGroup" hidden><label for="access">팀 액세스 코드</label><input id="access" type="password" maxlength="200" autocomplete="current-password" placeholder="코드 입력"></div>
           <button id="example" type="button" class="secondary">예시 보고서</button>
         </div>
       </form>
@@ -43,10 +48,15 @@
       <section id="result" hidden aria-labelledby="report-title"></section>
 
       <section class="panel upload" aria-labelledby="upload-title">
-        <div><h2 id="upload-title">PDF 직접 요약</h2><p class="muted">공식 사이트에서 받은 EP·중국 심사 문서, UPC 결정문, 기타 심사 PDF를 올릴 수 있습니다.</p></div>
+        <div><h2 id="upload-title">PDF 문서 요약</h2><p class="muted" id="uploadHelp">공개 심사 PDF를 선택하면 이 브라우저에서 중요 문장을 원문과 페이지 번호로 뽑습니다. 파일은 서버로 전송되지 않습니다.</p></div>
         <form id="upload">
-          <label for="pdf">PDF 파일 · 최대 3.5 MiB</label>
-          <div class="upload-row"><input id="pdf" type="file" accept=".pdf,application/pdf" required><button class="primary" type="submit">Claude에 PDF 보내기</button></div>
+          <div class="upload-options">
+            <div><label id="fileLabel" for="pdf">PDF 파일 · 파일당 최대 20 MiB</label><input id="pdf" type="file" accept=".pdf,application/pdf" multiple required></div>
+            <div id="scanGroup"><label for="scanLanguage">스캔 문서 언어</label><select id="scanLanguage">
+              <option value="eng">영어</option><option value="kor">한국어</option><option value="chi_sim">중국어 간체</option>
+            </select></div>
+            <button id="summarize" class="primary" type="submit">브라우저에서 요약</button>
+          </div>
         </form>
         <p id="uploadStatus" role="status" aria-live="polite" class="status"></p>
         <div id="standalone"></div>
@@ -55,11 +65,11 @@
         <h2 id="coverage-title">공식 자료 열람</h2>
         <div class="office-grid">
           <div><a href="https://www.kipris.or.kr/" target="_blank" rel="noopener noreferrer">한국 KIPRIS ↗</a><p>통합행정정보와 중간서류철</p></div>
-          <div><a href="https://patentcenter.uspto.gov/" target="_blank" rel="noopener noreferrer">미국 Patent Center ↗</a><p>출원별 심사 기록과 공개 문서</p></div>
+          <div><a href="https://globaldossier.uspto.gov/" target="_blank" rel="noopener noreferrer">Global Dossier ↗</a><p>미국 등 공개된 출원 심사 기록과 문서</p></div>
           <div><a href="https://register.epo.org/" target="_blank" rel="noopener noreferrer">European Patent Register ↗</a><p>EP 심사 이력과 모든 공개 문서</p></div>
           <div><a href="https://cpquery.cponline.cnipa.gov.cn/" target="_blank" rel="noopener noreferrer">중국 CNIPA ↗</a><p>중국 특허 심사 기록과 문서</p></div>
           <div><a href="https://www.unifiedpatentcourt.org/en/decisions-and-orders" target="_blank" rel="noopener noreferrer">UPC 결정·명령 ↗</a><p>유럽 특허 관련 공개 법원 결정</p></div>
-          <div><a href="https://register.epo.org/help?lng=en&amp;topic=globaldossier" target="_blank" rel="noopener noreferrer">Global Dossier ↗</a><p>참여 특허청의 패밀리별 공개 문서</p></div>
+          <div><a href="https://worldwide.espacenet.com/" target="_blank" rel="noopener noreferrer">Espacenet ↗</a><p>서지·패밀리와 공개 심사철 링크</p></div>
         </div>
       </section>
     </div>

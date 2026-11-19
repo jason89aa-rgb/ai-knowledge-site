@@ -7,11 +7,15 @@ const facts = [
   ["status", "기관 표시 상태"], ["applicants", "출원인"], ["inventors", "발명자"],
 ];
 const examples = {
-  auto: "EP4286919A1", KR: "10-2023-0010262", US: "US 2014-0167116 A1", EP: "EP4286919A1",
+  auto: "US 2014-0167116 A1", KR: "10-2023-0010262", US: "US 2014-0167116 A1", EP: "EP4286919A1",
   CN: "CN101876751A", UPC: "UPC_CFI_123/2025", WO: "WO2023232483A1", JP: "JP2020123456A",
 };
 let current;
+let standaloneReport;
 let searchVersion = 0;
+let processing = false;
+const useApi = () => by("lookup").elements.mode.value === "api";
+const localTools = () => import("/patent-review-local.mjs");
 
 function el(tag, text = "", className = "") {
   const element = document.createElement(tag);
@@ -69,6 +73,7 @@ function button(label, fn, style = "secondary") {
 }
 
 async function api(data) {
+  if (!useApi()) throw new Error("기관 API를 사용하려면 API 연결 사용을 선택해 주세요.");
   const code = by("access").value;
   if (!code) throw new Error("팀 액세스 코드를 입력해 주세요.");
   const headers = { "X-Patent-Access": code };
@@ -125,12 +130,13 @@ function showSummaries(report) {
   const slot = by("summaries");
   if (current !== report || !slot) return;
   slot.replaceChildren(...report.summaries.map(summaryCard));
-  if (!report.summaries.length) slot.append(el("p", "심사 문서에서 요약을 실행하거나 아래에서 PDF를 올려 주세요.", "muted"));
+  if (!report.summaries.length) slot.append(el("p", "아래에서 PDF를 선택해 문서 요약을 추가할 수 있습니다.", "muted"));
 }
 
 function documentActions(report, doc) {
-  if (!doc.downloadable || report.demo) return "공식 열람처 참고";
+  if (!doc.downloadable || report.demo) return report.local ? "브라우저에서 처리" : "공식 열람처 참고";
   const wrapper = el("div", "", "document-actions");
+  wrapper.hidden = !useApi();
   const payload = { country: report.country, application: report.application, id: doc.id, code: doc.code };
   for (const [action, title] of [["download", "원문 PDF"], ["summarize", "Claude 요약"]]) {
     wrapper.append(button(title, async event => {
@@ -179,6 +185,61 @@ function familyCell(row) {
   }, "text-button");
 }
 
+function manualEditor(report) {
+  const details = el("details", "", "manual-record");
+  details.append(el("summary", "기관에서 확인한 기록 입력"));
+  const form = el("form", "", "manual-form");
+  const fields = el("div", "", "manual-fields");
+  function field(name, label, value = "", placeholder = "", long = false) {
+    const wrapper = el("div", "", long ? "full" : "");
+    const caption = el("label", label);
+    const control = el(long ? "textarea" : "input");
+    control.id = "manual-" + name;
+    control.name = name;
+    control.value = value;
+    control.placeholder = placeholder;
+    control.maxLength = long ? 5500 : 250;
+    caption.htmlFor = control.id;
+    wrapper.append(caption, control);
+    fields.append(wrapper);
+  }
+  field("title", "발명의 명칭", report.title);
+  field("applicants", "출원인", report.applicants);
+  field("application", "출원번호", report.application);
+  field("publication", "공개번호", report.publication);
+  field("grant", "등록번호", report.grant);
+  field("status", "기관 표시 상태", report.status);
+  field("family", "패밀리 · 관할 | 번호 | 관계",
+    report.family.map(row => [row.country, row.publication, row.relation].join(" | ")).join("\n"), "EP | EP4286919A1 | 동일 우선권", true);
+  field("events", "심사 이력 · 날짜 | 사건명",
+    report.events.map(row => [row.date, row.title].join(" | ")).join("\n"), "2025-06-10 | 의견제출통지서 발송", true);
+  const save = el("button", "보고서에 반영", "secondary");
+  save.type = "submit";
+  const confirmation = el("span", "", "edit-confirmation");
+  confirmation.setAttribute("role", "status");
+  form.append(fields, save, confirmation);
+  details.append(form);
+  form.addEventListener("submit", event => {
+    event.preventDefault();
+    const data = new FormData(form);
+    const entries = name => String(data.get(name)).split(/\r?\n/).filter(line => line.trim()).map(line => line.split("|").map(value => value.trim()));
+    const family = entries("family");
+    const events = entries("events");
+    if (family.some(([country, id]) => !/^[A-Z]{2,3}$/i.test(country) || !id) ||
+        events.some(([date, title]) => !/^\d{4}-\d{2}-\d{2}$/.test(date) || !title)) {
+      confirmation.textContent = "패밀리와 심사 이력의 줄 형식을 확인해 주세요.";
+      return;
+    }
+    for (const name of ["title", "applicants", "application", "publication", "grant", "status"]) report[name] = String(data.get(name)).trim();
+    report.family = family.map(([country, publication, relation]) => ({ country: country.toUpperCase(), publication, relation: relation || "사용자 확인" }));
+    report.events = events.map(([date, title]) => ({ date, title })).sort((a, b) => b.date.localeCompare(a.date));
+    show(report);
+    by("report-title").focus();
+    say("status", "직접 입력한 기록을 보고서에 반영했습니다.");
+  });
+  return details;
+}
+
 function show(report) {
   current = report;
   const area = by("result");
@@ -190,6 +251,7 @@ function show(report) {
   const identity = el("div");
   const title = el("h2", report.title || report.query, "report-title");
   title.id = "report-title";
+  title.tabIndex = -1;
   identity.append(el("p", [report.country, report.query, report.source].filter(Boolean).join(" · "), "identity"), title,
     el("p", dateLabel(report.retrievedAt), "muted hint"));
   head.append(identity, exportButton(report, "status"));
@@ -217,6 +279,7 @@ function show(report) {
     notes.append(...report.notes.map(note => el("li", note)));
     overview.append(notes);
   }
+  if (report.local && report.country !== "UPC") overview.append(manualEditor(report));
   area.append(overview);
 
   if (report.country !== "UPC") {
@@ -230,13 +293,13 @@ function show(report) {
     history.append(el("h2", `심사·행정 이력 (${report.events.length})`), table(
       ["날짜", "기록", "상태·구분", "문서번호·코드"],
       report.events.map(row => [row.date, row.title, row.detail, row.id]),
-      "자동으로 가져온 이력이 없습니다. 공식 열람 링크에서 확인할 수 있습니다.",
+      report.local ? "공식 기록을 확인한 뒤 위 입력란에 추가할 수 있습니다." : "가져온 이력이 없습니다. 공식 열람 링크를 확인해 주세요.",
     ));
     const docs = el("section", "", "panel");
     docs.append(el("h2", `심사 문서 (${report.documents.length})`), table(
       ["날짜", "문서", "식별자", "원문 및 요약"],
       report.documents.map(doc => [doc.date, doc.title, doc.id, documentActions(report, doc)]),
-      "자동으로 가져온 문서가 없습니다. 기관에서 받은 PDF를 아래에서 올릴 수 있습니다.",
+      "기관에서 받은 PDF를 아래에서 선택할 수 있습니다.",
     ));
     area.append(family, history, docs);
   }
@@ -248,11 +311,30 @@ function show(report) {
   showSummaries(report);
 }
 
-by("office").addEventListener("change", () => {
+function updateMode() {
   const office = by("office").value;
+  const apiMode = useApi();
   by("number").placeholder = examples[office] ? "예: " + examples[office] : "국가 코드와 특허번호";
   by("numberType").disabled = office === "UPC";
-  by("search").textContent = office === "UPC" ? "사건 열람처 찾기" : "특허 조회";
+  by("search").textContent = office === "UPC" ? "사건 열람처 찾기" : apiMode ? "특허 조회" : "공식 열람처 찾기";
+  by("accessGroup").hidden = !apiMode;
+  by("scanGroup").hidden = apiMode;
+  by("pdf").multiple = !apiMode;
+  by("fileLabel").textContent = apiMode ? "PDF 파일 · 최대 3.5 MiB" : "PDF 파일 · 파일당 최대 20 MiB";
+  by("summarize").textContent = apiMode ? "Claude에 PDF 보내기" : "브라우저에서 요약";
+  by("uploadHelp").textContent = apiMode ? "선택한 PDF는 Claude로 전송되어 한국어 요약을 생성합니다."
+    : "PDF를 서버로 보내지 않고 중요 문장과 페이지 번호를 뽑습니다. 이미지 PDF는 파일당 스캔 10쪽까지 문자 인식합니다.";
+  document.querySelectorAll(".document-actions").forEach(actions => { actions.hidden = !apiMode; });
+}
+
+by("office").addEventListener("change", updateMode);
+by("lookup").querySelectorAll('[name="mode"]').forEach(mode => {
+  mode.addEventListener("change", () => {
+    searchVersion++;
+    by("search").disabled = false;
+    say("status", "");
+    updateMode();
+  });
 });
 
 by("lookup").addEventListener("submit", async event => {
@@ -260,15 +342,18 @@ by("lookup").addEventListener("submit", async event => {
   const version = ++searchVersion;
   const control = by("search");
   control.disabled = true;
-  say("status", "공개 특허 데이터를 확인하고 있습니다.");
+  const input = [by("number").value, by("office").value, by("numberType").value];
+  const apiMode = useApi();
+  say("status", apiMode ? "공개 특허 데이터를 확인하고 있습니다." : "공식 열람처를 준비하고 있습니다.");
   try {
-    const response = await api({
-      action: "lookup", country: by("office").value, numberType: by("numberType").value, number: by("number").value,
-    });
-    const report = await response.json();
+    const report = apiMode
+      ? await (await api({ action: "lookup", number: input[0], country: input[1], numberType: input[2] })).json()
+      : (await localTools()).localReport(...input);
     if (searchVersion !== version) return;
     show({ ...report, summaries: [] });
-    say("status", "조회 결과를 표시했습니다.");
+    if (report.country === "KR" || report.country === "CN") by("scanLanguage").value = report.country === "KR" ? "kor" : "chi_sim";
+    else by("scanLanguage").value = "eng";
+    say("status", apiMode ? "조회 결과를 표시했습니다." : "공식 열람처에서 원문 PDF를 내려받아 아래에서 선택하세요.");
   } catch (error) {
     if (searchVersion === version) say("status", error.message, true);
   } finally {
@@ -302,34 +387,60 @@ by("example").addEventListener("click", () => {
 
 by("upload").addEventListener("submit", async event => {
   event.preventDefault();
-  const file = by("pdf").files[0];
-  if (!file || !file.name.toLowerCase().endsWith(".pdf") || file.size > 3.5 * 1024 * 1024) {
-    say("uploadStatus", "3.5 MiB 이하의 PDF 파일을 선택해 주세요.", true);
+  if (processing) return;
+  const apiMode = useApi();
+  const files = Array.from(by("pdf").files);
+  const limit = apiMode ? 3.5 : 20;
+  if (!files.length || (apiMode && files.length !== 1) || files.length > 8 ||
+      files.some(file => !file.name.toLowerCase().endsWith(".pdf") || file.size > limit * 1024 * 1024)) {
+    say("uploadStatus", apiMode ? "3.5 MiB 이하의 PDF 파일 한 개를 선택해 주세요." : "20 MiB 이하의 PDF를 최대 8개까지 선택해 주세요.", true);
     return;
   }
-  const report = current;
-  const control = by("upload").querySelector("button");
-  const form = new FormData();
-  form.append("pdf", file);
+  const report = current && !current.demo ? current : null;
+  const control = by("summarize");
+  const language = by("scanLanguage").value;
+  const summaries = [];
+  const errors = [];
+  processing = true;
   control.disabled = true;
-  say("uploadStatus", "선택한 PDF를 Claude로 요약하고 있습니다.");
+  by("pdf").disabled = true;
   try {
-    const response = await api(form);
-    const summary = await readSummary(response);
-    if (report && !report.demo && current === report) {
-      report.summaries.push(summary);
-      showSummaries(report);
-      say("uploadStatus", "현재 보고서의 문서 요약에 추가했습니다.");
+    if (apiMode) {
+      say("uploadStatus", "선택한 PDF를 Claude로 요약하고 있습니다.");
+      const form = new FormData();
+      form.append("pdf", files[0]);
+      summaries.push(await readSummary(await api(form)));
     } else {
-      const standalone = { title: summary.title, source: "사용자 업로드", retrievedAt: new Date().toISOString(),
-        query: "", notes: [], family: [], events: [], documents: [], links: [], summaries: [summary] };
-      by("standalone").replaceChildren(summaryCard(summary), exportButton(standalone, "uploadStatus"));
-      say("uploadStatus", "PDF 요약이 완료되었습니다.");
+      const { summarizeLocal } = await localTools();
+      for (const [index, file] of files.entries()) {
+        const progress = message => say("uploadStatus", `${index + 1}/${files.length} · ${file.name} · ${message}`);
+        progress("PDF 여는 중");
+        try { summaries.push(await summarizeLocal(file, language, progress)); }
+        catch (error) { errors.push(`${file.name} · ${error.message}`); }
+      }
     }
+    if (summaries.length && report && current === report) {
+      report.summaries.push(...summaries);
+      if (report.local) {
+        report.documents.push(...summaries.map(summary => ({ title: summary.title, id: "직접 선택한 PDF" })));
+        show(report);
+      } else showSummaries(report);
+    } else if (summaries.length) {
+      standaloneReport ??= { title: "심사 문서 요약", source: "사용자 선택 PDF", retrievedAt: new Date().toISOString(),
+        query: "", notes: [], family: [], events: [], documents: [], links: [], summaries: [] };
+      standaloneReport.summaries.push(...summaries);
+      by("standalone").replaceChildren(...standaloneReport.summaries.map(summaryCard), exportButton(standaloneReport, "uploadStatus"));
+    }
+    say("uploadStatus", [summaries.length ? `${summaries.length}개 문서 요약을 추가했습니다.` : "", ...errors].filter(Boolean).join(" "), Boolean(errors.length));
     by("upload").reset();
+    by("scanLanguage").value = language;
   } catch (error) {
     say("uploadStatus", error.message, true);
   } finally {
     control.disabled = false;
+    by("pdf").disabled = false;
+    processing = false;
   }
 });
+
+updateMode();
