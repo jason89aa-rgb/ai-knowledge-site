@@ -346,7 +346,8 @@ function show(report) {
   const ppt = exportButton(report, "status");
   ppt.id = "report-export";
   ppt.disabled = Boolean(report.autoPending);
-  head.append(identity, ppt);
+  head.append(identity);
+  if (!report.linksOnly) head.append(ppt);
   overview.append(head);
   const fields = el("dl", "", "facts");
   for (const [key, label] of facts) {
@@ -373,6 +374,7 @@ function show(report) {
   overview.append(notes);
   if (report.local && report.country !== "UPC") overview.append(manualEditor(report));
   area.append(overview);
+  if (report.linksOnly) return;
 
   if (report.country !== "UPC") {
     const family = el("section", "", "panel");
@@ -459,10 +461,11 @@ by("lookup").addEventListener("submit", async event => {
     if (apiMode) {
       const query = { number: input[0], country: input[1], numberType: input[2] };
       const response = await api({ action: "lookup", ...query }, controller.signal);
-      report = { ...await response.json(), summaries: [], autoPending: true };
+      const data = await response.json();
+      report = { ...data, summaries: [], autoPending: !data.linksOnly };
       controller.signal.throwIfAborted();
       show(report);
-      await summarizeReport(report, query, controller.signal);
+      if (!report.linksOnly) await summarizeReport(report, query, controller.signal);
     } else {
       report = { ...(await localTools()).localReport(...input), summaries: [] };
       if (searchVersion === version) show(report);
@@ -470,7 +473,8 @@ by("lookup").addEventListener("submit", async event => {
     if (searchVersion !== version) return;
     if (report.country === "KR" || report.country === "CN") by("scanLanguage").value = report.country === "KR" ? "kor" : "chi_sim";
     else by("scanLanguage").value = "eng";
-    say("status", apiMode ? `조회 완료 · 요약 ${report.summaries.length}건 · PowerPoint 다운로드 가능`
+    if (report.linksOnly) say("status", "미국 자동 조회를 완료하지 못했습니다. 공식 열람 링크를 표시했습니다.");
+    else say("status", apiMode ? `조회 완료 · 요약 ${report.summaries.length}건 · PowerPoint 다운로드 가능`
       : "공식 열람처를 표시했습니다.");
   } catch (error) {
     if (searchVersion === version) say("status", error.message, true);
