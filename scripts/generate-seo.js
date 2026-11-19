@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const publicDir = path.join(process.cwd(), 'public');
-const files = fs.readdirSync(publicDir).filter(f => f.endsWith('.html') && f !== 'naverf5984bc86d5b4fab1223bb755aac7fad.html' && f !== '404.html');
+const files = fs.readdirSync(publicDir).filter(f => f.endsWith('.html') && f !== 'naverf5984bc86d5b4fab1223bb755aac7fad.html' && f !== '404.html' && f !== 'patent-review.html');
 
 const items = [];
 const skipRssList = ['index.html', 'about.html', 'contact.html', 'privacy.html', 'terms.html', 'sitemap.html', 'tools.html', 'roadmap.html'];

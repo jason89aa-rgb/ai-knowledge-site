@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "include": ["/*"],
+  "exclude": [
+    "/patent-review",
+    "/patent-review.html",
+    "/patent-review.css",
+    "/patent-review.js",
+    "/patent-review-local.mjs",
+    "/patent-review-pptx.js",
+    "/patent-pptx.bundle.js",
+    "/patent-assets/*"
+  ]
+}

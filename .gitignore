@@ -2,6 +2,8 @@
 
 # dependencies
 /node_modules
+/public/patent-pptx.bundle.js
+/public/patent-assets/
 /.pnp
 .pnp.*
 .yarn/*
