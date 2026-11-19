@@ -85,42 +85,41 @@ async function api(data, signal) {
   });
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    throw new Error(body.error || "요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+    throw summaryError(body);
   }
   return response;
 }
 
 async function readSummary(response) {
   const summary = await response.json();
-  if (summary.error) throw new Error(summary.error);
+  if (summary.error) throw summaryError(summary);
   return summary;
 }
 
-async function readReview(response, onMessage) {
-  if (!response.body || !response.headers.get("content-type")?.includes("application/x-ndjson")) {
-    throw new Error("자동 리포트 서버에 연결하지 못했습니다.");
-  }
-  const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
-  let buffer = "";
-  let complete = false;
+function summaryError({ error, retryAfter }) {
+  return Object.assign(new Error(error || "요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요."), { retryAfter });
+}
+
+async function summarizeWithRetry(payload, signal, progress) {
   try {
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      const lines = (buffer + value).split("\n");
-      buffer = lines.pop();
-      for (const line of lines) {
-        if (!line.trim()) continue;
-        const message = JSON.parse(line);
-        if (message.error) throw new Error(message.error);
-        if (message.type === "complete") complete = true;
-        else onMessage(message);
+    return await readSummary(await api(payload, signal));
+  } catch (error) {
+    signal.throwIfAborted();
+    if (!Number.isFinite(error.retryAfter)) throw error;
+    say("status", `${progress} · ${error.retryAfter}초 후 재시도`);
+    await new Promise((resolve, reject) => {
+      function abort() {
+        clearTimeout(timer);
+        reject(signal.reason);
       }
-    }
-    if (!complete || buffer.trim()) throw new Error("자동 조회 연결이 중간에 종료됐습니다. 다시 시도해 주세요.");
-  } finally {
-    await reader.cancel().catch(() => {});
-    reader.releaseLock();
+      const timer = setTimeout(() => {
+        signal.removeEventListener("abort", abort);
+        resolve();
+      }, Math.min(error.retryAfter * 1000, 2147483647));
+      signal.addEventListener("abort", abort, { once: true });
+    });
+    say("status", progress);
+    return readSummary(await api(payload, signal));
   }
 }
 
@@ -166,11 +165,71 @@ function showSummaries(report) {
   }
 }
 
+function addSummary(report, summary) {
+  const index = summary.id ? report.summaries.findIndex(item => item.id === summary.id) : -1;
+  if (index < 0) report.summaries.push(summary);
+  else report.summaries[index] = summary;
+  const slot = by("summaries");
+  if (current !== report || !slot) return;
+  if (index < 0) {
+    if (report.summaries.length === 1) slot.replaceChildren();
+    slot.append(summaryCard(summary));
+  } else {
+    slot.children[index].replaceWith(summaryCard(summary));
+  }
+}
+
+function addReportNote(report, text) {
+  report.notes.push(text);
+  if (current === report) {
+    const notes = by("report-notes");
+    notes.hidden = false;
+    notes.append(el("li", text));
+  }
+}
+
+const documentPayload = (report, doc) => ({ country: report.country, application: report.application, id: doc.id, code: doc.code });
+
+async function summarizeReport(report, query, signal) {
+  const documents = new Map(report.documents.filter(doc => doc.downloadable).map(doc => [doc.id, doc]));
+  if (!report.canSummarize) {
+    if (documents.size || report.events.length) addReportNote(report, "Claude API 키가 서버에 설정되면 자동 요약을 사용할 수 있습니다.");
+    return;
+  }
+  let position = 0;
+  // Keep each PDF in its own worker request, even for a long document list.
+  for (const doc of documents.values()) {
+    signal.throwIfAborted();
+    const progress = `공개 원문 요약 중 (${++position}/${documents.size}) · ${doc.title}`;
+    say("status", progress);
+    try {
+      const summary = await summarizeWithRetry({ action: "summarize", ...documentPayload(report, doc) }, signal, progress);
+      signal.throwIfAborted();
+      addSummary(report, { ...summary, id: doc.id });
+    } catch (error) {
+      signal.throwIfAborted();
+      addReportNote(report, `${doc.title} (${doc.id}) · ${error.message}`);
+    }
+  }
+  if (!report.summaries.length && report.events.length) {
+    const progress = "기관에서 제공한 공개 이력을 요약하고 있습니다.";
+    say("status", progress);
+    try {
+      const summary = await summarizeWithRetry({ action: "summarize-events", ...query }, signal, progress);
+      signal.throwIfAborted();
+      addSummary(report, summary);
+    } catch (error) {
+      signal.throwIfAborted();
+      addReportNote(report, `공개 이력 요약 · ${error.message}`);
+    }
+  }
+}
+
 function documentActions(report, doc) {
   if (!doc.downloadable || report.demo) return report.local ? "브라우저에서 처리" : "공식 열람처 참고";
   const wrapper = el("div", "", "document-actions");
   wrapper.hidden = !isAutomaticMode();
-  const payload = { country: report.country, application: report.application, id: doc.id, code: doc.code };
+  const payload = documentPayload(report, doc);
   for (const [action, title] of [["download", "원문 PDF"], ["summarize", "Claude 요약"]]) {
     wrapper.append(button(title, async event => {
       const control = event.currentTarget;
@@ -180,10 +239,7 @@ function documentActions(report, doc) {
         const response = await api({ action, ...payload });
         if (action === "download") download(await response.blob(), `${report.country}-${doc.id}.pdf`);
         else {
-          const summary = { ...await readSummary(response), id: doc.id };
-          report.summaries = report.summaries.filter(item => item.id !== doc.id);
-          report.summaries.push(summary);
-          showSummaries(report);
+          addSummary(report, { ...await readSummary(response), id: doc.id });
         }
         if (current === report) say("status", action === "download" ? "원문 PDF를 내려받았습니다." : "문서 요약을 아래에 추가했습니다.");
         if (action === "summarize" && current === report) by("summaries").scrollIntoView({ block: "nearest" });
@@ -401,25 +457,12 @@ by("lookup").addEventListener("submit", async event => {
   say("status", apiMode ? "공개 특허 데이터를 확인하고 있습니다." : "공식 열람처를 준비하고 있습니다.");
   try {
     if (apiMode) {
-      const response = await api({ action: "review", number: input[0], country: input[1], numberType: input[2] }, controller.signal);
-      await readReview(response, message => {
-        if (searchVersion !== version) return;
-        if (message.type === "report") {
-          report = { ...message.report, summaries: [], autoPending: true };
-          show(report);
-        } else if (message.type === "progress") say("status", message.text);
-        else if (message.type === "summary" && report) {
-          report.summaries = report.summaries.filter(summary => !message.summary.id || summary.id !== message.summary.id);
-          report.summaries.push(message.summary);
-          showSummaries(report);
-        } else if (message.type === "note" && report) {
-          report.notes.push(message.text);
-          const notes = by("report-notes");
-          notes.hidden = false;
-          notes.append(el("li", message.text));
-        }
-      });
-      if (!report) throw new Error("조회 결과를 받지 못했습니다.");
+      const query = { number: input[0], country: input[1], numberType: input[2] };
+      const response = await api({ action: "lookup", ...query }, controller.signal);
+      report = { ...await response.json(), summaries: [], autoPending: true };
+      controller.signal.throwIfAborted();
+      show(report);
+      await summarizeReport(report, query, controller.signal);
     } else {
       report = { ...(await localTools()).localReport(...input), summaries: [] };
       if (searchVersion === version) show(report);
@@ -437,7 +480,7 @@ by("lookup").addEventListener("submit", async event => {
       if (report?.autoPending) {
         report.autoPending = false;
         by("report-export").disabled = false;
-        showSummaries(report);
+        if (!report.summaries.length) showSummaries(report);
       }
     }
   }
