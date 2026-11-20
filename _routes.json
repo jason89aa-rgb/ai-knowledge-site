@@ -6,6 +6,8 @@
     "/patent-review.html",
     "/patent-review.css",
     "/patent-review.js",
+    "/patent-review-dashboard.js",
+    "/patent-review-case.js",
     "/patent-review-local.mjs",
     "/patent-review-pptx.js",
     "/patent-pptx.bundle.js",
