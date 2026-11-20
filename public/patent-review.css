@@ -110,5 +110,8 @@ td:first-child { white-space: nowrap; }
   .search-footer button { flex: 0 0 auto; }
 }
 .ask label { display: block; margin-bottom: 6px; font-weight: 700; }
-.ask textarea { width: 100%; min-height: 88px; border: 1px solid #bfcddd; border-radius: 7px; padding: 9px 10px; font: inherit; resize: vertical; color: var(--ink); }
+.ask textarea, .ask-field textarea { width: 100%; min-height: 88px; border: 1px solid #bfcddd; border-radius: 7px; padding: 9px 10px; font: inherit; resize: vertical; color: var(--ink); }
 .ask button { margin-top: 12px; }
+.ask-field { margin-top: 14px; }
+.ask-field .optional { color: var(--muted); font-weight: 400; margin-left: 4px; }
+.ask-field textarea { min-height: 64px; }

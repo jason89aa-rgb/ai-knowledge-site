@@ -417,9 +417,17 @@ const askContext = report => ({
   summaries: report.summaries.map(({ title, source, text }) => ({ title, source, text })),
 });
 
+async function requestAnswer(report, text, signal) {
+  const progress = "AI가 요청한 내용을 작성하고 있습니다.";
+  say("status", progress);
+  const summary = await summarizeWithRetry({ action: "ask", prompt: text, report: askContext(report) }, signal, progress);
+  const number = report.summaries.filter(item => item.id?.startsWith("AI 요청")).length + 1;
+  addSummary(report, { ...summary, id: `AI 요청 ${number}` });
+}
+
 function askPanel(report) {
   const panel = el("section", "", "panel ask");
-  const label = el("label", "AI에게 보고서 내용 요청");
+  const label = el("label", "AI에게 추가로 요청");
   label.htmlFor = "askPrompt";
   const prompt = el("textarea");
   prompt.id = "askPrompt";
@@ -437,12 +445,8 @@ function askPanel(report) {
       return;
     }
     send.disabled = true;
-    const progress = "AI가 요청한 내용을 작성하고 있습니다.";
-    say("status", progress);
     try {
-      const summary = await summarizeWithRetry({ action: "ask", prompt: text, report: askContext(report) }, new AbortController().signal, progress);
-      const number = report.summaries.filter(item => item.id?.startsWith("AI 요청")).length + 1;
-      addSummary(report, { ...summary, id: `AI 요청 ${number}` });
+      await requestAnswer(report, text, new AbortController().signal);
       if (current === report) {
         say("status", "요청한 내용을 문서 요약에 추가했습니다.");
         by("summaries").scrollIntoView({ block: "nearest" });
@@ -465,6 +469,7 @@ function updateMode() {
   by("number").placeholder = examples[office] ? "예: " + examples[office] : "국가 코드와 특허번호";
   by("numberType").disabled = office === "UPC";
   by("source").disabled = !apiMode;
+  by("requestGroup").hidden = !apiMode;
   by("search").textContent = apiMode ? "리포트 만들기" : "공식 열람처 찾기";
   by("accessGroup").hidden = !apiMode;
   by("manualUpload").hidden = apiMode;
@@ -524,7 +529,7 @@ function finishReport(report) {
   else by("scanLanguage").value = "eng";
 }
 
-async function openCandidate(candidate, notes = []) {
+async function openCandidate(candidate, notes = [], request = "") {
   activeSearch?.abort();
   const controller = new AbortController();
   activeSearch = controller;
@@ -543,10 +548,24 @@ async function openCandidate(candidate, notes = []) {
     report.notes.unshift(...notes);
     show(report);
     if (!report.linksOnly) await summarizeReport(report, query, controller.signal);
+    // The request from the search form runs last, so the answer can draw on every document summary.
+    let answered = false;
+    if (request && !report.linksOnly) {
+      if (!report.canSummarize) addReportNote(report, "Claude API 키가 서버에 설정되면 AI 요청을 사용할 수 있습니다.");
+      else {
+        try {
+          await requestAnswer(report, request, controller.signal);
+          answered = true;
+        } catch (error) {
+          controller.signal.throwIfAborted();
+          addReportNote(report, `AI 요청 · ${error.message}`);
+        }
+      }
+    }
     if (searchVersion !== version) return;
     finishReport(report);
     say("status", report.linksOnly ? "미국 자동 조회를 완료하지 못했습니다. 공식 열람 링크를 표시했습니다."
-      : `조회 완료 · 요약 ${report.summaries.length}건 · PowerPoint 다운로드 가능`);
+      : `조회 완료 · 요약 ${report.summaries.length}건${answered ? " · AI 요청 반영" : ""} · PowerPoint 다운로드 가능`);
   } catch (error) {
     if (searchVersion === version) say("status", error.message, true);
   } finally {
@@ -592,6 +611,7 @@ by("lookup").addEventListener("submit", async event => {
   by("result").hidden = true;
   current = undefined;
   const [number, office, numberType] = [by("number").value, by("office").value, by("numberType").value];
+  const request = apiMode ? by("request").value.trim() : "";
   say("status", apiMode ? "번호와 일치하는 특허를 찾고 있습니다." : "공식 열람처를 준비하고 있습니다.");
   try {
     if (apiMode) {
@@ -599,10 +619,10 @@ by("lookup").addEventListener("submit", async event => {
       controller.signal.throwIfAborted();
       if (!found.candidates.length) throw new Error(["일치하는 특허를 찾지 못했습니다.", ...found.notes].join(" "));
       if (found.candidates.length === 1) {
-        await openCandidate(found.candidates[0], found.notes);
+        await openCandidate(found.candidates[0], found.notes, request);
         return;
       }
-      showCandidates(found, candidate => openCandidate(candidate, found.notes));
+      showCandidates(found, candidate => openCandidate(candidate, found.notes, request));
       say("status", `같은 번호로 ${found.candidates.length}건을 찾았습니다. 리포트를 만들 특허를 고르세요.`);
     } else {
       const tools = await localTools();
