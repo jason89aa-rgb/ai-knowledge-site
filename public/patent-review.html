@@ -11,7 +11,7 @@
   <script defer src="/patent-review-case.js?v=20261120-dossier-guide"></script>
   <script defer src="/patent-review-dashboard.js?v=20261120-dossier-guide"></script>
   <script defer src="/patent-review-handoff.js?v=20261120-import"></script>
-  <script defer src="/patent-review.js?v=one-click-1-zip"></script>
+  <script id="patent-app" defer src="/patent-assets/app/patent-review.7e73dac91307bb86.js"></script>
 </head>
 <body>
   <header class="top"><div class="shell"><a class="brand" href="/">AI-ALL<span>.</span></a><a class="home" href="/">사이트 홈 ↗</a></div></header>
@@ -64,6 +64,7 @@
       </form>
       <button id="back-search" type="button" class="secondary" hidden>← 특허 검색으로</button>
       <p id="status" class="status" role="status" aria-live="polite"></p>
+      <p id="preview-environment" class="hint" hidden>미리보기는 운영과 별도의 EPO 인증 설정을 사용합니다. <a href="https://ai-all.co.kr/patent-review">운영 리포트 열기</a></p>
       <section id="result" hidden aria-labelledby="report-title"></section>
 
       <section class="panel upload" id="manualUpload" aria-labelledby="upload-title" hidden>
