@@ -14,6 +14,7 @@ export type Report = {
 };
 
 export class PatentError extends Error {
+  kiprisCode?: string;
   constructor(message: string, public status = 502, public retryAfter?: number) { super(message); }
 }
 
@@ -84,11 +85,38 @@ function fail(service: string, status: number): PatentError {
   return new PatentError(`${service} 요청을 처리하지 못했습니다.`);
 }
 
+const redirectHosts: Record<string, string[]> = {
+  KIPRISPlus: ["kipris.or.kr"],
+  "USPTO ODP": ["uspto.gov", "amazonaws.com", "cloudfront.net"],
+  "EPO Publication Server": ["epo.org"],
+};
+
+function redirectTarget(location: string | null, from: URL, service: string) {
+  if (!location) return undefined;
+  const next = new URL(location, from);
+  if (next.protocol === "http:" && next.hostname === from.hostname) next.protocol = "https:";
+  const hosts = redirectHosts[service] ?? [];
+  const allowed = hosts.some(host => next.hostname === host || next.hostname.endsWith("." + host));
+  if (next.protocol !== "https:" || next.username || next.password || (next.port && next.port !== "443") || !allowed) return undefined;
+  return next;
+}
+
 async function request(url: URL | string, service: string, init: RequestInit = {}, timeout = 18000) {
   let response;
   try {
-    response = await fetch(url, { ...init, cache: "no-store", redirect: "manual", signal: AbortSignal.timeout(timeout) });
-    if (response.status >= 300 && response.status < 400) throw new Error("Unexpected upstream redirect");
+    const signal = AbortSignal.timeout(timeout);
+    let current = new URL(url);
+    const origin = current.origin;
+    for (let hop = 0; ; hop++) {
+      // Credentials such as the USPTO key header only go to the original API origin.
+      const headers = current.origin === origin ? init.headers : undefined;
+      response = await fetch(current, { ...init, headers, cache: "no-store", redirect: "manual", signal });
+      if (response.status < 300 || response.status >= 400) break;
+      const next = hop < 5 ? redirectTarget(response.headers.get("Location"), current, service) : undefined;
+      if (!next) throw new Error("Unexpected upstream redirect");
+      await response.body?.cancel();
+      current = next;
+    }
   } catch {
     throw new PatentError(`${service} 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.`);
   }
@@ -130,10 +158,38 @@ const kipris = (number: string): Link => ({
   label: "KIPRIS 특허 원문·통합행정정보", url: `https://www.kipris.or.kr/link/APP_link/APP_PATENT.jsp?APPLNO=${number}`,
 });
 
-async function krXml(path: string, params: Record<string, string>, modern = false) {
+const krServices: [RegExp, string][] = [
+  [/IntermediateDocumentOPService/, "중간서류철(의견제출통지서)"],
+  [/IntermediateDocumentREService/, "중간서류철(거절결정서)"],
+  [/IntermediateDocumentRGService/, "중간서류철(등록결정서)"],
+  [/RelatedDocsonfilePatService/, "통합행정정보(행정처리 이력)"],
+  [/patFamInfoSearchService/, "특허 패밀리"],
+  [/getBibliographyDetailInfoSearch/, "공개·등록공보 서지상세"],
+  [/patUtiModInfoSearchSevice/, "공개·등록공보 검색"],
+];
+
+// Portal pages often show the key URL-encoded; URLSearchParams would encode it a second time.
+function kiprisKey() {
   const key = required(process.env.KIPRIS_API_KEY?.trim(), "KIPRISPlus");
+  if (!/%[0-9a-f]{2}/i.test(key)) return key;
+  try { return decodeURIComponent(key); } catch { return key; }
+}
+
+async function krXml(path: string, params: Record<string, string>, modern = false): Promise<XmlNode> {
+  try {
+    return await krXmlOnce(path, params, modern);
+  } catch (error) {
+    // Code 30 means the key was not recognised; older and newer KIPRISPlus endpoints name the key parameter differently.
+    if (!(error instanceof PatentError) || error.kiprisCode !== "30") throw error;
+    return krXmlOnce(path, params, !modern).catch(() => { throw error; });
+  }
+}
+
+async function krXmlOnce(path: string, params: Record<string, string>, modern: boolean) {
+  const key = kiprisKey();
   const url = new URL(path, krRoot);
   url.search = new URLSearchParams({ ...params, [modern ? "ServiceKey" : "accessKey"]: key }).toString();
+  const service = krServices.find(([pattern]) => pattern.test(path))?.[1] ?? "API";
   const res = await request(url, "KIPRISPlus").catch(error => {
     if (error instanceof PatentError && error.status === 502) throw new PatentError(error.message, 424);
     throw error;
@@ -145,9 +201,13 @@ async function krXml(path: string, params: Record<string, string>, modern = fals
   const xml = parseXml(await res.text());
   const code = value(xml, "resultCode") || value(xml, "returnReasonCode");
   if (code && !/^(?:0+|SUCCESS)$/i.test(code) && code !== "03") {
-    const detail = /^\d{1,3}$/.test(code) ? ` (코드 ${code})` : "";
-    const reason = /^[23]\d$/.test(code) ? "인증키, 상품 권한 또는 호출 한도를 확인해 주세요." : "기관 API에서 요청을 처리하지 못했습니다.";
-    throw new PatentError(`KIPRISPlus 응답 오류${detail} · ${reason}`, 424);
+    const detail = /^\d{1,3}$/.test(code) ? ` (${service}, 코드 ${code})` : ` (${service})`;
+    const reason = code === "30"
+      ? `이 키가 ${service} 상품에 등록되지 않았습니다. KIPRISPlus 마이페이지에서 해당 상품의 이용 신청 승인 여부와 서버에 넣은 키(인코딩 전 원본)를 확인해 주세요.`
+      : /^[23]\d$/.test(code) ? "인증키, 상품 권한 또는 호출 한도를 확인해 주세요." : "기관 API에서 요청을 처리하지 못했습니다.";
+    const problem = new PatentError(`KIPRISPlus 응답 오류${detail} · ${reason}`, 424);
+    problem.kiprisCode = code;
+    throw problem;
   }
   if (!first(xml, "response") && !first(xml, "OpenAPI_ServiceResponse")) throw new PatentError("KIPRISPlus 응답을 해석하지 못했습니다.", 424);
   return xml;
@@ -590,9 +650,11 @@ export async function officialPdf(country: unknown, application: unknown, id: un
     const row = all(xml, "pdfInfoV2").find(item => value(item, "sendNumber") === id && value(item, "applicationNumber").replace(/[\s-]/g, "") === application);
     const path = value(row, "filePath");
     if (!path) throw fail("KIPRISPlus", 404);
-    const url = new URL(path, krRoot);
-    if (url.hostname !== "plus.kipris.or.kr" || url.pathname !== "/kiprisplusws/fileToss.jsp" || url.username || url.password || url.port) throw fail("KIPRISPlus", 502);
+    const url = new URL(path.trim(), krRoot);
+    const host = url.hostname === "kipris.or.kr" || url.hostname.endsWith(".kipris.or.kr");
+    if (!host || !/^https?:$/.test(url.protocol) || url.username || url.password || (url.port && !["80", "443"].includes(url.port))) throw fail("KIPRISPlus", 502);
     url.protocol = "https:";
+    url.port = "";
     const res = await request(url, "KIPRISPlus");
     if (!res.ok) throw fail("KIPRISPlus", res.status);
     return { bytes: await readPdf(res, maxBytes), title: krDocuments[code], source: "KIPRISPlus" };

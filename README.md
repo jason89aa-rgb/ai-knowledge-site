@@ -58,7 +58,7 @@ Cloudflare Pages에서 자동 조회 및 요약을 쓰려면 **Settings → Func
 | 변수 | 설정 |
 | --- | --- |
 | `PATENT_REVIEW_ACCESS_CODE` | 팀용 임의 문자열. 16자 이상, HTTP 헤더로 전송 가능한 ASCII 사용 |
-| `KIPRIS_API_KEY` | 공개·등록공보, 특허 패밀리, 행정처리 이력, 중간서류철 3종 이용 권한이 있는 KIPRISPlus 키 |
+| `KIPRIS_API_KEY` | 공개·등록공보, 특허 패밀리, 행정처리 이력, 중간서류철 3종(의견제출통지서·거절결정서·등록결정서) 이용 권한이 있는 KIPRISPlus 키. 상품마다 이용 신청 승인이 필요하며, 미승인 상품은 코드 30을 반환합니다 |
 | `USPTO_API_KEY` | USPTO Open Data Portal 키 |
 | `EPO_OPS_KEY`, `EPO_OPS_SECRET` | EPO Open Patent Services 앱의 Consumer Key와 Secret |
 | `ANTHROPIC_API_KEY` | Claude Messages API 키. 모델은 `claude-opus-5-5` |
