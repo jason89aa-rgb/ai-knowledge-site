@@ -6,6 +6,16 @@ const publicDir = path.join(__dirname, "../public");
 fs.copyFileSync(bundle, path.join(publicDir, "patent-pptx.bundle.js"));
 
 const assets = path.join(publicDir, "patent-assets");
+// A new path keeps old edge/browser cache entries away from the new HTML.
+const app = fs.readFileSync(path.join(publicDir, "patent-review.js"));
+const digest = require("node:crypto").createHash("sha256").update(app).digest("hex").slice(0, 16);
+const appName = `patent-review.${digest}.js`;
+fs.mkdirSync(path.join(assets, "app"), { recursive: true });
+fs.writeFileSync(path.join(assets, "app", appName), app);
+const pagePath = path.join(publicDir, "patent-review.html");
+const page = fs.readFileSync(pagePath, "utf8");
+const built = page.replace(/(id="patent-app" defer src=")[^"]+"/, `$1/patent-assets/app/${appName}"`);
+if (built !== page) fs.writeFileSync(pagePath, built);
 const packageDir = name => path.dirname(require.resolve(name + "/package.json"));
 function copy(root, file, destination) {
   const target = path.join(assets, destination);

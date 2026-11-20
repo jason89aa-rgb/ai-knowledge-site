@@ -1,6 +1,16 @@
 "use strict";
 
 const by = id => document.getElementById(id);
+if (location.hostname.endsWith(".ai-knowledge-site.pages.dev") || /^ai-knowledge-site-git-.+\.vercel\.app$/.test(location.hostname)) {
+  const environment = by("preview-environment");
+  if (environment) {
+    environment.hidden = false;
+    const production = new URL("https://ai-all.co.kr/patent-review");
+    const input = new URLSearchParams(location.search).get("patent");
+    if (input) production.searchParams.set("patent", input);
+    environment.querySelector("a").href = production.href;
+  }
+}
 const facts = [
   ["application", "출원번호"], ["publication", "공개번호"], ["grant", "등록번호"],
   ["filed", "출원일"], ["published", "공개일"], ["granted", "등록일"],
