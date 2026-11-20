@@ -354,7 +354,7 @@ async function opsToken() {
 
 async function opsXml(token: string, path: string) {
   const accept = path.startsWith("/register/") ? "application/register+xml"
-    : path.startsWith("/published-data/") ? "application/exchange+xml" : "application/ops+xml";
+    : path.startsWith("/published-data/") && !path.endsWith("/images") ? "application/exchange+xml" : "application/ops+xml";
   const res = await request(epoRoot + "/rest-services" + path, "EPO OPS", {
     headers: { Authorization: "Bearer " + token, Accept: accept },
   });
@@ -366,6 +366,45 @@ async function opsXml(token: string, path: string) {
 }
 
 type XmlNode = ReturnType<typeof parseXml>;
+
+const opsPageNames: Record<string, string> = { COVER: "공보 첫 면", CLAIMS: "공보 청구항", SEARCH_REPORT: "공보 수록 검색보고서" };
+
+// OPS supplies publication images one PDF page at a time. Match the exact
+// publication and kind so another member of the family cannot enter the report.
+export async function addEpoPublicationPages(r: Report) {
+  if (r.country !== "US" || r.linksOnly) return;
+  const match = /^US((?:RE|PP|D)?\d{5,11})([A-Z]\d?)$/.exec(r.grant || r.publication || "");
+  r.notes.push("미국 심사관 통지서와 출원인 답변서 원문은 이번 EPO 자동 조회 범위에 포함되지 않습니다. 공보에 수록된 청구항과 검색보고서는 출처와 쪽수를 구분해 표시합니다.");
+  if (!match) return;
+  const [, number, kind] = match;
+  const docs = await section(r, "EPO 공보 원문 목록", async () => {
+    let xml;
+    try {
+      xml = await opsXml(await opsToken(), `/published-data/publication/docdb/US.${number}.${kind}/images`);
+    } catch (error) {
+      if (error instanceof PatentError && error.status === 404) return [];
+      throw error;
+    }
+    const instance = all(xml, "document-instance").find(node => node.attrs.link === `US/${number}/${kind}/fullimage`);
+    const total = Number(instance?.attrs["number-of-pages"]);
+    if (!instance || !Number.isSafeInteger(total) || total < 1 || total > 9999) return [];
+    const sections = all(instance, "document-section").map(node => ({
+      name: node.attrs.name, start: Number(node.attrs["start-page"]),
+    })).filter(s => Number.isInteger(s.start) && s.start >= 1 && s.start <= total).sort((a, b) => a.start - b.start);
+    const pages = new Map<number, string>([[1, "COVER"]]);
+    for (const s of sections) {
+      if (s.name !== "CLAIMS" && s.name !== "SEARCH_REPORT") continue;
+      const end = sections.find(next => next.start > s.start)?.start ?? total + 1;
+      for (let page = s.start; page < end; page++) pages.set(page, s.name);
+    }
+    return [...pages].sort(([a], [b]) => a - b).map(([page, code]) => ({
+      id: `US${number}${kind}-p${page}`, code, date: r.granted || r.published || "", downloadable: true,
+      title: `US${number}${kind} · ${opsPageNames[code]} · p. ${page}`,
+    }));
+  });
+  r.documents.push(...docs ?? []);
+}
+
 function docId(node: XmlNode | undefined) {
   const ids = all(node, "document-id");
   return ids.find(x => x.attrs["document-id-type"] === "docdb") ?? ids[0];
@@ -517,11 +556,9 @@ async function lookupUs(p: Patent) {
   const number = "US" + p.number + p.kind;
   const espacenet = { label: "EPO Espacenet에서 검색", url: application ? "https://worldwide.espacenet.com/" :
     "https://worldwide.espacenet.com/patent/search?q=" + encodeURIComponent("pn=" + number) };
-  const docket = { label: "USPTO 공식 심사철 열람", url: application ?
-    "https://patentcenter.uspto.gov/applications/" + p.number + "/ifw/docs" : "https://patentcenter.uspto.gov/" };
   const r = report(p, "EPO Espacenet · 공식 열람처");
   r.linksOnly = true;
-  r.links = [espacenet, docket];
+  r.links = [espacenet, dossierLink];
   if (application) {
     r.notes.push("미국 국내 출원 일련번호에는 EPO 검색에 필요한 연도가 없습니다. 미국 공개번호 또는 등록번호로 EPO에서 검색해 주세요.");
     return r;
@@ -529,7 +566,7 @@ async function lookupUs(p: Patent) {
   try {
     const epo = await europeanData(p);
     if (epo.title || epo.publication || epo.family.length || epo.events.length) {
-      epo.links = [espacenet, dossierLink, docket];
+      epo.links = [espacenet, dossierLink];
       return epo;
     }
     r.notes.push(...epo.notes);
@@ -663,6 +700,15 @@ async function readPdf(res: Response, limit: number) {
 }
 
 export async function officialPdf(country: unknown, application: unknown, id: unknown, code: unknown, maxBytes: number) {
+  if (country === "US" && typeof id === "string" && typeof code === "string" && Object.hasOwn(opsPageNames, code)) {
+    const page = /^US((?:RE|PP|D)?\d{5,11})([A-Z]\d?)-p([1-9]\d{0,3})$/.exec(id);
+    if (!page) throw new PatentError("EPO 공보의 문서 식별자를 확인해 주세요.", 400);
+    const [, number, kind, index] = page;
+    const url = `${epoRoot}/rest-services/published-data/images/US/${number}/${kind}/fullimage?Range=${index}`;
+    const response = await request(url, "EPO OPS", { headers: { Authorization: "Bearer " + await opsToken(), Accept: "application/pdf" } });
+    if (!response.ok) throw fail("EPO OPS", response.status);
+    return { bytes: await readPdf(response, maxBytes), title: `US${number}${kind} · ${opsPageNames[code]} · p. ${index}`, source: "EPO OPS · 공보 원문" };
+  }
   if (country === "EP" && typeof id === "string" && /^EP\d{7}A[134]$/.test(id)) {
     const res = await request(epPublicationUrl(id, "pdf"), "EPO Publication Server");
     if (!res.ok) throw fail("EPO Publication Server", res.status);
@@ -691,7 +737,8 @@ export async function summarizePdf(bytes: Uint8Array, title: string, source: str
   let data = "";
   // Encode in chunks divisible by three so that only the final chunk has padding.
   for (let offset = 0; offset < bytes.length; offset += 24576) data += btoa(String.fromCharCode(...bytes.subarray(offset, offset + 24576)));
-  const scope = source === "EPO Publication Server" ? " PDF에 공개공보가 함께 있으면 검색보고서에 해당하는 부분만 요약하세요." : "";
+  const scope = source === "EPO OPS · 공보 원문" ? ` 공보 발췌 위치는 ${title}입니다. 이 쪽에 적힌 내용만 정리하고, 청구항이나 서지에서 심사관의 판단 또는 출원인의 주장을 추론하지 마세요.`
+    : source === "EPO Publication Server" ? " PDF에 공개공보가 함께 있으면 검색보고서에 해당하는 부분만 요약하세요." : "";
   return summarize(title, source, [
     { type: "document", source: { type: "base64", media_type: "application/pdf", data } },
     { type: "text", text: "문서 요약, 심사관 또는 법원의 핵심 판단, 관련 청구항·인용문헌·법조문, 출원인 주장이나 보정, 명시된 결정과 기한을 해당되는 범위에서 작성하세요. 결론마다 근거가 보이는 PDF 페이지를 '(PDF p. 2)' 형태로 표시하세요. PDF 페이지를 확인할 수 없으면 페이지 번호를 만들지 마세요. 당사자 주장과 기관 판단을 구분하고 한국어 평문으로 써 주세요." + scope },
