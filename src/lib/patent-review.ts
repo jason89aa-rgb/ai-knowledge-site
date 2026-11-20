@@ -176,26 +176,45 @@ function kiprisKey() {
   try { return decodeURIComponent(key); } catch { return key; }
 }
 
+// Set once an unencoded key has been accepted, so later calls in this worker skip the rejected form.
+let krRawKey = false;
+
 async function krXml(path: string, params: Record<string, string>, modern = false): Promise<XmlNode> {
   try {
-    return await krXmlOnce(path, params, modern);
+    return await krXmlOnce(path, params, modern, krRawKey);
   } catch (error) {
     // Code 30 means the key was not recognised. Keys issued for the newer kipo-api gateway are rejected by the
     // legacy /openapi/rest paths, and the two gateways name the key parameter differently.
+    // Some KIPRISPlus servers compare the key without URL-decoding it, so a key containing + / = only matches
+    // when it is sent as is.
     if (!(error instanceof PatentError) || error.kiprisCode !== "30") throw error;
-    const attempts: [string, boolean][] = [[path, !modern]];
-    if (path.startsWith("/openapi/rest/")) attempts.unshift([path.replace("/openapi/rest/", "/kipo-api/kipi/"), true]);
-    for (const [next, nextModern] of attempts) {
-      try { return await krXmlOnce(next, params, nextModern); } catch { /* keep the first, most specific error */ }
+    const encodes = encodeURIComponent(kiprisKey()) !== kiprisKey();
+    const modernPath = path.startsWith("/openapi/rest/") ? path.replace("/openapi/rest/", "/kipo-api/kipi/") : undefined;
+    const attempts: [string, boolean, boolean][] = [
+      ...(encodes ? [[path, modern, true] as [string, boolean, boolean]] : []),
+      ...(modernPath ? [[modernPath, true, false], ...(encodes ? [[modernPath, true, true]] : [])] as [string, boolean, boolean][] : []),
+      [path, !modern, false],
+      ...(encodes ? [[path, !modern, true] as [string, boolean, boolean]] : []),
+    ];
+    for (const [next, nextModern, raw] of attempts) {
+      if (raw === krRawKey && next === path && nextModern === modern) continue;
+      try {
+        const xml = await krXmlOnce(next, params, nextModern, raw);
+        if (raw) krRawKey = true;
+        return xml;
+      } catch { /* keep the first, most specific error */ }
     }
     throw error;
   }
 }
 
-async function krXmlOnce(path: string, params: Record<string, string>, modern: boolean) {
+async function krXmlOnce(path: string, params: Record<string, string>, modern: boolean, raw = false) {
   const key = kiprisKey();
   const url = new URL(path, krRoot);
-  url.search = new URLSearchParams({ ...params, [modern ? "ServiceKey" : "accessKey"]: key }).toString();
+  const name = modern ? "ServiceKey" : "accessKey";
+  url.search = raw
+    ? `${new URLSearchParams(params)}&${name}=${key}`
+    : new URLSearchParams({ ...params, [name]: key }).toString();
   const service = krServices.find(([pattern]) => pattern.test(path))?.[1] ?? "API";
   const res = await request(url, "KIPRISPlus").catch(error => {
     if (error instanceof PatentError && error.status === 502) throw new PatentError(error.message, 424);
@@ -210,12 +229,13 @@ async function krXmlOnce(path: string, params: Record<string, string>, modern: b
   if (code && !/^(?:0+|SUCCESS)$/i.test(code) && code !== "03") {
     const detail = /^\d{1,3}$/.test(code) ? ` (${service}, 코드 ${code})` : ` (${service})`;
     const message = (value(xml, "resultMsg") || value(xml, "returnAuthMsg") || value(xml, "errMsg")).replace(/\s+/g, " ").slice(0, 120);
-    const raw = process.env.KIPRIS_API_KEY ?? "";
+    const stored = process.env.KIPRIS_API_KEY ?? "";
     const shape = [
       `서버 키 길이 ${key.length}자`,
-      /\s/.test(raw.trim()) ? "키 중간에 공백·줄바꿈 포함" : "",
-      /["']/.test(raw) ? "따옴표 포함" : "",
-      /%[0-9a-f]{2}/i.test(raw) ? "URL 인코딩된 값을 디코딩해 사용" : "",
+      /\s/.test(stored.trim()) ? "키 중간에 공백·줄바꿈 포함" : "",
+      /["']/.test(stored) ? "따옴표 포함" : "",
+      /%[0-9a-f]{2}/i.test(stored) ? "URL 인코딩된 값을 디코딩해 사용" : "",
+      /[+/=]/.test(key) ? "+ / = 문자 포함(인코딩·원문 모두 시도)" : "",
     ].filter(Boolean).join(", ");
     const reason = code === "30"
       ? `이 키가 ${service} 상품에 등록되지 않았습니다${message ? ` [${message}]` : ""}. ${shape}. KIPRIS Plus 마이페이지의 인증키와 길이가 같은지, 해당 상품 이용 신청이 승인되었는지 확인해 주세요.`
