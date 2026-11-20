@@ -236,7 +236,7 @@ async function summarizeReport(report, query, signal) {
 }
 
 function documentActions(report, doc) {
-  if (report.reviewed) return link(report.docket);
+  if (report.reviewed) return link(report.espacenet);
   if (!(doc.downloadable || doc.text) || report.demo) return report.local ? "브라우저에서 처리" : "공식 열람처 참고";
   const wrapper = el("div", "", "document-actions");
   wrapper.hidden = !isAutomaticMode();
@@ -402,7 +402,10 @@ function show(report) {
     title.focus({ preventScroll: true });
     window.scrollTo(0, 0);
   }
-  if (report.linksOnly) return;
+  if (report.linksOnly) {
+    if (report.country === "US") area.append(usDocumentGuide(report));
+    return;
+  }
 
   if (report.country !== "UPC") {
     const nav = el("nav", "", "report-nav");
@@ -435,6 +438,7 @@ function show(report) {
       report.documents.map(doc => [doc.date, doc.title, doc.id, documentActions(report, doc)]),
       report.local ? "기관에서 받은 PDF를 아래에서 선택할 수 있습니다." : "자동으로 가져올 수 있는 공개 원문이 없습니다. 위의 공식 열람처를 확인해 주세요.",
     ));
+    if (report.country === "US") docs.append(usDocumentGuide(report));
     area.append(docs, history, family);
   }
   const summaries = el("section", "", "panel");
@@ -444,6 +448,18 @@ function show(report) {
   area.append(summaries);
   if (!report.local && !report.demo && !report.reviewed) area.append(askPanel(report));
   showSummaries(report);
+}
+
+function usDocumentGuide(report) {
+  const guide = el("section", "", "panel");
+  guide.append(el("h3", "EPO에서 미국 심사문서 받기"),
+    el("p", "Espacenet에서 해당 미국 문헌을 열고 서지 화면의 Global Dossier를 선택하세요. 문서 목록에서 날짜와 제목을 확인하고 원문을 열면 PDF 뷰어에서 저장할 수 있습니다. Global Dossier는 미국 특허청이 심사철을 제공하는 경우에 표시됩니다."));
+  const entry = report.links.find(item => item.url.startsWith("https://worldwide.espacenet.com/"));
+  const pub = String(report.grant || report.publication || "").replace(/[\s,/.-]/g, "").replace(/^US/i, "");
+  const url = entry?.url || (/^(?:D|RE|PP)?\d{5,11}(?:[A-Z]\d?)?$/i.test(pub)
+    ? "https://worldwide.espacenet.com/patent/search?q=" + encodeURIComponent("pn=US" + pub) : "https://worldwide.espacenet.com/");
+  guide.append(link({ label: "EPO Espacenet 열기", url }));
+  return guide;
 }
 
 const askContext = report => ({

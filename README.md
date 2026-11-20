@@ -54,7 +54,7 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 | 관할 | 자동 조회 | 원문 열람 |
 | --- | --- | --- |
 | KR | KIPRISPlus 서지, DOCDB 패밀리, 행정처리 이력 | 의견제출통지서, 거절결정서, 등록결정서 PDF. 기타 문서는 KIPRIS에서 열람 |
-| US | EPO OPS에서 미국 공개·등록번호로 서지, INPADOC 패밀리와 법적 이벤트 조회 | Espacenet 직접 검색은 팀 코드 없이 사용 가능. 개별 미국 심사 문서는 공식 심사철에서 열람 |
+| US | EPO OPS에서 미국 공개·등록번호로 서지, INPADOC 패밀리와 법적 이벤트 조회 | Espacenet에서 미국 문헌의 Global Dossier를 선택해 제공되는 원문 PDF를 열고 저장. 대체 열람처는 USPTO Patent Center |
 | EP | EPO OPS 서지, INPADOC 패밀리, Register의 절차 이력. OPS 키가 없으면 EP 공보번호로 공개공보 서지 조회 | EPO Publication Server의 공개 검색보고서(A1·A3·A4) 자동 요약. 심사관 통지와 당사자 서류는 European Patent Register에서 열람 |
 | CN 및 기타 지원 관할 | EPO OPS 서지, INPADOC 패밀리 및 제공 범위 내 법적 이벤트 | CNIPA, 해당 특허청 또는 Global Dossier에서 열람 |
 | UPC | 입력한 사건번호와 공개 결정·명령 열람처 표시 | UPC에서 공개 결정문 열람 |

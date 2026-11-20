@@ -175,7 +175,7 @@ function claimAnalysis(report, panel) {
           item.append(el("small", scope), el("p", row.text));
           const cite = [row.documentDate, row.title, row.locator].filter(Boolean).join(" · ");
           if (report.reviewed) {
-            item.append(el("small", cite, "source-ref"), el("br"), link(report.docket));
+            item.append(el("small", cite, "source-ref"), el("br"), link(report.espacenet));
           } else {
             const source = el("a", cite, "source-ref");
             source.href = "#summary-" + row.summaryIndex;

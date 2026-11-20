@@ -12,6 +12,7 @@ function reviewedUsCase() {
     ["2024-12-10", "정정 허여 통지", "M4CP76YBWFYGX62"],
   ].map(([date, title, id]) => ({ date, title, id }));
   const docket = { label: "USPTO 공식 문서 목록", url: "https://patentcenter.uspto.gov/applications/18494796/ifw/docs" };
+  const espacenet = { label: "Espacenet에서 이 특허 열기", url: "https://worldwide.espacenet.com/patent/search?q=pn%3DUS12198599B2" };
   const claims = Array.from({ length: 19 }, (_, index) => index + 1);
   function finding(index, role, text, locator, scope = claims) {
     const doc = documents[index];
@@ -44,11 +45,11 @@ function reviewedUsCase() {
     publication: "US 2024/0078956 A1", title: "Array substrate and display device",
     applicants: "BOE Technology Group Co., Ltd.", inventors: "Long Han, Libin Liu, Lujiang Huangfu",
     status: "특허 등록", filed: events[0].date, published: events[1].date, granted: events.at(-1).date,
-    source: "저장된 검토 사례 · USPTO 공개 심사철", reviewedAt: "2026-11-20", docket, events, documents, summaries,
+    source: "저장된 검토 사례 · USPTO 공개 심사철", reviewedAt: "2026-11-20", espacenet, events, documents, summaries,
     takeaway: "제1~19항에 제기된 이중특허 거절은 출원인이 모특허와 연계한 terminal disclaimer를 제출하면서 해소됐다. 심사관은 19개 항을 모두 허여했다.",
     notes: ["선별한 주요 절차와 원문을 수록했습니다. 날짜는 미국 현지 서류 기준입니다. 담당 심사관은 Kenneth B. Lee Jr.이며 심사 부서는 Art Unit 2625입니다."],
     family: [{ country: "US", application: "17/638,836", publication: "US11837142B2", relation: "모출원 · 계속출원 관계" }],
-    links: [docket,
+    links: [espacenet, docket,
       { label: "등록공보", url: "https://image-ppubs.uspto.gov/dirsearch-public/print/downloadPdf/12198599" }],
   };
 }
