@@ -73,6 +73,43 @@ function button(label, fn, style = "secondary") {
   return element;
 }
 
+function reportBody(text) {
+  const body = el("div", "", "report-body");
+  const lines = text.split(/\r?\n/).map(line => line.trim());
+  const cells = line => line.replace(/^\||\|$/g, "").split("|").map(value => value.trim());
+  const inline = value => {
+    const fragment = document.createDocumentFragment();
+    for (const part of value.split(/(\*\*[^*]+\*\*|`[^`]+`)/g)) {
+      if (part.startsWith("**") && part.endsWith("**")) fragment.append(el("strong", part.slice(2, -2)));
+      else if (part.startsWith("`") && part.endsWith("`")) fragment.append(el("code", part.slice(1, -1)));
+      else fragment.append(part);
+    }
+    return fragment;
+  };
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line || /^-{3,}$/.test(line)) continue;
+    if (line.includes("|") && /^\|?\s*:?-{3,}/.test(lines[i + 1] || "") && (lines[i + 1] || "").includes("|")) {
+      const headers = cells(line).map(value => inline(value).textContent);
+      const rows = [];
+      i++;
+      while (i + 1 < lines.length && lines[i + 1].includes("|")) rows.push(cells(lines[++i]).map(inline));
+      body.append(table(headers, rows, headers.join(" · ")));
+      continue;
+    }
+    const heading = /^(#{1,6})\s+(.+)/.exec(line);
+    const item = /^[-*]\s+/.test(line);
+    const quote = /^>\s?/.test(line);
+    const node = el(heading ? (heading[1].length < 3 ? "h3" : "h4") : item ? "li" : quote ? "blockquote" : "p");
+    node.append(inline(heading ? heading[2] : line.replace(/^(?:[-*]\s+|>\s?)/, "")));
+    if (item) {
+      if (body.lastElementChild?.tagName !== "UL") body.append(el("ul"));
+      body.lastElementChild.append(node);
+    } else body.append(node);
+  }
+  return body;
+}
+
 async function api(data, signal) {
   if (!isAutomaticMode()) throw new Error("검색 설정에서 자동 조회 및 요약을 선택해 주세요.");
   const code = by("access").value;
@@ -400,7 +437,7 @@ function show(report) {
   area.append(overview);
   if (report.conclusion) {
     const conclusion = el("section", "", "panel summary");
-    conclusion.append(el("h2", "심사 결과 보고서"), el("pre", report.conclusion.text));
+    conclusion.append(el("h2", "심사 결과 보고서"), reportBody(report.conclusion.text));
     if (report.conclusion.partial) conclusion.append(el("p", "출력 한도로 종합 분석이 일부만 작성됐습니다.", "muted"));
     area.append(conclusion);
   }

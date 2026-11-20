@@ -91,6 +91,11 @@ td:first-child { white-space: nowrap; }
 .summary { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
 .summary pre { font: inherit; font-size: .93rem; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
 .summary small { color: var(--muted); }
+.report-body { line-height: 1.7; overflow-wrap: anywhere; }
+.report-body h3 { margin: 1.6em 0 .5em; }
+.report-body h4, .report-body p, .report-body ul { margin: .65em 0; }
+.report-body .table-wrap { margin: .8em 0 1.4em; }
+.report-body blockquote { border-left: 3px solid var(--line); margin: 1em 0; padding-left: 1em; }
 .office-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px 20px; }
 .office-grid div { border-top: 1px solid var(--line); padding-top: 12px; }
 .office-grid a { font-weight: 720; }
