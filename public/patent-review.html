@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex">
   <title>특허 심사 리포트 | AI-ALL</title>
-  <link rel="stylesheet" href="/patent-review.css?v=20261120-search">
+  <link rel="stylesheet" href="/patent-review.css?v=20261120-ask">
   <script defer src="/patent-pptx.bundle.js"></script>
   <script defer src="/patent-review-pptx.js"></script>
-  <script defer src="/patent-review.js?v=20261120-search"></script>
+  <script defer src="/patent-review.js?v=20261120-ask"></script>
 </head>
 <body>
   <header class="top"><div class="shell"><a class="brand" href="/">AI-ALL<span>.</span></a><a class="home" href="/">사이트 홈 ↗</a></div></header>
@@ -24,6 +24,11 @@
           <button id="search" class="primary" type="submit">리포트 만들기</button>
         </div>
         <p id="numberHint" class="muted hint">국가 코드, 하이픈, 쉼표는 있어도 없어도 됩니다. 같은 번호를 가진 특허가 여러 건이면 목록에서 골라 리포트를 만듭니다.</p>
+        <div class="ask-field" id="requestGroup">
+          <label for="request">AI에게 요청할 내용 <span class="optional">선택</span></label>
+          <textarea id="request" maxlength="2000" rows="2" placeholder="예: 거절이유와 인용발명을 표로 정리하고, 출원인이 어떻게 대응했는지 설명해 줘" aria-describedby="requestHint"></textarea>
+          <p id="requestHint" class="muted hint">리포트를 만든 뒤 이 요청에 맞춘 내용을 Claude가 작성해 문서 요약과 PowerPoint에 넣습니다. 비워 두면 리포트만 만듭니다.</p>
+        </div>
         <details class="search-settings">
           <summary>검색 설정</summary>
           <div class="settings-grid">
