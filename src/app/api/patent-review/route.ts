@@ -1,5 +1,5 @@
 import {
-  askReport, isPdf, lookup, maxUpload, normalizePatent, officialCandidates, officialPdf, PatentError, summarizeEvents, summarizePdf, summarizeText,
+  addEpoPublicationPages, askReport, isPdf, lookup, maxUpload, normalizePatent, officialCandidates, officialPdf, PatentError, summarizeEvents, summarizePdf, summarizeText,
 } from "../../../lib/patent-review";
 import { wintelipsCandidates, wintelipsConfigured, wintelipsDocument, wintelipsReport, withWintelips } from "../../../lib/wintelips";
 
@@ -51,10 +51,24 @@ function streamSummary(summarize: () => Promise<unknown>) {
   return new Response(stream, { headers: { ...headers, "Content-Type": "application/json; charset=utf-8" } });
 }
 
+const sessionName = "patent_review_session";
+async function sessionSignature(secret: string, expiry: string) {
+  const key = await crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const bytes = new Uint8Array(await crypto.subtle.sign("HMAC", key, encoder.encode(sessionName + ":" + expiry)));
+  return Array.from(bytes, byte => byte.toString(16).padStart(2, "0")).join("");
+}
+
 async function authorize(request: Request) {
   const secret = process.env.PATENT_REVIEW_ACCESS_CODE;
   if (!secret || secret.length < 16) throw new PatentError("팀용 특허 조회가 아직 설정되지 않았습니다. 예시 보고서를 확인할 수 있습니다.", 503);
   const supplied = request.headers.get("X-Patent-Access") ?? "";
+  if (!supplied) {
+    const cookie = /(?:^|;\s*)patent_review_session=(\d{13})\.([a-f0-9]{64})(?:;|$)/.exec(request.headers.get("Cookie") ?? "");
+    // The custom header requires a CORS preflight for cross-origin calls.
+    if (request.headers.get("X-Patent-Client") === "report" && request.headers.get("Origin") === new URL(request.url).origin &&
+        cookie && Number(cookie[1]) > Date.now() && await sessionSignature(secret, cookie[1]) === cookie[2]) return;
+    throw new PatentError("이 브라우저의 팀 인증이 필요합니다. 팀 액세스 코드를 입력해 주세요.", 401);
+  }
   if (supplied.length > 200) throw new PatentError("팀 액세스 코드를 확인해 주세요.", 401);
   const [expected, actual] = await Promise.all([secret, supplied].map(code => crypto.subtle.digest("SHA-256", encoder.encode(code))));
   const a = new Uint8Array(expected);
@@ -82,7 +96,16 @@ export async function POST(request: Request) {
     if (!content.startsWith("application/json") || length > (asking ? 600000 : 8192)) throw new PatentError("요청 형식을 확인해 주세요.", 400);
     const body = await request.json().catch(() => null);
     if (asking && body?.action === "ask") return streamSummary(() => askReport(body.report, body.prompt));
-    if (body?.action === "search") return json(await search(body));
+    if (body?.action === "search") {
+      const result = json(await search(body));
+      if (request.headers.get("X-Patent-Access")) {
+        const expiry = String(Date.now() + 8 * 60 * 60 * 1000);
+        const signature = await sessionSignature(process.env.PATENT_REVIEW_ACCESS_CODE!, expiry);
+        const secure = new URL(request.url).protocol === "https:" ? "; Secure" : "";
+        result.headers.append("Set-Cookie", `${sessionName}=${expiry}.${signature}; HttpOnly; SameSite=Strict; Path=/api/patent-review${secure}`);
+      }
+      return result;
+    }
     if (body?.source === "wintelips") {
       if (body.action === "lookup") {
         const report = await withWintelips(token => wintelipsReport(token, body.skey));
@@ -105,6 +128,7 @@ export async function POST(request: Request) {
     }
     if (body?.action === "lookup") {
       const report = await lookup(normalizePatent(body.number, body.country, body.numberType));
+      await addEpoPublicationPages(report);
       return json({ ...report, canSummarize: Boolean(process.env.ANTHROPIC_API_KEY) });
     }
     if (body?.action === "summarize-events") {
