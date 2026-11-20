@@ -179,9 +179,15 @@ async function krXml(path: string, params: Record<string, string>, modern = fals
   try {
     return await krXmlOnce(path, params, modern);
   } catch (error) {
-    // Code 30 means the key was not recognised; older and newer KIPRISPlus endpoints name the key parameter differently.
+    // Code 30 means the key was not recognised. Keys issued for the newer kipo-api gateway are rejected by the
+    // legacy /openapi/rest paths, and the two gateways name the key parameter differently.
     if (!(error instanceof PatentError) || error.kiprisCode !== "30") throw error;
-    return krXmlOnce(path, params, !modern).catch(() => { throw error; });
+    const attempts: [string, boolean][] = [[path, !modern]];
+    if (path.startsWith("/openapi/rest/")) attempts.unshift([path.replace("/openapi/rest/", "/kipo-api/kipi/"), true]);
+    for (const [next, nextModern] of attempts) {
+      try { return await krXmlOnce(next, params, nextModern); } catch { /* keep the first, most specific error */ }
+    }
+    throw error;
   }
 }
 
@@ -224,10 +230,27 @@ async function korean(p: Patent) {
       gazette: ["publicationNumberSearchInfo", "publicationNumber", "PublicNumber"],
     };
     const [op, parameter, field] = configs[p.type as keyof typeof configs];
-    const xml = await krXml(`/openapi/rest/${krPublications}/${op}`, {
-      [parameter]: p.type === "grant" ? p.number + "0000" : p.number, docsStart: "1", docsCount: "10",
-    });
-    searchResult = all(xml, "PatentUtilityInfo").find(item => value(item, field).replace(/\D/g, "").slice(0, p.number.length) === p.number);
+    const searched = p.type === "grant" ? p.number + "0000" : p.number;
+    const matches = (rows: XmlNode[], tag: string) =>
+      rows.find(item => value(item, tag).replace(/\D/g, "").slice(0, p.number.length) === p.number);
+    let problem: unknown;
+    try {
+      // The kipo-api gateway accepts ServiceKey-style keys that the legacy number search rejects.
+      const xml = await krXml(`/kipo-api/kipi/${krPublications}/getAdvancedSearch`, {
+        [parameter]: searched, patent: "true", utility: "true", pageNo: "1", numOfRows: "10",
+      }, true);
+      searchResult = matches(all(xml, "item"), parameter);
+    } catch (error) {
+      problem = error;
+    }
+    if (!searchResult) {
+      try {
+        const xml = await krXml(`/openapi/rest/${krPublications}/${op}`, { [parameter]: searched, docsStart: "1", docsCount: "10" });
+        searchResult = matches(all(xml, "PatentUtilityInfo"), field);
+      } catch (error) {
+        throw problem ?? error;
+      }
+    }
     application = value(searchResult, "ApplicationNumber").replace(/[\s-]/g, "");
     if (!/^\d{13}$/.test(application)) throw fail(r.source, 404);
   }
@@ -256,7 +279,7 @@ async function korean(p: Patent) {
     granted: date(value(b, "registerDate") || value(b, "RegistrationDate")),
     status: value(b, "registerStatus") || value(b, "finalDisposal") || value(b, "RegistrationStatus"),
     abstract: value(biblio, "astrtCont") || value(b, "Abstract"),
-    applicants: all(biblio, "applicantInfo").map(node => value(node, "name")).filter(Boolean).join(", ") || value(b, "Applicant"),
+    applicants: all(biblio, "applicantInfo").map(node => value(node, "name")).filter(Boolean).join(", ") || value(b, "applicantName") || value(b, "Applicant"),
     inventors: all(biblio, "inventorInfo").map(node => value(node, "name")).filter(Boolean).join(", "),
   });
   r.links = [kipris(application), { label: "KIPRISPlus 데이터 안내", url: "https://plus.kipris.or.kr/portal/data/service/DBII_000000000000001/view.do" }];
@@ -270,7 +293,8 @@ async function korean(p: Patent) {
     publication: value(item, "publicationNumber") + value(item, "publicationKindCode"),
     date: date(value(item, "publicationDate")), relation: "KIPRISPlus DOCDB 패밀리",
   })).filter(item => item.country && (item.publication || item.application));
-  r.events = recent(all(history, "relateddocsonfileInfo").map(item => ({
+  const historyRows = all(history, "relateddocsonfileInfo");
+  r.events = recent((historyRows.length ? historyRows : all(history, "item")).map(item => ({
     date: date(value(item, "documentDate")), title: value(item, "documentTitle"),
     detail: [value(item, "step"), value(item, "status")].filter(Boolean).join(" · "), id: value(item, "documentNumber"),
   })).filter(item => item.title));
@@ -647,7 +671,8 @@ export async function officialPdf(country: unknown, application: unknown, id: un
   if (typeof application !== "string" || typeof id !== "string") throw new PatentError("문서 식별자를 확인해 주세요.", 400);
   if (country === "KR" && /^\d{13}$/.test(application) && /^\d{15}$/.test(id) && typeof code === "string" && Object.hasOwn(krDocuments, code)) {
     const xml = await krXml(`/openapi/rest/IntermediateDocument${code}Service/pdfInfoV2`, { applicationNumber: application, sendNumber: id });
-    const row = all(xml, "pdfInfoV2").find(item => value(item, "sendNumber") === id && value(item, "applicationNumber").replace(/[\s-]/g, "") === application);
+    const pdfRows = all(xml, "pdfInfoV2");
+    const row = (pdfRows.length ? pdfRows : all(xml, "item")).find(item => value(item, "sendNumber") === id && value(item, "applicationNumber").replace(/[\s-]/g, "") === application);
     const path = value(row, "filePath");
     if (!path) throw fail("KIPRISPlus", 404);
     const url = new URL(path.trim(), krRoot);
