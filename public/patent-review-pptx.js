@@ -99,6 +99,7 @@
     if (title.length > 3 || overview.some(([key]) => wrap(report[key], 24).length > 3) || report.abstract) {
       slidesForText("서지 상세", [pptx.title, ...overview.map(([key, label]) => label + "  " + report[key]), report.abstract].filter(Boolean).join("\n\n"));
     }
+    if (report.conclusion) slidesForText("심사 결과 보고서", report.conclusion.text + (report.conclusion.partial ? "\n\n일부 출력" : ""));
     tabulate("패밀리 및 연계 출원", ["관할", "공개·등록번호", "출원번호", "조회 관계", "일자"],
       report.family.map(row => [row.country, row.publication, row.application, row.relation, row.date]), [1.05, 2.65, 2.53, 4.02, 1.79]);
     tabulate("심사·행정 이력", ["날짜", "기록", "상태·구분", "문서번호·코드"],

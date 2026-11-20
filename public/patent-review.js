@@ -398,12 +398,20 @@ function show(report) {
   overview.append(notes, metadata);
   if (report.local && report.country !== "UPC") overview.append(manualEditor(report));
   area.append(overview);
+  if (report.conclusion) {
+    const conclusion = el("section", "", "panel summary");
+    conclusion.append(el("h2", "심사 결과 보고서"), el("pre", report.conclusion.text));
+    if (report.conclusion.partial) conclusion.append(el("p", "출력 한도로 종합 분석이 일부만 작성됐습니다.", "muted"));
+    area.append(conclusion);
+  }
+  const useHandoff = ["US", "EP"].includes(report.country) && !report.demo && !report.reviewed && !report.local;
+  if (useHandoff) area.append(dossierHandoff(report));
   if (entering) {
     title.focus({ preventScroll: true });
     window.scrollTo(0, 0);
   }
   if (report.linksOnly) {
-    if (report.country === "US") area.append(usDocumentGuide(report));
+    if (report.country === "US" && !useHandoff) area.append(usDocumentGuide(report));
     return;
   }
 
@@ -438,7 +446,7 @@ function show(report) {
       report.documents.map(doc => [doc.date, doc.title, doc.id, documentActions(report, doc)]),
       report.local ? "기관에서 받은 PDF를 아래에서 선택할 수 있습니다." : "자동으로 가져올 수 있는 공개 원문이 없습니다. 위의 공식 열람처를 확인해 주세요.",
     ));
-    if (report.country === "US") docs.append(usDocumentGuide(report));
+    if (report.country === "US" && !useHandoff) docs.append(usDocumentGuide(report));
     area.append(docs, history, family);
   }
   const summaries = el("section", "", "panel");
@@ -475,6 +483,38 @@ async function requestAnswer(report, text, signal) {
   const summary = await summarizeWithRetry({ action: "ask", prompt: text, report: askContext(report) }, signal, progress);
   const number = report.summaries.filter(item => item.id?.startsWith("AI 요청")).length + 1;
   addSummary(report, { ...summary, id: `AI 요청 ${number}` });
+}
+
+async function finishDossierAnalysis(report, signal) {
+  if (!report.canSummarize || !report.summaries.length) return;
+  const context = askContext(report);
+  const base = { ...context, documents: [], summaries: [] };
+  let pieces = report.summaries.filter(item => !item.id?.startsWith("AI 요청")).map(item => ({
+    title: item.title, source: [item.source, item.id].filter(Boolean).join(" · "),
+    text: item.text.slice(0, 9000) + (item.text.length > 9000 || item.partial ? "\n[일부 발췌]" : ""),
+  }));
+  if (!pieces.length) return;
+  const progress = "원문 분석을 종합해 심사 결과 보고서를 작성하고 있습니다.";
+  const request = (summaries, prompt) => summarizeWithRetry({
+    action: "ask", report: { ...base, summaries }, prompt,
+  }, signal, progress);
+  say("status", progress);
+  // Keep every document represented even when the final request would exceed
+  // the API's context limits. Preserve source references between passes.
+  while (pieces.length > 10) {
+    const condensed = [];
+    for (let i = 0; i < pieces.length; i += 10) {
+      const summary = await request(pieces.slice(i, i + 10), "각 문서에서 확인된 심사 시점, 청구항, 심사관 판단, 출원인 대응, 결과를 날짜와 문서명·근거 페이지를 유지해 압축해 주세요. 근거가 없는 판단은 추가하지 마세요.");
+      condensed.push({ title: "문서 묶음 " + (condensed.length + 1), source: summary.source, text: summary.text + (summary.partial ? "\n[일부 요약]" : "") });
+    }
+    pieces = condensed;
+  }
+  const final = await request(pieces, "검토한 문서와 이력만 근거로 한국어 심사 결과 보고서를 작성하세요. 심사 결과, 회차별 거절이유·출원인 대응·판단, 청구항별 적용 범위, 누락 자료 순으로 정리하고 근거 문서명·페이지 또는 이력 날짜를 표시하세요. 사용자가 제공한 문서와 기관 확인 기록을 구분하고 서지 미확인·분석 실패·원문 부재는 명시하세요.");
+  signal.throwIfAborted();
+  if (current !== report) return;
+  report.conclusion = final;
+  show(report);
+  say("status", final.partial ? "심사 결과 보고서가 일부 작성되었습니다." : "심사 결과 보고서를 작성했습니다.");
 }
 
 function askPanel(report) {
@@ -523,7 +563,7 @@ function updateMode() {
   by("numberType").disabled = office === "UPC";
   by("source").disabled = !apiMode;
   by("requestGroup").hidden = !apiMode;
-  by("search").textContent = apiMode ? "리포트 만들기" : "공식 열람처 찾기";
+  by("search").textContent = apiMode ? "특허 검색" : "공식 열람처 찾기";
   by("accessGroup").hidden = !apiMode;
   by("manualUpload").hidden = apiMode;
   by("scanGroup").hidden = apiMode;
@@ -576,11 +616,24 @@ function showCandidates(found, pick, local = false) {
   heading.id = "report-title";
   heading.tabIndex = -1;
   panel.append(heading, el("p", local ? "국가 코드가 없어 여러 관할의 번호로 읽을 수 있습니다. 확인할 번호를 고르세요."
-    : hasUnverified ? "자동 조회로 확인하지 못한 후보는 공식 열람처에서 번호를 확인할 수 있습니다." : "같은 번호를 가진 특허가 여러 건입니다. 리포트를 만들 특허를 고르세요.", "muted"));
+    : hasUnverified ? "자동 조회 미확인 항목은 원문을 연결해 검토할 수 있습니다." : "리포트를 만들 특허를 선택하세요.", "muted"));
+  if (found.candidates.some(item => item.country === "US" && item.source === "official")) {
+    panel.append(el("p", "미국 리포트를 만들면 원문 열람용 EPO 탭도 열립니다. 보안 확인은 그 탭에서 진행하세요.", "hint"));
+  }
   panel.append(table(
     local ? ["관할", "번호 해석", ""] : ["관할", "명칭", "출원번호", "문헌·등록번호", "출원일", "상태", "출원인", "일치", ""],
     found.candidates.map(item => {
-      const choose = button(local || item.linksOnly ? "열람처 보기" : "리포트 만들기", () => pick(item), "secondary");
+      const choose = button(local ? "열람처 보기" : "리포트 만들기", () => {
+        if (!local && item.country === "US" && item.source === "official") {
+          const pub = item.numberType === "application" ? (item.grant || item.publication) : item.number;
+          const number = String(pub || "").toUpperCase().replace(/[\s,./-]/g, "").replace(/^US/, "");
+          const url = /^(?:D|RE|PP)?\d{5,11}(?:[A-Z]\d?)?$/.test(number)
+            ? "https://worldwide.espacenet.com/patent/search?q=" + encodeURIComponent("pn=US" + number)
+            : "https://worldwide.espacenet.com/";
+          window.open(url, "_blank", "noopener,noreferrer");
+        }
+        pick(item);
+      }, "secondary");
       return local ? [item.country, item.matched, choose] : [item.country, item.title, item.application,
         item.documents || item.grant || item.publication || item.number, item.filed, item.status, item.applicants, item.matched, choose];
     }), ""));
@@ -645,6 +698,13 @@ async function openCandidate(candidate, notes = [], request = "") {
     report.notes.unshift(...notes);
     show(report);
     if (!report.linksOnly) await summarizeReport(report, query, controller.signal);
+    if (!report.linksOnly && report.summaries.length) {
+      try { await finishDossierAnalysis(report, controller.signal); }
+      catch (error) {
+        controller.signal.throwIfAborted();
+        addReportNote(report, "결과 보고서 작성 실패 · " + error.message);
+      }
+    }
     // The request from the search form runs last, so the answer can draw on every document summary.
     let answered = false;
     if (request && !report.linksOnly) {
@@ -670,6 +730,8 @@ async function openCandidate(candidate, notes = [], request = "") {
       control.disabled = false;
       if (report?.autoPending) {
         report.autoPending = false;
+        const controls = handoffPanels.get(report)?.querySelector("fieldset");
+        if (controls) controls.disabled = !report.canSummarize;
         by("report-export").disabled = false;
         if (!report.summaries.length || by("claim-analysis")) showSummaries(report);
       }
@@ -715,10 +777,6 @@ by("lookup").addEventListener("submit", async event => {
       const found = await (await api({ action: "search", number, country: office, numberType, source: by("source").value }, controller.signal)).json();
       controller.signal.throwIfAborted();
       if (!found.candidates.length) throw new Error(["일치하는 특허를 찾지 못했습니다.", ...found.notes].join(" "));
-      if (found.candidates.length === 1) {
-        await openCandidate(found.candidates[0], found.notes, request);
-        return;
-      }
       showCandidates(found, candidate => openCandidate(candidate, found.notes, request));
       say("status", "확인할 번호와 자료를 선택해 주세요.");
     } else {

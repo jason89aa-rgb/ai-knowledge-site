@@ -59,6 +59,8 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 | CN 및 기타 지원 관할 | EPO OPS 서지, INPADOC 패밀리 및 제공 범위 내 법적 이벤트 | CNIPA, 해당 특허청 또는 Global Dossier에서 열람 |
 | UPC | 입력한 사건번호와 공개 결정·명령 열람처 표시 | UPC에서 공개 결정문 열람 |
 
+자동 모드에서는 **특허 검색 → 결과 행의 리포트 만들기** 순서로 진행합니다. 미국 공식 검색 결과를 선택하면 Espacenet이 별도 탭에서 열립니다. 미국·유럽 심사철의 보안 확인과 원문 저장은 그 탭에서 진행합니다. Chrome·Edge에서는 리포트에서 사건번호로 이름을 지은 폴더를 연결한 뒤 그 폴더에 저장하면 새 PDF·ZIP을 자동 분석합니다. 기존 파일이나 폴더 연결을 지원하지 않는 브라우저에서는 PDF·ZIP을 직접 선택할 수 있습니다. 원문 분석에는 팀 액세스 코드와 서버의 AI 키가 필요합니다. 리포트 탭을 닫으면 폴더 감지가 끝납니다.
+
 운영 호스트의 프로젝트 설정에서 아래 값을 서버 환경 변수 또는 비밀로 등록하고 대상 환경을 다시 배포합니다. Cloudflare Pages는 **Settings → Variables and Secrets**, Vercel은 **Settings → Environment Variables**를 사용합니다. 로컬에서는 같은 이름을 `.env.local`에 설정한 후 `npm ci && npm run dev`를 실행합니다. 브라우저에는 팀 공유 코드만 입력합니다.
 
 Cloudflare Pages에서 자동 조회 및 요약을 쓰려면 **Settings → Functions → Compatibility flags**의 Preview 및 Production 환경에 `nodejs_compat`을 설정하고 재배포해야 합니다.
