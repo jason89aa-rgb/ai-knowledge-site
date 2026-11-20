@@ -170,7 +170,8 @@ const krServices: [RegExp, string][] = [
 
 // Portal pages often show the key URL-encoded; URLSearchParams would encode it a second time.
 function kiprisKey() {
-  const key = required(process.env.KIPRIS_API_KEY?.trim(), "KIPRISPlus");
+  // KIPRIS keys contain no whitespace or quotes; both creep in when a key is pasted into a dashboard.
+  const key = required(process.env.KIPRIS_API_KEY?.replace(/[\s"']/g, ""), "KIPRISPlus");
   if (!/%[0-9a-f]{2}/i.test(key)) return key;
   try { return decodeURIComponent(key); } catch { return key; }
 }
@@ -208,8 +209,16 @@ async function krXmlOnce(path: string, params: Record<string, string>, modern: b
   const code = value(xml, "resultCode") || value(xml, "returnReasonCode");
   if (code && !/^(?:0+|SUCCESS)$/i.test(code) && code !== "03") {
     const detail = /^\d{1,3}$/.test(code) ? ` (${service}, 코드 ${code})` : ` (${service})`;
+    const message = (value(xml, "resultMsg") || value(xml, "returnAuthMsg") || value(xml, "errMsg")).replace(/\s+/g, " ").slice(0, 120);
+    const raw = process.env.KIPRIS_API_KEY ?? "";
+    const shape = [
+      `서버 키 길이 ${key.length}자`,
+      /\s/.test(raw.trim()) ? "키 중간에 공백·줄바꿈 포함" : "",
+      /["']/.test(raw) ? "따옴표 포함" : "",
+      /%[0-9a-f]{2}/i.test(raw) ? "URL 인코딩된 값을 디코딩해 사용" : "",
+    ].filter(Boolean).join(", ");
     const reason = code === "30"
-      ? `이 키가 ${service} 상품에 등록되지 않았습니다. KIPRISPlus 마이페이지에서 해당 상품의 이용 신청 승인 여부와 서버에 넣은 키(인코딩 전 원본)를 확인해 주세요.`
+      ? `이 키가 ${service} 상품에 등록되지 않았습니다${message ? ` [${message}]` : ""}. ${shape}. KIPRIS Plus 마이페이지의 인증키와 길이가 같은지, 해당 상품 이용 신청이 승인되었는지 확인해 주세요.`
       : /^[23]\d$/.test(code) ? "인증키, 상품 권한 또는 호출 한도를 확인해 주세요." : "기관 API에서 요청을 처리하지 못했습니다.";
     const problem = new PatentError(`KIPRISPlus 응답 오류${detail} · ${reason}`, 424);
     problem.kiprisCode = code;
