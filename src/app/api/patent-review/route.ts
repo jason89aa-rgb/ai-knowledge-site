@@ -19,7 +19,9 @@ async function search(body: { number?: unknown; country?: unknown; numberType?: 
     const result = await officialCandidates(body.number, body.country, body.numberType);
     return { source: "official", candidates: result.candidates, notes: [...notes, ...result.notes] };
   };
-  if (body.source === "official" || (body.source !== "wintelips" && !wintelipsConfigured())) return official();
+  const input = typeof body.number === "string" ? body.number.normalize("NFKC").trim() : "";
+  const usSearch = body.country === "US" || /^(?:USA?(?=[\s\d-]|D\d|RE\d|PP\d)|\d{2}\/\d{3},?\d{3}$)/i.test(input);
+  if (body.source === "official" || (body.source !== "wintelips" && (usSearch || !wintelipsConfigured()))) return official();
   try {
     return { source: "wintelips", ...await withWintelips(token => wintelipsCandidates(token, body.number, body.country)) };
   } catch (error) {
