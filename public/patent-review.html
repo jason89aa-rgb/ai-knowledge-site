@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex">
   <title>특허 심사 리포트 | AI-ALL</title>
-  <link rel="stylesheet" href="/patent-review.css">
+  <link rel="stylesheet" href="/patent-review.css?v=20261120-search">
   <script defer src="/patent-pptx.bundle.js"></script>
   <script defer src="/patent-review-pptx.js"></script>
-  <script defer src="/patent-review.js?v=20261120-us"></script>
+  <script defer src="/patent-review.js?v=20261120-search"></script>
 </head>
 <body>
   <header class="top"><div class="shell"><a class="brand" href="/">AI-ALL<span>.</span></a><a class="home" href="/">사이트 홈 ↗</a></div></header>
@@ -20,10 +20,10 @@
     <div class="shell workspace">
       <form id="lookup" class="panel">
         <div class="search-grid">
-          <div><label for="number">특허 또는 UPC 사건 번호</label><input id="number" required maxlength="64" placeholder="예: EP4286919A1" autocomplete="off" spellcheck="false" aria-describedby="numberHint"></div>
+          <div><label for="number">특허번호 또는 UPC 사건번호</label><input id="number" required maxlength="64" placeholder="예: 10-2023-0010262, US 11,234,231, EP4286919" autocomplete="off" spellcheck="false" aria-describedby="numberHint"></div>
           <button id="search" class="primary" type="submit">리포트 만들기</button>
         </div>
-        <p id="numberHint" class="muted hint">국가 코드와 번호를 입력하세요. 번호 유형이 모호하면 검색 설정에서 선택할 수 있습니다.</p>
+        <p id="numberHint" class="muted hint">국가 코드, 하이픈, 쉼표는 있어도 없어도 됩니다. 같은 번호를 가진 특허가 여러 건이면 목록에서 골라 리포트를 만듭니다.</p>
         <details class="search-settings">
           <summary>검색 설정</summary>
           <div class="settings-grid">
@@ -36,6 +36,9 @@
           <div><label for="numberType">번호 유형</label><select id="numberType">
             <option value="auto">자동 감지</option><option value="application">출원번호</option><option value="publication">공개번호</option>
             <option value="grant">등록번호</option><option value="gazette">공고번호 · KR</option>
+          </select></div>
+          <div><label for="source">데이터 출처</label><select id="source">
+            <option value="auto">자동 · WINTELIPS 우선</option><option value="wintelips">WINTELIPS</option><option value="official">공식 기관 API</option>
           </select></div>
           </div>
           <fieldset class="mode-picker">

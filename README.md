@@ -43,6 +43,14 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 패밀리 표의 지원 번호를 누르면 해당 관할의 기록을 다시 조회합니다.
 
+번호는 국가 코드, 하이픈, 쉼표, 슬래시 없이 입력해도 됩니다(예: `11234231`, `US 11,234,231`, `1020230010262`). 같은 번호를 가진 특허가 여러 건이면 후보 목록이 나오고, 하나를 고르면 그 특허로 리포트를 만듭니다. **검색 설정 → 데이터 출처**에서 검색과 리포트에 쓸 자료를 고릅니다.
+
+| 데이터 출처 | 동작 |
+| --- | --- |
+| 자동 · WINTELIPS 우선 (기본) | `WINTELIPS_ACCESS_TOKEN`이 있으면 WINTELIPS로 검색하고, 없거나 WINTELIPS 검색이 실패하면 공식 기관 API로 검색 |
+| WINTELIPS | WINTELIPS MCP의 번호 검색(출원·등록·문헌·공개번호, 전체 국가), 서지, 상태, 이력, 패밀리, 발명자를 사용. 한국 건은 의견제출통지서·거절결정서 본문을 Claude로 요약 |
+| 공식 기관 API | 번호를 가능한 관할·번호 유형으로 나눠(예: US 등록번호와 US 출원번호) 아래 기관 API로 각각 조회 |
+
 | 관할 | 자동 조회 | 원문 열람 |
 | --- | --- | --- |
 | KR | KIPRISPlus 서지, DOCDB 패밀리, 행정처리 이력 | 의견제출통지서, 거절결정서, 등록결정서 PDF. 기타 문서는 KIPRIS에서 열람 |
@@ -62,5 +70,12 @@ Cloudflare Pages에서 자동 조회 및 요약을 쓰려면 **Settings → Func
 | `USPTO_API_KEY` | USPTO Open Data Portal 키 |
 | `EPO_OPS_KEY`, `EPO_OPS_SECRET` | EPO Open Patent Services 앱의 Consumer Key와 Secret |
 | `ANTHROPIC_API_KEY` | Claude Messages API 키. 모델은 `claude-opus-5-5` |
+| `WINTELIPS_ACCESS_TOKEN` | 선택 사항. 팀이 함께 쓰는 WINTELIPS 액세스 토큰. 아래 토큰 발급 스크립트로 받음 |
+| `WINTELIPS_REFRESH_TOKEN`, `WINTELIPS_CLIENT_ID`, `WINTELIPS_CLIENT_SECRET` | 선택 사항. 넣어 두면 액세스 토큰이 만료됐을 때 서버가 자동으로 갱신 |
+| `WINTELIPS_MCP_URL` | 선택 사항. 기본값 `https://mcp.wipsclip.co.kr/mcp` |
+
+WINTELIPS 공용 토큰은 관리자가 한 번 로그인해 발급합니다. 프로젝트 폴더에서 `node scripts/wintelips-token.mjs`를 실행하면 브라우저에 WINTELIPS 로그인 화면이 열리고, 로그인이 끝나면 토큰이 `.env.local`에 저장됩니다(화면에는 출력하지 않음). 저장된 `WINTELIPS_*` 값을 운영 호스트의 비밀로 옮긴 뒤 재배포합니다. 스크립트는 갱신을 한 번 시험해 **리프레시 토큰 회전 여부**를 알려 줍니다. 회전이 있으면 서버의 리프레시 토큰은 한 번만 쓸 수 있으므로, 만료될 때마다 `node scripts/wintelips-token.mjs --refresh`로 새 값을 받아 비밀을 교체해야 합니다.
+
+리포트 아래 **AI 요청** 칸에 원하는 보고서 내용을 적으면(예: "거절이유와 인용발명을 표로 정리해 줘"), 화면의 서지·이력·패밀리·문서 요약을 Claude에 함께 보내 답변을 받습니다. 답변은 문서 요약에 추가되고 PowerPoint에도 들어갑니다.
 
 자동 요약은 기관이 제공하는 문서당 최대 12 MiB의 PDF 또는 공개 이력 데이터를 Anthropic Messages API에 전달합니다. 이 기능은 조회 기록, PDF, 요약을 사이트 저장소에 기록하지 않습니다.

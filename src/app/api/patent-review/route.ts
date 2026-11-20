@@ -1,4 +1,7 @@
-import { isPdf, lookup, maxUpload, normalizePatent, officialPdf, PatentError, summarizeEvents, summarizePdf } from "../../../lib/patent-review";
+import {
+  askReport, isPdf, lookup, maxUpload, normalizePatent, officialCandidates, officialPdf, PatentError, summarizeEvents, summarizePdf, summarizeText,
+} from "../../../lib/patent-review";
+import { wintelipsCandidates, wintelipsConfigured, wintelipsDocument, wintelipsReport, withWintelips } from "../../../lib/wintelips";
 
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
@@ -9,6 +12,21 @@ const encoder = new TextEncoder();
 
 function failure(error: unknown) {
   return error instanceof PatentError ? error : new PatentError("특허 자료를 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+}
+
+async function search(body: { number?: unknown; country?: unknown; numberType?: unknown; source?: unknown }) {
+  const official = async (notes: string[] = []) => {
+    const result = await officialCandidates(body.number, body.country, body.numberType);
+    return { source: "official", candidates: result.candidates, notes: [...notes, ...result.notes] };
+  };
+  if (body.source === "official" || (body.source !== "wintelips" && !wintelipsConfigured())) return official();
+  try {
+    return { source: "wintelips", ...await withWintelips(token => wintelipsCandidates(token, body.number, body.country)) };
+  } catch (error) {
+    // Automatic mode keeps working when WINTELIPS is down or its token has expired.
+    if (body.source === "wintelips" || (error instanceof PatentError && error.status === 400)) throw error;
+    return official([`WINTELIPS 검색 실패 · ${failure(error).message} 공식 기관 API로 검색했습니다.`]);
+  }
 }
 
 function streamSummary(summarize: () => Promise<unknown>) {
@@ -57,8 +75,32 @@ export async function POST(request: Request) {
       if (!isPdf(bytes)) throw new PatentError("유효한 PDF 파일을 올려 주세요.", 400);
       return streamSummary(() => summarizePdf(bytes, file.name.slice(0, 180), "사용자 업로드"));
     }
-    if (!content.startsWith("application/json") || length > 8192) throw new PatentError("요청 형식을 확인해 주세요.", 400);
+    // An AI request carries the report the browser already holds, so it gets a larger body limit.
+    const asking = request.headers.get("X-Patent-Action") === "ask";
+    if (!content.startsWith("application/json") || length > (asking ? 600000 : 8192)) throw new PatentError("요청 형식을 확인해 주세요.", 400);
     const body = await request.json().catch(() => null);
+    if (asking && body?.action === "ask") return streamSummary(() => askReport(body.report, body.prompt));
+    if (body?.action === "search") return json(await search(body));
+    if (body?.source === "wintelips") {
+      if (body.action === "lookup") {
+        const report = await withWintelips(token => wintelipsReport(token, body.skey));
+        return json({ ...report, canSummarize: Boolean(process.env.ANTHROPIC_API_KEY) });
+      }
+      if (body.action === "summarize-events") {
+        return streamSummary(async () => {
+          const report = await withWintelips(token => wintelipsReport(token, body.skey));
+          if (!report.events.length) throw new PatentError("요약할 공개 이력을 찾지 못했습니다.", 404);
+          return summarizeEvents(report);
+        });
+      }
+      if (body.action === "summarize") {
+        return streamSummary(async () => {
+          const document = await withWintelips(token => wintelipsDocument(token, body.skey, body.code, body.id));
+          return summarizeText(document.title, "WINTELIPS", document.text);
+        });
+      }
+      throw new PatentError("WINTELIPS 자료는 원문 PDF를 제공하지 않습니다.", 400);
+    }
     if (body?.action === "lookup") {
       const report = await lookup(normalizePatent(body.number, body.country, body.numberType));
       return json({ ...report, canSummarize: Boolean(process.env.ANTHROPIC_API_KEY) });

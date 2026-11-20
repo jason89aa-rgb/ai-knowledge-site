@@ -3,6 +3,20 @@ const epRegister = "https://register.epo.org/";
 const maxPages = 80;
 const maxScanPages = 10;
 
+// A bare number with no country code can belong to several offices; list the readings the user can pick from.
+export function localCandidates(input, office, numberType) {
+  const raw = input.normalize("NFKC").trim().toUpperCase();
+  if (office !== "auto" || /^(?:KR|US|EP|CN|ZL|WO|JP|CA|AU|GB|DE|FR|UPC)|^(?:CFI|COA|ACT|APL|APP|ORD)[_ -]?\d/.test(raw)) return [];
+  const digits = raw.replace(/[\s,./-]/g, "").replace(/(?<=\d)[A-Z]\d?$/, "");
+  const readings = /^(10|20)\d{11}$/.test(digits) ? [["KR", "auto", "KR 출원·공개번호"]]
+    : /^(10|20)\d{7}$/.test(digits) ? [["KR", "grant", "KR 등록번호"]]
+      : /^\d{8}$/.test(digits) ? [["US", "grant", "US 등록번호"], ["US", "application", "US 출원번호"], ["EP", "application", "EP 출원번호"]]
+        : /^\d{7}$/.test(digits) ? [["US", "grant", "US 등록번호"], ["EP", "publication", "EP 공개·등록번호"]]
+          : /^20\d{9}$/.test(digits) ? [["US", "publication", "US 공개번호"]] : [];
+  return readings.filter(([, type]) => numberType === "auto" || type === "auto" || type === numberType)
+    .map(([country, type, matched]) => ({ country, numberType: numberType === "auto" ? type : numberType, matched }));
+}
+
 export function localReport(input, office, numberType) {
   const raw = input.normalize("NFKC").trim().toUpperCase();
   const isCourt = /^(?:UPC[_ -])?(?:CFI|COA|ACT|APL|APP|ORD)[_ -]?\d{1,7}\s*\/\s*20\d{2}$/.test(raw);
@@ -26,6 +40,9 @@ export function localReport(input, office, numberType) {
   const match = compact.match(/^((?:D|RE|PP)?\d{5,14})(?:\.[\dX])?([A-Z]\d?)?$/);
   if (!match) throw new Error("특허번호를 확인해 주세요. 미국 번호만 입력할 때는 관할을 미국으로 선택하세요.");
   const [, digits, kind = ""] = match;
+  if (office === "auto" && !detected && country === "KR" && !/^(10|20)\d{7}(?:\d{4})?$/.test(digits)) {
+    throw new Error("국가 코드를 붙여 입력하거나 검색 설정에서 관할을 선택해 주세요. 예: US11234231, EP4286919A1. 국가 코드가 없는 번호는 한국 번호로 조회합니다.");
+  }
   const looksLikeApplication = country === "US" ? /^\d{8}$/.test(digits) && !kind && (!raw.includes(",") || raw.includes("/"))
     : country === "KR" ? digits.length === 13 && !kind
       : country === "EP" ? digits.length === 8 && !kind

@@ -7,7 +7,7 @@ const facts = [
   ["status", "기관 표시 상태"], ["applicants", "출원인"], ["inventors", "발명자"],
 ];
 const examples = {
-  auto: "EP4286919A1", KR: "10-2023-0010262", US: "US 2014-0167116 A1", EP: "EP4286919A1",
+  auto: "10-2023-0010262, US 11,234,231, EP4286919", KR: "10-2023-0010262", US: "US 2014-0167116 A1", EP: "EP4286919A1",
   CN: "CN101876751A", UPC: "UPC_CFI_123/2025", WO: "WO2023232483A1", JP: "JP2020123456A",
 };
 let current;
@@ -16,7 +16,7 @@ let searchVersion = 0;
 let activeSearch;
 let processing = false;
 const isAutomaticMode = () => by("lookup").elements.mode.value === "api";
-const localTools = () => import("/patent-review-local.mjs");
+const localTools = () => import("/patent-review-local.mjs?v=20261120-search");
 
 function el(tag, text = "", className = "") {
   const element = document.createElement(tag);
@@ -80,6 +80,7 @@ async function api(data, signal) {
   const headers = { "X-Patent-Access": code };
   const form = data instanceof FormData;
   if (!form) headers["Content-Type"] = "application/json";
+  if (data.action === "ask") headers["X-Patent-Action"] = "ask";
   const response = await fetch("/api/patent-review", {
     method: "POST", headers, body: form ? data : JSON.stringify(data), cache: "no-store", signal,
   });
@@ -188,10 +189,12 @@ function addReportNote(report, text) {
   }
 }
 
-const documentPayload = (report, doc) => ({ country: report.country, application: report.application, id: doc.id, code: doc.code });
+const documentPayload = (report, doc) => report.skey
+  ? { source: "wintelips", skey: report.skey, id: doc.id, code: doc.code }
+  : { country: report.country, application: report.application, id: doc.id, code: doc.code };
 
 async function summarizeReport(report, query, signal) {
-  const documents = new Map(report.documents.filter(doc => doc.downloadable).map(doc => [doc.id, doc]));
+  const documents = new Map(report.documents.filter(doc => doc.downloadable || doc.text).map(doc => [doc.id, doc]));
   if (!report.canSummarize) {
     if (documents.size || report.events.length) addReportNote(report, "Claude API 키가 서버에 설정되면 자동 요약을 사용할 수 있습니다.");
     return;
@@ -226,11 +229,12 @@ async function summarizeReport(report, query, signal) {
 }
 
 function documentActions(report, doc) {
-  if (!doc.downloadable || report.demo) return report.local ? "브라우저에서 처리" : "공식 열람처 참고";
+  if (!(doc.downloadable || doc.text) || report.demo) return report.local ? "브라우저에서 처리" : "공식 열람처 참고";
   const wrapper = el("div", "", "document-actions");
   wrapper.hidden = !isAutomaticMode();
   const payload = documentPayload(report, doc);
-  for (const [action, title] of [["download", "원문 PDF"], ["summarize", "Claude 요약"]]) {
+  const actions = doc.text ? [["summarize", "Claude 요약"]] : [["download", "원문 PDF"], ["summarize", "Claude 요약"]];
+  for (const [action, title] of actions) {
     wrapper.append(button(title, async event => {
       const control = event.currentTarget;
       control.disabled = true;
@@ -402,7 +406,57 @@ function show(report) {
   slot.id = "summaries";
   summaries.append(el("h2", "문서 요약"), slot);
   area.append(summaries);
+  if (!report.local && !report.demo) area.append(askPanel(report));
   showSummaries(report);
+}
+
+const askContext = report => ({
+  ...Object.fromEntries(["country", "query", "title", "source", "application", "publication", "grant", "filed", "published",
+    "granted", "status", "applicants", "inventors", "abstract", "family", "events", "notes"].map(key => [key, report[key]])),
+  documents: report.documents.map(({ date, title, id }) => ({ date, title, id })),
+  summaries: report.summaries.map(({ title, source, text }) => ({ title, source, text })),
+});
+
+function askPanel(report) {
+  const panel = el("section", "", "panel ask");
+  const label = el("label", "AI에게 보고서 내용 요청");
+  label.htmlFor = "askPrompt";
+  const prompt = el("textarea");
+  prompt.id = "askPrompt";
+  prompt.maxLength = 2000;
+  prompt.rows = 3;
+  prompt.placeholder = "예: 거절이유와 인용발명을 표로 정리하고, 출원인이 어떻게 대응했는지 설명해 줘";
+  const help = el("p", report.canSummarize
+    ? "지금 화면의 서지·이력·패밀리·문서 요약을 함께 보냅니다. 답변은 문서 요약에 추가되고 PowerPoint에도 들어갑니다."
+    : "Claude API 키가 서버에 설정되면 사용할 수 있습니다.", "muted hint");
+  const send = button("AI에게 요청", async () => {
+    const text = prompt.value.trim();
+    if (!text) {
+      say("status", "AI에게 요청할 내용을 입력해 주세요.", true);
+      prompt.focus();
+      return;
+    }
+    send.disabled = true;
+    const progress = "AI가 요청한 내용을 작성하고 있습니다.";
+    say("status", progress);
+    try {
+      const summary = await summarizeWithRetry({ action: "ask", prompt: text, report: askContext(report) }, new AbortController().signal, progress);
+      const number = report.summaries.filter(item => item.id?.startsWith("AI 요청")).length + 1;
+      addSummary(report, { ...summary, id: `AI 요청 ${number}` });
+      if (current === report) {
+        say("status", "요청한 내용을 문서 요약에 추가했습니다.");
+        by("summaries").scrollIntoView({ block: "nearest" });
+        prompt.value = "";
+      }
+    } catch (error) {
+      if (current === report) say("status", error.message, true);
+    } finally {
+      send.disabled = !report.canSummarize;
+    }
+  }, "primary");
+  send.disabled = !report.canSummarize;
+  panel.append(el("h2", "AI 요청"), label, prompt, help, send);
+  return panel;
 }
 
 function updateMode() {
@@ -410,6 +464,7 @@ function updateMode() {
   const apiMode = isAutomaticMode();
   by("number").placeholder = examples[office] ? "예: " + examples[office] : "국가 코드와 특허번호";
   by("numberType").disabled = office === "UPC";
+  by("source").disabled = !apiMode;
   by("search").textContent = apiMode ? "리포트 만들기" : "공식 열람처 찾기";
   by("accessGroup").hidden = !apiMode;
   by("manualUpload").hidden = apiMode;
@@ -437,6 +492,88 @@ by("lookup").querySelectorAll('[name="mode"]').forEach(mode => {
   });
 });
 
+function showCandidates(found, pick, local = false) {
+  current = undefined;
+  const area = by("result");
+  area.replaceChildren();
+  area.hidden = false;
+  const panel = el("section", "", "panel");
+  const heading = el("h2", local ? `가능한 번호 해석 ${found.candidates.length}가지` : `검색 결과 ${found.candidates.length}건`, "report-title");
+  heading.id = "report-title";
+  heading.tabIndex = -1;
+  panel.append(heading, el("p", local ? "국가 코드가 없어 여러 관할의 번호로 읽을 수 있습니다. 확인할 번호를 고르세요."
+    : "같은 번호를 가진 특허가 여러 건입니다. 리포트를 만들 특허를 고르세요.", "muted"));
+  panel.append(table(
+    local ? ["관할", "번호 해석", ""] : ["관할", "명칭", "출원번호", "문헌·등록번호", "출원일", "상태", "출원인", "일치", ""],
+    found.candidates.map(item => {
+      const choose = button(local ? "열람처 보기" : "리포트 만들기", () => pick(item), "secondary");
+      return local ? [item.country, item.matched, choose] : [item.country, item.title, item.application,
+        item.documents || item.grant || item.publication || item.number, item.filed, item.status, item.applicants, item.matched, choose];
+    }), ""));
+  if (found.notes?.length) {
+    const notes = el("ul", "", "notes");
+    notes.append(...found.notes.map(note => el("li", note)));
+    panel.append(notes);
+  }
+  area.append(panel);
+  heading.focus();
+}
+
+function finishReport(report) {
+  if (report.country === "KR" || report.country === "CN") by("scanLanguage").value = report.country === "KR" ? "kor" : "chi_sim";
+  else by("scanLanguage").value = "eng";
+}
+
+async function openCandidate(candidate, notes = []) {
+  activeSearch?.abort();
+  const controller = new AbortController();
+  activeSearch = controller;
+  const version = ++searchVersion;
+  const control = by("search");
+  control.disabled = true;
+  let report;
+  say("status", "선택한 특허의 공개 기록을 조회하고 있습니다.");
+  try {
+    const query = candidate.source === "wintelips" ? { source: "wintelips", skey: candidate.skey }
+      : { number: candidate.number, country: candidate.country, numberType: candidate.numberType };
+    const response = await api({ action: "lookup", ...query }, controller.signal);
+    const data = await response.json();
+    report = { ...data, summaries: [], autoPending: !data.linksOnly };
+    controller.signal.throwIfAborted();
+    report.notes.unshift(...notes);
+    show(report);
+    if (!report.linksOnly) await summarizeReport(report, query, controller.signal);
+    if (searchVersion !== version) return;
+    finishReport(report);
+    say("status", report.linksOnly ? "미국 자동 조회를 완료하지 못했습니다. 공식 열람 링크를 표시했습니다."
+      : `조회 완료 · 요약 ${report.summaries.length}건 · PowerPoint 다운로드 가능`);
+  } catch (error) {
+    if (searchVersion === version) say("status", error.message, true);
+  } finally {
+    if (searchVersion === version) {
+      control.disabled = false;
+      if (report?.autoPending) {
+        report.autoPending = false;
+        by("report-export").disabled = false;
+        if (!report.summaries.length) showSummaries(report);
+      }
+    }
+  }
+}
+
+function openLocal(tools, number, reading) {
+  activeSearch?.abort();
+  searchVersion++;
+  try {
+    const report = { ...tools.localReport(number, reading.country, reading.numberType), summaries: [] };
+    show(report);
+    finishReport(report);
+    say("status", "공식 열람처를 표시했습니다.");
+  } catch (error) {
+    say("status", error.message, true);
+  }
+}
+
 by("lookup").addEventListener("submit", async event => {
   event.preventDefault();
   activeSearch?.abort();
@@ -454,39 +591,32 @@ by("lookup").addEventListener("submit", async event => {
   control.disabled = true;
   by("result").hidden = true;
   current = undefined;
-  const input = [by("number").value, by("office").value, by("numberType").value];
-  let report;
-  say("status", apiMode ? "공개 특허 데이터를 확인하고 있습니다." : "공식 열람처를 준비하고 있습니다.");
+  const [number, office, numberType] = [by("number").value, by("office").value, by("numberType").value];
+  say("status", apiMode ? "번호와 일치하는 특허를 찾고 있습니다." : "공식 열람처를 준비하고 있습니다.");
   try {
     if (apiMode) {
-      const query = { number: input[0], country: input[1], numberType: input[2] };
-      const response = await api({ action: "lookup", ...query }, controller.signal);
-      const data = await response.json();
-      report = { ...data, summaries: [], autoPending: !data.linksOnly };
+      const found = await (await api({ action: "search", number, country: office, numberType, source: by("source").value }, controller.signal)).json();
       controller.signal.throwIfAborted();
-      show(report);
-      if (!report.linksOnly) await summarizeReport(report, query, controller.signal);
+      if (!found.candidates.length) throw new Error(["일치하는 특허를 찾지 못했습니다.", ...found.notes].join(" "));
+      if (found.candidates.length === 1) {
+        await openCandidate(found.candidates[0], found.notes);
+        return;
+      }
+      showCandidates(found, candidate => openCandidate(candidate, found.notes));
+      say("status", `같은 번호로 ${found.candidates.length}건을 찾았습니다. 리포트를 만들 특허를 고르세요.`);
     } else {
-      report = { ...(await localTools()).localReport(...input), summaries: [] };
-      if (searchVersion === version) show(report);
+      const tools = await localTools();
+      if (searchVersion !== version) return;
+      const readings = tools.localCandidates(number, office, numberType);
+      if (readings.length > 1) {
+        showCandidates({ candidates: readings }, reading => openLocal(tools, number, reading), true);
+        say("status", "국가 코드가 없는 번호입니다. 확인할 번호 해석을 고르세요.");
+      } else openLocal(tools, number, readings[0] ?? { country: office, numberType });
     }
-    if (searchVersion !== version) return;
-    if (report.country === "KR" || report.country === "CN") by("scanLanguage").value = report.country === "KR" ? "kor" : "chi_sim";
-    else by("scanLanguage").value = "eng";
-    if (report.linksOnly) say("status", "미국 자동 조회를 완료하지 못했습니다. 공식 열람 링크를 표시했습니다.");
-    else say("status", apiMode ? `조회 완료 · 요약 ${report.summaries.length}건 · PowerPoint 다운로드 가능`
-      : "공식 열람처를 표시했습니다.");
   } catch (error) {
     if (searchVersion === version) say("status", error.message, true);
   } finally {
-    if (searchVersion === version) {
-      control.disabled = false;
-      if (report?.autoPending) {
-        report.autoPending = false;
-        by("report-export").disabled = false;
-        if (!report.summaries.length) showSummaries(report);
-      }
-    }
+    if (searchVersion === version) control.disabled = false;
   }
 });
 
