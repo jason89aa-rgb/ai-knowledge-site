@@ -60,10 +60,10 @@ export function localReport(input, office, numberType) {
   }
 
   if (country === "US") {
-    add("Global Dossier · 미국 공개 심사철", usDossier);
-    add("USPTO Patent Center · 본인 인증 필요", yearlessUsSerial
+    if (yearlessUsSerial) add("EPO Espacenet", "https://worldwide.espacenet.com/");
+    add("USPTO 공식 심사철 열람", yearlessUsSerial
       ? "https://patentcenter.uspto.gov/applications/" + digits + "/ifw/docs" : "https://patentcenter.uspto.gov/");
-    report.notes.push("Global Dossier에서 관할을 US로 선택하고 번호 유형과 번호를 입력하세요. Espacenet 검색 결과에서도 공개 파일이 있으면 Global Dossier로 이동할 수 있습니다.");
+    report.notes.push(yearlessUsSerial ? "EPO 번호 검색에는 미국 공개번호 또는 등록번호를 입력해 주세요." : "Espacenet에서 서지와 패밀리를 확인하고, 공개된 심사철은 Global Dossier로 열람할 수 있습니다.");
   } else if (country === "EP") {
     add("European Patent Register · 심사 문서", application && digits.length === 8
       ? epRegister + "application?number=EP" + digits + "&lng=en&tab=doclist"

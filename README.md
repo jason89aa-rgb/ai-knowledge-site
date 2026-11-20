@@ -47,17 +47,19 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 | 데이터 출처 | 동작 |
 | --- | --- |
-| 자동 · WINTELIPS 우선 (기본) | `WINTELIPS_ACCESS_TOKEN`이 있으면 WINTELIPS로 검색하고, 없거나 WINTELIPS 검색이 실패하면 공식 기관 API로 검색 |
+| 자동 · 미국은 EPO (기본) | 미국 번호는 EPO로 검색합니다. 다른 관할은 `WINTELIPS_ACCESS_TOKEN`이 있으면 WINTELIPS로 검색하고, 없거나 WINTELIPS 검색이 실패하면 공식 기관 API로 검색 |
 | WINTELIPS | WINTELIPS MCP의 번호 검색(출원·등록·문헌·공개번호, 전체 국가), 서지, 상태, 이력, 패밀리, 발명자를 사용. 한국 건은 의견제출통지서·거절결정서 본문을 Claude로 요약 |
 | 공식 기관 API | 번호를 가능한 관할·번호 유형으로 나눠(예: US 등록번호와 US 출원번호) 아래 기관 API로 각각 조회 |
 
 | 관할 | 자동 조회 | 원문 열람 |
 | --- | --- | --- |
 | KR | KIPRISPlus 서지, DOCDB 패밀리, 행정처리 이력 | 의견제출통지서, 거절결정서, 등록결정서 PDF. 기타 문서는 KIPRIS에서 열람 |
-| US | USPTO ODP 서지, 계속출원 관계, 거래 이력, 공개 심사 문서. EPO OPS 설정 시 해외 패밀리 | 목록에서 기관이 제공하는 PDF를 열거나 요약 |
+| US | EPO OPS에서 미국 공개·등록번호로 서지, INPADOC 패밀리와 법적 이벤트 조회 | Espacenet에서 미국 문헌의 Global Dossier를 선택해 제공되는 원문 PDF를 열고 저장. 대체 열람처는 USPTO Patent Center |
 | EP | EPO OPS 서지, INPADOC 패밀리, Register의 절차 이력. OPS 키가 없으면 EP 공보번호로 공개공보 서지 조회 | EPO Publication Server의 공개 검색보고서(A1·A3·A4) 자동 요약. 심사관 통지와 당사자 서류는 European Patent Register에서 열람 |
 | CN 및 기타 지원 관할 | EPO OPS 서지, INPADOC 패밀리 및 제공 범위 내 법적 이벤트 | CNIPA, 해당 특허청 또는 Global Dossier에서 열람 |
 | UPC | 입력한 사건번호와 공개 결정·명령 열람처 표시 | UPC에서 공개 결정문 열람 |
+
+자동 모드에서는 **특허 검색 → 결과 행의 리포트 만들기** 순서로 진행합니다. 미국 공식 검색 결과를 선택하면 Espacenet이 별도 탭에서 열립니다. 미국·유럽 심사철의 보안 확인과 원문 저장은 그 탭에서 진행합니다. Chrome·Edge에서는 리포트에서 사건번호로 이름을 지은 폴더를 연결한 뒤 그 폴더에 저장하면 새 PDF·ZIP을 자동 분석합니다. 기존 파일이나 폴더 연결을 지원하지 않는 브라우저에서는 PDF·ZIP을 직접 선택할 수 있습니다. 원문 분석에는 팀 액세스 코드와 서버의 AI 키가 필요합니다. 리포트 탭을 닫으면 폴더 감지가 끝납니다.
 
 운영 호스트의 프로젝트 설정에서 아래 값을 서버 환경 변수 또는 비밀로 등록하고 대상 환경을 다시 배포합니다. Cloudflare Pages는 **Settings → Variables and Secrets**, Vercel은 **Settings → Environment Variables**를 사용합니다. 로컬에서는 같은 이름을 `.env.local`에 설정한 후 `npm ci && npm run dev`를 실행합니다. 브라우저에는 팀 공유 코드만 입력합니다.
 
@@ -67,7 +69,6 @@ Cloudflare Pages에서 자동 조회 및 요약을 쓰려면 **Settings → Func
 | --- | --- |
 | `PATENT_REVIEW_ACCESS_CODE` | 팀용 임의 문자열. 16자 이상, HTTP 헤더로 전송 가능한 ASCII 사용 |
 | `KIPRIS_API_KEY` | 공개·등록공보, 특허 패밀리, 행정처리 이력, 중간서류철 3종(의견제출통지서·거절결정서·등록결정서) 이용 권한이 있는 KIPRISPlus 키. 상품마다 이용 신청 승인이 필요하며, 미승인 상품은 코드 30을 반환합니다 |
-| `USPTO_API_KEY` | USPTO Open Data Portal 키 |
 | `EPO_OPS_KEY`, `EPO_OPS_SECRET` | EPO Open Patent Services 앱의 Consumer Key와 Secret |
 | `ANTHROPIC_API_KEY` | Claude Messages API 키. 모델은 `claude-opus-5-5` |
 | `WINTELIPS_ACCESS_TOKEN` | 선택 사항. 팀이 함께 쓰는 WINTELIPS 액세스 토큰. 아래 토큰 발급 스크립트로 받음 |
