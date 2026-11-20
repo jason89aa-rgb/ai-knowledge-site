@@ -339,8 +339,12 @@ async function korean(p: Patent) {
 let opsSession: { token: string; expires: number } | undefined;
 async function opsToken() {
   if (opsSession && opsSession.expires > Date.now()) return opsSession.token;
-  const key = required(process.env.EPO_OPS_KEY, "EPO OPS");
-  const secret = required(process.env.EPO_OPS_SECRET, "EPO OPS");
+  const key = process.env.EPO_OPS_KEY;
+  const secret = process.env.EPO_OPS_SECRET;
+  if (!key || !secret) {
+    const missing = [!key && "EPO_OPS_KEY", !secret && "EPO_OPS_SECRET"].filter(Boolean).join(", ");
+    throw new PatentError(`이 배포에서 EPO 인증 설정을 읽지 못했습니다 (${missing}).`, 503);
+  }
   const res = await request(epoRoot + "/auth/accesstoken", "EPO OPS", {
     method: "POST", headers: { Authorization: "Basic " + btoa(key + ":" + secret), "Content-Type": "application/x-www-form-urlencoded" },
     body: "grant_type=client_credentials",
