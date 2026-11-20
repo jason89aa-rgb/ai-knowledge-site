@@ -106,7 +106,8 @@
     tabulate("심사 문서", ["날짜", "문서", "식별자", "원문"],
       report.documents.map(row => [row.date, row.title, row.id, row.downloadable ? "기관 PDF" : "공식 열람처 참조"]), [1.6, 5.43, 2.91, 2.1]);
     for (const summary of report.summaries) {
-      slidesForText("문서 요약", summary.text + (summary.partial ? "\n\n출력 한도에 도달해 일부만 표시됩니다." : ""),
+      slidesForText("문서 요약", [summary.text, summary.partial && "요약이 불완전합니다.",
+        summary.evidenceIncomplete && "청구항 근거 추출이 불완전합니다."].filter(Boolean).join("\n\n"),
         [summary.title, summary.id, summary.source, summary.model].filter(Boolean).join(" · "));
     }
     if (!report.summaries.length) slidesForText("문서 요약", "이 보고서에 포함된 문서 요약이 없습니다.");
