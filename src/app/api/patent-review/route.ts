@@ -1,7 +1,9 @@
 import {
-  addEpoPublicationPages, askReport, jointReport, isPdf, lookup, maxUpload, normalizePatent, officialCandidates, officialPdf, PatentError, summarizeEvents, summarizePdf, summarizeText,
+  addEpoPublicationPages, askReport, compareFamilyClaims, jointReport, isPdf, lookup, maxUpload, normalizePatent, officialCandidates, officialPdf, PatentError, summarizeEvents, summarizePdf, summarizeText,
 } from "../../../lib/patent-review";
-import { wintelipsCandidates, wintelipsConfigured, wintelipsDocument, wintelipsReport, withWintelips } from "../../../lib/wintelips";
+import {
+  wintelipsCandidates, wintelipsConfigured, wintelipsDocument, wintelipsFamily, wintelipsFamilyMember, wintelipsReport, withWintelips,
+} from "../../../lib/wintelips";
 
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
@@ -100,11 +102,15 @@ export async function POST(request: Request) {
       if (!isPdf(bytes)) throw new PatentError("유효한 PDF 파일을 올려 주세요.", 400);
       return streamSummary(() => summarizePdf(bytes, file.name.slice(0, 180), "사용자 업로드"));
     }
-    // An AI request carries the report the browser already holds, so it gets a larger body limit.
-    const asking = request.headers.get("X-Patent-Action") === "ask";
-    if (!content.startsWith("application/json") || length > (asking ? 600000 : 8192)) throw new PatentError("요청 형식을 확인해 주세요.", 400);
+    // An AI request carries the report or claims the browser already holds, so it gets a larger body limit.
+    const large = request.headers.get("X-Patent-Action");
+    const limit = large === "ask" ? 600000 : large === "family-compare" ? 160000 : 8192;
+    if (!content.startsWith("application/json") || length > limit) throw new PatentError("요청 형식을 확인해 주세요.", 400);
     const body = await request.json().catch(() => null);
-    if (asking && body?.action === "ask") return streamSummary(() => askReport(body.report, body.prompt));
+    if (large === "ask" && body?.action === "ask") return streamSummary(() => askReport(body.report, body.prompt));
+    if (large === "family-compare" && body?.action === "family-compare") return streamSummary(() => compareFamilyClaims(body));
+    if (body?.action === "family") return json(await withWintelips(token => wintelipsFamily(token, body)));
+    if (body?.action === "family-member") return json(await withWintelips(token => wintelipsFamilyMember(token, body)));
     if (body?.action === "search") {
       const result = json(await search(body));
       if (request.headers.get("X-Patent-Access")) {

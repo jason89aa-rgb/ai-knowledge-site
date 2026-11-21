@@ -11,7 +11,7 @@ const pagePath = path.join(publicDir, "patent-review.html");
 const page = fs.readFileSync(pagePath, "utf8");
 let built = page;
 fs.mkdirSync(path.join(assets, "app"), { recursive: true });
-for (const [id, name] of [["patent-app", "patent-review"], ["patent-handoff", "patent-review-handoff"], ["patent-dashboard", "patent-review-dashboard"]]) {
+for (const [id, name] of [["patent-app", "patent-review"], ["patent-handoff", "patent-review-handoff"], ["patent-dashboard", "patent-review-dashboard"], ["patent-family", "patent-review-family"]]) {
   const source = fs.readFileSync(path.join(publicDir, name + ".js"));
   const digest = require("node:crypto").createHash("sha256").update(source).digest("hex").slice(0, 16);
   const filename = name + "." + digest + ".js";
