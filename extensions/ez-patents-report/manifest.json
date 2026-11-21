@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "AI-ALL 미국 심사철 ZIP",
+  "version": "1.2.0",
+  "minimum_chrome_version": "148",
+  "message_serialization": "structured_clone",
+  "description": "미국 특허 리포트를 만들면 해당 출원의 전체 ZIP을 다운로드하고 같은 리포트에 연결합니다.",
+  "permissions": ["storage"],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    {
+      "matches": ["https://ai-all.co.kr/patent-review*"],
+      "js": ["report.js"]
+    },
+    {
+      "matches": ["https://ez-patents.com/*"],
+      "js": ["ez-patents.js"]
+    }
+  ]
+}
