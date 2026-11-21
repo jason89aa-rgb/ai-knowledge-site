@@ -21,8 +21,9 @@ function reviewedUsCase() {
     ] };
   }
   const summaries = [
-    finding(0, "examiner", "심사관은 제1~19항을 모특허 US 11,837,142의 제1항, 제3~18항, 제20항과 함께 비교했다. 이 출원의 청구범위가 더 넓고 특허성 측면에서 구별되지 않는다는 이유로 비법정 이중특허 거절을 제기했다.", "PDF p. 4"),
-    finding(1, "applicant", "출원인은 같은 날 제출한 terminal disclaimer를 근거로 이중특허 거절을 철회해 달라고 요청했다.", "PDF p. 1"),
+    finding(0, "examiner", "심사관은 제1~19항을 모특허 US 11,837,142의 제1항, 제3~18항, 제20항과 함께 비교했다. 이 출원의 청구범위가 더 넓고 특허성 측면에서 구별되지 않는다는 이유로 비법정 이중특허 거절을 제기했다.", "PDF p. 4",
+      { ground: "이중특허 (비법정)", references: [{ doc: "US 11,837,142 B2 (모특허)", where: "제1항, 제3~18항, 제20항" }] }),
+    finding(1, "applicant", "출원인은 같은 날 제출한 terminal disclaimer를 근거로 이중특허 거절을 철회해 달라고 요청했다.", "PDF p. 1", { responseType: "disclaimer" }),
     { id: documents[3].id, title: documents[3].title, source: "USPTO 심사철 · PDF p. 1",
       text: "출원인은 모특허의 존속기간을 초과하는 부분을 포기하고, 두 특허의 소유자가 같은 기간에만 이 특허의 권리를 행사할 수 있다는 조건을 수락했다." },
     finding(5, "outcome", "심사관은 terminal disclaimer로 이중특허 문제가 해소됐다고 기재하고 제1~19항을 모두 허여했다.", "PDF pp. 5–6",

@@ -297,6 +297,82 @@ function claimRange(numbers) {
   return parts.join(", ") + "항";
 }
 
+// Claim-level detail of a finding: the ground, limitation and prior art behind a rejection, or how the applicant answered it.
+const responseLabels = { amend: "보정", argue: "보정 없이 의견서", cancel: "청구항 삭제", add: "청구항 신설", disclaimer: "Terminal disclaimer 제출" };
+
+function findingDetails(row) {
+  const applicant = row.role === "applicant";
+  const chip = applicant ? responseLabels[row.responseType] || "" : row.ground || "";
+  const lines = [];
+  if (row.element) {
+    const label = !applicant ? "대상 구성" : ["amend", "add"].includes(row.responseType) ? "보정 문언" : row.responseType === "cancel" ? "삭제 대상" : "다툰 구성";
+    lines.push([label, ["“" + row.element + "”"]]);
+  }
+  const references = (row.references || []).filter(item => item?.doc).map(item => [item.doc, item.where].filter(Boolean).join(" · "));
+  if (references.length) lines.push(["인용문헌", references]);
+  return { chip, tone: applicant ? row.responseType : "ground", lines };
+}
+
+function findingDetailNodes(row) {
+  const { chip, tone, lines } = findingDetails(row);
+  const nodes = { chip: chip ? el("span", chip, "detail-chip chip-" + tone) : null, list: null };
+  if (lines.length) {
+    nodes.list = el("dl", "", "finding-detail");
+    for (const [label, values] of lines) {
+      const line = el("div");
+      const value = el("dd");
+      value.append(...values.map(text => el("span", text)));
+      line.append(el("dt", label), value);
+      nodes.list.append(line);
+    }
+  }
+  return nodes;
+}
+
+// Plain-text form of the same detail for the PowerPoint export.
+function findingDetailText(row) {
+  const { chip, lines } = findingDetails(row);
+  return [chip && (row.role === "applicant" ? "대응 방식: " : "거절 근거: ") + chip, ...lines.map(([label, values]) => label + ": " + values.join("; "))].filter(Boolean);
+}
+
+// One line per ground or response type with the claims it covers, so a stage can be read before its individual findings.
+function stageOverview(role, rows) {
+  const groups = new Map();
+  const group = label => {
+    const key = label.replace(/\s+/g, "");
+    if (!groups.has(key)) groups.set(key, { label, claims: new Set(), references: new Set() });
+    return groups.get(key);
+  };
+  if (role === "examiner") {
+    for (const row of rows) {
+      if (!row.ground) continue;
+      const entry = group(row.ground);
+      row.claims.forEach(number => entry.claims.add(number));
+      for (const item of row.references || []) if (item?.doc) entry.references.add(item.doc);
+    }
+  } else {
+    const types = new Map();
+    for (const row of rows) {
+      if (!responseLabels[row.responseType]) continue;
+      if (!row.claims.length) group(responseLabels[row.responseType]);
+      for (const number of row.claims) types.set(number, (types.get(number) || new Set()).add(row.responseType));
+    }
+    // A claim counts as answered by argument only when the stage shows no amendment, cancellation or new claim for it.
+    for (const [number, found] of [...types].sort(([a], [b]) => a - b)) {
+      const changed = ["amend", "cancel", "add"].filter(type => found.has(type));
+      for (const type of changed.length ? changed : found) group(responseLabels[type]).claims.add(number);
+    }
+  }
+  if (!groups.size) return null;
+  const list = el("ul", "", "stage-overview");
+  for (const { label, claims, references } of groups.values()) {
+    const item = el("li");
+    item.append(el("strong", label), [claimScope([...claims]), [...references].join(", ")].filter(Boolean).map(text => " · " + text).join(""));
+    list.append(item);
+  }
+  return list;
+}
+
 function comparisonTable(rows) {
   const wrap = el("div", "", "table-wrap claim-comparison");
   wrap.tabIndex = 0;
@@ -322,7 +398,8 @@ function comparisonTable(rows) {
       if (!cells[role].length) td.append(el("span", empty, "comparison-empty"));
       for (const row of cells[role]) {
         const item = el("div", "", "comparison-finding");
-        item.append(el("p", row.text), findingSource(row, true));
+        const detail = findingDetailNodes(row);
+        item.append(...[detail.chip, el("p", row.text), detail.list, findingSource(row, true)].filter(Boolean));
         if (role === "applicant" && row.linked && row.targetDate) {
           item.append(el("small", row.targetDate + " 통지에 대한 답변", "comparison-context"));
         }
@@ -360,14 +437,15 @@ function prosecutionRounds(report, briefs) {
     }
   }
   notices.sort((a, b) => a.date.localeCompare(b.date));
-  const rounds = notices.map(notice => ({ notice, responses: [], docket: [], results: [] }));
+  const rounds = notices.map(notice => ({ notice, responses: [], decisions: [], docket: [], results: [] }));
   const roundAt = date => rounds.filter(round => date && round.notice.date <= date).at(-1);
   const decisions = [];
   const loose = [];
   for (const group of briefs) {
     if (rounds.some(round => round.notice === group) || referenceOnly(group)) continue;
     const round = roundAt(group.date);
-    if (decisionStages.has(group.stage)) decisions.push(group);
+    // An analysed decision is the result of the stage it closes, so its reasons are read with that stage.
+    if (decisionStages.has(group.stage)) (round ? round.decisions : decisions).push(group);
     else if (round) round.responses.push(group);
     else loose.push(group);
   }
@@ -391,7 +469,8 @@ function prosecutionRounds(report, briefs) {
 function findingItem(row, groupName) {
   const item = el("div", "", "finding");
   if (row.procedure !== groupName || row.linked) item.append(el("strong", [row.date, row.procedure].filter(Boolean).join(" · "), "finding-procedure"));
-  item.append(el("p", row.text));
+  const detail = findingDetailNodes(row);
+  item.append(...[detail.chip, el("p", row.text), detail.list].filter(Boolean));
   const scope = [claimScope(row.claims), row.issue].filter(Boolean).join(" · ");
   if (scope) item.append(el("small", scope, "finding-scope"));
   item.append(findingSource(row, true));
@@ -403,11 +482,13 @@ function findingItem(row, groupName) {
   return item;
 }
 
-function findingColumn(role, title, rows, groupName, extra = []) {
+function findingColumn(role, title, rows, groupName, extra = [], overview = null) {
   const column = el("section", "", "claim-role " + role);
   column.append(el("h4", title));
-  const overview = rows.filter(row => !row.claims.length);
-  const primary = overview.length ? overview : rows.slice(0, 2);
+  if (overview) column.append(overview);
+  const general = rows.filter(row => !row.claims.length);
+  // Short stages show every finding; longer ones lead with the stage-level findings and fold the rest.
+  const primary = rows.length <= 5 ? rows : [...general, ...rows.filter(row => row.claims.length)].slice(0, 4);
   const more = el("details", "", "extra-findings");
   more.append(el("summary", "근거 " + (rows.length - primary.length) + "건 더 보기"));
   for (const row of rows) (primary.includes(row) ? column : more).append(findingItem(row, groupName));
@@ -444,8 +525,11 @@ function roundCard(report, round, index, next, selected) {
   head.append(identity);
   card.append(head);
   const responseRows = round.responses.flatMap(group => group.rows);
+  const decisionRows = round.decisions.flatMap(group => group.rows);
   const rows = [...notice.rows, ...responseRows];
-  const claims = [...new Set(rows.flatMap(row => row.claims))].sort((a, b) => a - b);
+  const claims = [...new Set([...rows, ...decisionRows].flatMap(row => row.claims))].sort((a, b) => a - b);
+  // A docket line for a decision is dropped once the decision document itself was analysed.
+  const docketResults = round.results.filter(entry => !round.decisions.some(group => group.date === entry.date && group.stage === entry.stage));
   const picker = el("select");
   picker.dataset.filterKey = "claim:" + notice.key;
   const all = el("option", "전체 청구항");
@@ -471,25 +555,29 @@ function roundCard(report, round, index, next, selected) {
   }
   const grid = el("div", "", "round-grid");
   const result = el("footer", "", "round-result");
+  const roleOf = row => row.role === "outcome" && noticeStages.has(row.sourceStage) ? "examiner" : row.role;
+  // An answer linked to this notice counts, even when its document has no card of its own.
+  const answered = rows.some(row => roleOf(row) === "applicant");
   function render() {
     const visible = list => list.filter(row => (!picker.value || row.claims.includes(Number(picker.value))) &&
       (!issuePicker.value || row.issue === issuePicker.value));
-    const roleOf = row => row.role === "outcome" && noticeStages.has(row.sourceStage) ? "examiner" : row.role;
     const examiner = visible(rows.filter(row => roleOf(row) === "examiner"));
     const applicant = visible(rows.filter(row => roleOf(row) === "applicant"));
-    const outcome = visible(rows.filter(row => roleOf(row) === "outcome"));
+    const outcome = visible([...rows.filter(row => roleOf(row) === "outcome"), ...decisionRows]);
+    const decisionSummaries = round.decisions.filter(group => group.summaryIndex !== undefined);
     const noticeExtra = notice.summaryIndex !== undefined ? [summaryFinding(report, notice)] : [];
     if (!examiner.length && !noticeExtra.length) noticeExtra.push(el("p", report.autoPending ? "통지 원문을 분석하고 있습니다." : "통지 기록은 확인됐습니다. 선택한 자료에서 통지 내용을 확인하지 못했습니다.", "muted"));
     // Docket entries stand in only when no analysed document covers that side of the stage.
     const analysed = round.responses.filter(group => group.summaryIndex !== undefined).map(group => summaryFinding(report, group));
-    const responseExtra = analysed.length || responseRows.length ? analysed : round.docket.map(docketFinding);
+    const responseExtra = analysed.length || answered ? analysed : round.docket.map(docketFinding);
     if (!applicant.length && !responseExtra.length) responseExtra.push(el("p", "이 통지에 대한 출원인 대응은 선택한 자료에서 확인되지 않았습니다.", "muted"));
-    grid.replaceChildren(findingColumn("examiner", "심사관의 통지", examiner, notice.name, noticeExtra),
-      findingColumn("applicant", "출원인의 대응", applicant, notice.name, responseExtra));
+    grid.replaceChildren(findingColumn("examiner", "심사관의 통지", examiner, notice.name, noticeExtra, stageOverview("examiner", examiner)),
+      findingColumn("applicant", "출원인의 대응", applicant, notice.name, responseExtra, stageOverview("applicant", applicant)));
     result.replaceChildren(el("h4", "이 단계의 결과"));
     for (const row of outcome) result.append(findingItem(row, notice.name));
-    if (!rows.some(row => roleOf(row) === "outcome")) for (const entry of round.results) result.append(docketFinding(entry));
-    if (!outcome.length && !round.results.length) {
+    for (const group of decisionSummaries) result.append(summaryFinding(report, group));
+    if (!rows.some(row => roleOf(row) === "outcome")) for (const entry of docketResults) result.append(docketFinding(entry));
+    if (!outcome.length && !decisionSummaries.length && !docketResults.length) {
       result.append(el("p", next ? "→ " + next.notice.date + " " + next.notice.name + " (" + (index + 2) + "단계)로 이어졌습니다." : "이 단계 이후의 결정은 선택한 자료에서 확인되지 않았습니다.", "muted"));
     }
   }

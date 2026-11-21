@@ -272,7 +272,7 @@ function exportButton(report, status) {
         [...stages].map(([stage, sources]) => [date, stage, [...sources.keys()].join(" · ")]));
       const procedureRows = proceedingBriefs(report).flatMap(group => group.rows.map(row => [
         [group.date, group.name].filter(Boolean).join(" · "), claimScope(row.claims),
-        briefRoles.find(([role]) => role === row.role)?.[1], [row.issue, row.text].filter(Boolean).join("\n"),
+        briefRoles.find(([role]) => role === row.role)?.[1], [row.issue, ...findingDetailText(row), row.text].filter(Boolean).join("\n"),
         [row.date, row.procedure, row.locator].filter(Boolean).join(" · "),
       ]));
       await window.exportPatentPptx({ ...report, timelineRows, procedureRows }, report.reviewed ? "원문 검토일 " + report.reviewedAt : dateLabel(report.retrievedAt), facts, download);
