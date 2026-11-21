@@ -26,7 +26,7 @@ let searchVersion = 0;
 let activeSearch;
 let processing = false;
 const isAutomaticMode = () => by("lookup").elements.mode.value === "api";
-const localTools = () => import("/patent-review-local.mjs?v=20261120-epo-review");
+const localTools = () => import("/patent-review-local.mjs?v=20261120-epo-review-zip");
 
 function el(tag, text = "", className = "") {
   const element = document.createElement(tag);
@@ -336,6 +336,98 @@ function documentActions(report, doc) {
   return wrapper;
 }
 
+const uploadLimit = 3.5 * 1024 * 1024;
+const sizeLabel = bytes => bytes >= 1024 * 1024 ? (bytes / 1024 / 1024).toFixed(1) + " MiB" : Math.max(1, Math.round(bytes / 1024)) + " KiB";
+
+// EPO does not offer prosecution documents through an API, so the user downloads the Register ZIP once and we summarize it.
+function registerZipBox(report) {
+  const box = el("div", "", "register-zip");
+  box.append(el("h3", "EP 심사 서류 원문 한 번에 요약"), el("p",
+    "European Patent Register의 All documents에서 ZIP Archive로 받은 파일을 올리면, 안에 든 PDF를 골라 Claude로 요약합니다. "
+    + "EPO 이용 조건상 원문은 사이트가 자동으로 가져오지 않습니다. PDF는 3.5 MiB 이하만 요약할 수 있습니다.", "muted hint"));
+  const actions = el("div", "", "register-zip-actions");
+  const register = report.links.find(item => item.url.includes("register.epo.org"));
+  if (register) actions.append(link({ label: "Register에서 ZIP 받기", url: register.url }));
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".zip,application/zip";
+  input.hidden = true;
+  const pick = button("Register ZIP 올리기", () => input.click(), "primary");
+  pick.disabled = !report.canSummarize;
+  actions.append(pick);
+  const list = el("div", "", "zip-list");
+  box.append(actions, list);
+  if (!report.canSummarize) box.append(el("p", "Claude API 키가 서버에 설정되면 사용할 수 있습니다.", "muted hint"));
+
+  input.addEventListener("change", async () => {
+    const file = input.files[0];
+    input.value = "";
+    if (!file) return;
+    list.replaceChildren();
+    if (file.size > 200 * 1024 * 1024) {
+      say("status", "200 MiB 이하의 ZIP을 올려 주세요.", true);
+      return;
+    }
+    say("status", "ZIP 안의 PDF를 확인하고 있습니다.");
+    let entries;
+    try {
+      entries = await (await localTools()).readZipPdfs(file);
+    } catch (error) {
+      say("status", error.message, true);
+      return;
+    }
+    if (!entries.length) {
+      say("status", "ZIP 안에서 PDF를 찾지 못했습니다.", true);
+      return;
+    }
+    const rows = entries.map(entry => {
+      const usable = !entry.encrypted && entry.size <= uploadLimit;
+      const row = el("label", "", "zip-row");
+      const check = document.createElement("input");
+      check.type = "checkbox";
+      check.checked = usable;
+      check.disabled = !usable;
+      row.append(check, el("span", entry.name), el("small", usable ? sizeLabel(entry.size)
+        : entry.encrypted ? "암호 파일" : `${sizeLabel(entry.size)} · 용량 초과`, "muted"));
+      return { entry, check, row };
+    });
+    const run = button("", async () => {
+      const selected = rows.filter(item => item.check.checked);
+      if (!selected.length) {
+        say("status", "요약할 PDF를 골라 주세요.", true);
+        return;
+      }
+      run.disabled = pick.disabled = true;
+      let done = 0;
+      for (const [index, { entry }] of selected.entries()) {
+        const progress = `Register 서류 요약 중 (${index + 1}/${selected.length}) · ${entry.name}`;
+        say("status", progress);
+        try {
+          const form = new FormData();
+          form.append("pdf", new File([await entry.read()], entry.name, { type: "application/pdf" }));
+          const summary = await summarizeWithRetry(form, new AbortController().signal, progress);
+          addSummary(report, { ...summary, source: "European Patent Register · 사용자 업로드", id: entry.name });
+          done++;
+        } catch (error) {
+          addReportNote(report, `${entry.name} · ${error.message}`);
+        }
+      }
+      run.disabled = pick.disabled = false;
+      if (current === report) {
+        say("status", `Register 서류 ${done}건을 요약해 문서 요약에 추가했습니다.`, done < selected.length);
+        if (done) by("summaries").scrollIntoView({ block: "nearest" });
+      }
+    }, "primary");
+    const count = () => { run.textContent = `선택한 서류 요약 (${rows.filter(item => item.check.checked).length}건)`; };
+    rows.forEach(item => item.check.addEventListener("change", count));
+    count();
+    list.append(el("p", `${file.name} · PDF ${entries.length}개`, "muted hint"), ...rows.map(item => item.row), run);
+    say("status", "요약할 서류를 고른 뒤 버튼을 눌러 주세요.");
+  });
+  box.append(input);
+  return box;
+}
+
 function familyCell(row) {
   const label = row.publication || row.application || "";
   const countries = Array.from(by("office").options, option => option.value);
@@ -520,6 +612,7 @@ function show(report) {
       report.documents.map(doc => [doc.date, doc.title, doc.id, documentActions(report, doc)]),
       report.local ? "기관에서 받은 PDF를 아래에서 선택할 수 있습니다." : "자동으로 가져올 수 있는 공개 원문이 없습니다. 위의 공식 열람처를 확인해 주세요.",
     ));
+    if (report.country === "EP" && !report.local && !report.demo) docs.append(registerZipBox(report));
     if (report.country === "US" && !useHandoff) docs.append(usDocumentGuide(report));
     area.append(docs, history);
   }
