@@ -328,6 +328,7 @@ function findingDetails(row) {
   if (!applicant && row.gap) lines.push(["인정한 차이", ["“" + row.gap + "”"], "gap"]);
   const references = (row.references || []).filter(item => item?.doc).map(item => [item.doc, item.where].filter(Boolean).join(" · "));
   if (references.length) lines.push(["인용문헌", references, "art"]);
+  if (applicant && row.ground) lines.push(["다툰 거절", [row.ground], "against"]);
   if (applicant && row.support) lines.push(["명세서 근거", [row.support], "support"]);
   if (applicant && row.statement) lines.push(["한정 발언", ["“" + row.statement + "”"], "statement"]);
   if (!applicant && row.reason) lines.push(["허여·철회 이유", [row.reason], "reason"]);
@@ -573,7 +574,7 @@ function roundIssues(rows) {
     const title = ground || row.issue || "";
     let issue = issues.find(item => item.title === title && (!ground || row.claims.some(number => item.claims.has(number)) ||
       (item.art.size === art.length && art.every(key => item.art.has(key)))));
-    if (!issue) issues.push(issue = { title, requirement: ground ? requirementKey(ground) : "", art: new Set(), references: new Map(), claims: new Set(), rows: [], answers: [] });
+    if (!issue) issues.push(issue = { title, requirement: ground ? requirementKey(ground) : "", art: new Set(), references: new Map(), claims: new Set(), rows: [], answers: [], links: new Map() });
     for (const item of docs) {
       const key = artKey(item.doc);
       issue.art.add(key);
@@ -590,7 +591,16 @@ const answerSignals = [[/이중특허|double patent|terminal disclaimer/i, "이�
   [/§\s*112|기재불비|indefinite|명확|written description|enablement/i, "기재불비"], [/§\s*101|적격|eligib/i, "특허적격"], [/신규사항|new matter/i, "신규사항"],
   [/restriction|제한\s*요구|election|단일성|종\s*선택/i, "단일성"]];
 
-// An answer belongs to the rejections of the claims it addresses. When it names a cited document or a ground, only those rejections take it.
+// How an answer came to stand under a rejection. Only the first two say that the applicant addressed that rejection itself.
+const answerLinks = {
+  stated: "답변서가 이 거절을 지목해 다툼",
+  named: "이 거절의 근거나 인용문헌을 언급",
+  shared: "여러 거절이 함께 인용한 문헌을 언급 · 어느 거절을 다툰 것인지는 원문에서 확인",
+  claims: "청구항 번호가 겹쳐 놓은 답변 · 이 거절을 직접 다퉜는지는 원문에서 확인",
+};
+
+// An answer stands under the rejections of the claims it addresses. The rejection the response itself names comes first, then a ground
+// or a cited document named in its wording. With none of these it is placed under every rejection of those claims and marked as such.
 function pairAnswers(issues, answers) {
   const loose = [];
   for (const row of [...answers].sort(byRowDate)) {
@@ -600,13 +610,22 @@ function pairAnswers(issues, answers) {
       continue;
     }
     const text = [row.issue, row.text, row.element, row.statement].filter(Boolean).join(" ");
-    const named = touching.filter(issue => (row.responseType === "disclaimer" && issue.requirement === "이중특허") || (row.responseType === "elect" && issue.requirement === "단일성") ||
-      answerSignals.some(([pattern, requirement]) => issue.requirement === requirement && pattern.test(text)) ||
-      [...issue.references.values()].some(item => {
-        const name = /^[^\s,(]{3,}/.exec(item.doc)?.[0];
-        return name && text.includes(name);
-      }));
-    for (const issue of named.length ? named : touching) issue.answers.push(row);
+    const art = (row.references || []).map(item => item?.doc).filter(Boolean).map(artKey);
+    const requirement = row.ground ? requirementKey(row.ground) : "";
+    const stated = touching.filter(issue => requirement && issue.requirement === requirement && (!art.length || !issue.art.size || art.some(key => issue.art.has(key))));
+    const grounds = touching.filter(issue => (row.responseType === "disclaimer" && issue.requirement === "이중특허") || (row.responseType === "elect" && issue.requirement === "단일성") ||
+      answerSignals.some(([pattern, key]) => issue.requirement === key && pattern.test(text)));
+    const cited = touching.filter(issue => art.some(key => issue.art.has(key)) || [...issue.references.values()].some(item => {
+      const name = /^[^\s,(]{3,}/.exec(item.doc)?.[0];
+      return name && text.includes(name);
+    }));
+    const [list, link] = stated.length ? [stated, "stated"] : grounds.length ? [grounds, "named"] : cited.length ? [cited, cited.length > 1 ? "shared" : "named"]
+      : [touching, touching.length > 1 ? "claims" : ""];
+    for (const issue of list) {
+      issue.answers.push(row);
+      // With a single rejection of those claims there is nothing to tell apart, so no basis is shown.
+      issue.links.set(row, touching.length > 1 ? link : "");
+    }
   }
   return loose;
 }
@@ -788,7 +807,12 @@ function issueCard(issue, stage, art, unanswered) {
   const challenger = column(!issue.contested ? "심사관의 판단" : offices ? "청구인·심사관의 주장" : "청구인·제3자의 주장", issue.contested && !offices ? "third" : "examiner");
   for (const row of issue.rows) challenger.append(issueFinding(row, issue, round.notice.name));
   const answer = column(stage.track ? "특허권자의 대응" : round.kind === "appeal" ? "출원인의 주장" : "출원인의 대응", "applicant");
-  for (const row of issue.answers) answer.append(issueFinding(row, issue, round.notice.name));
+  for (const row of issue.answers) {
+    const item = issueFinding(row, issue, round.notice.name);
+    const link = issue.links.get(row);
+    if (answerLinks[link]) item.append(el("small", answerLinks[link], "answer-link link-" + link));
+    answer.append(item);
+  }
   if (!issue.answers.length) answer.append(el("p", unanswered, "muted"));
   const after = column("그 뒤", "outcome");
   for (const line of issue.fate) {
@@ -906,7 +930,7 @@ function issueRows(report) {
     `${index + 1}단계 · ${round.notice.date}\n${round.notice.name}`,
     [issue.title, claimScope([...issue.claims]), ...[...issue.references.values()].map(item => item.doc)].filter(Boolean).join("\n"),
     issue.rows.map(row => [row.text, ...findingDetailText(row).filter(line => !line.startsWith("거절 근거"))].join("\n")).join("\n\n"),
-    issue.answers.map(row => [...findingDetailText(row), row.text].join("\n")).join("\n\n") || "대응 미확인",
+    issue.answers.map(row => [answerLinks[issue.links.get(row)] && "[" + answerLinks[issue.links.get(row)] + "]", ...findingDetailText(row), row.text].filter(Boolean).join("\n")).join("\n\n") || "대응 미확인",
     issue.fate.map(line => [line.text, line.reason && "이유: " + line.reason].filter(Boolean).join("\n")).join("\n"),
   ]));
 }
@@ -933,7 +957,7 @@ function renderAnalysis(report) {
   procedures.replaceChildren(el("h2", "4 · 단계별 심사 흐름"));
   const flow = prosecutionRounds(report, briefs);
   if (flow.rounds.length) {
-    procedures.append(el("p", "심사관의 통지, 불복 절차, 등록 후 절차마다 한 단계로 묶고, 그 안에서 거절이나 주장 하나하나를 상대방의 대응과 그 뒤의 처리까지 이어서 보여 줍니다. Advisory Action은 최종 거절 단계에, 제3자 정보제공은 제출된 시점의 단계에 넣었습니다.", "hint muted"));
+    procedures.append(el("p", "심사관의 통지, 불복 절차, 등록 후 절차마다 한 단계로 묶고, 그 안에서 거절이나 주장 하나하나를 상대방의 대응과 그 뒤의 처리까지 이어서 보여 줍니다. Advisory Action은 최종 거절 단계에, 제3자 정보제공은 제출된 시점의 단계에 넣었습니다. 답변이 어느 거절을 다툰 것인지 답변서에서 확인되지 않으면 청구항이 겹치는 거절마다 놓고 그렇게 표시합니다.", "hint muted"));
     const focus = stageFocus(report, flow.rounds);
     if (focus) procedures.append(el("p", focus, "stage-focus-note"));
   }
