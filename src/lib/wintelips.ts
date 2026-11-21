@@ -327,7 +327,7 @@ export async function wintelipsFamilyMember(token: string, input: unknown) {
 
 const plain = (value: string | undefined) => (value ?? "").replace(/&amp;/g, "&");
 const trialFields = ["trial_char", "trial_num", "appeal_num", "trial_type", "trial_title", "case_info", "inst", "req_dt", "filing_dt", "dcsn_dt", "trial_stts", "dcsn",
-  "dcsn_rslt", "appeal_rslt", "dcsn_stts", "pprt_claim", "claim_cnt", "dcsn_dtl", "cons_trial_num", "cons_dt", "appeal_phase", "stmnt_filed_dt"];
+  "dcsn_rslt", "appeal_rslt", "dcsn_stts", "pprt_claim", "claim_cnt", "dcsn_dtl", "cons_trial_num", "cons_dt", "appeal_phase", "stmnt_filed_dt", "final_adm", "final_adm_dt", "dcsn_rsn"];
 
 // One trial or court case about the patent. Offices name the fields differently; fields this does not know are kept as a plain detail line.
 function trialRecord(item: Row, extra: { title?: string; parties?: string; root?: string } = {}) {
@@ -336,15 +336,16 @@ function trialRecord(item: Row, extra: { title?: string; parties?: string; root?
   return {
     number: named || rest[0] || "",
     type: item.trial_type || item.appeal_phase || undefined,
-    title: plain(extra.title || item.trial_title || item.case_info) || undefined,
+    title: plain(extra.title || item.trial_title || item.case_info).replace(/^-$/, "") || undefined,
     forum: item.inst || undefined,
-    filed: day(item.req_dt || item.filing_dt), decided: day(item.dcsn_dt),
+    filed: day(item.req_dt || item.filing_dt), decided: day(item.dcsn_dt || item.final_adm_dt),
     status: item.trial_stts || undefined,
-    result: item.dcsn || item.appeal_rslt || item.dcsn_rslt || undefined,
+    result: item.dcsn || item.appeal_rslt || item.dcsn_rslt || item.final_adm || undefined,
     finality: item.dcsn_stts || undefined,
     purport: item.pprt_claim ? clean(item.pprt_claim).slice(0, 400) : undefined,
     parties: extra.parties || undefined, root: extra.root || undefined,
-    detail: (named ? rest : rest.slice(1)).slice(0, 5).join(" · ").slice(0, 400) || undefined,
+    // The conclusion and reasons of a decision, where the office gives them, lead the detail line.
+    detail: [item.dcsn_dtl, item.dcsn_rsn, ...(named ? rest : rest.slice(1))].filter(Boolean).slice(0, 5).map(value => clean(value ?? "")).join(" · ").slice(0, 400) || undefined,
   };
 }
 
