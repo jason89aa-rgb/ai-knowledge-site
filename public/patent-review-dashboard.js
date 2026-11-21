@@ -217,7 +217,7 @@ function proceedingBriefs(report) {
       const ownNotice = briefs.get(ownKey);
       const group = (isNotice(record) && ownNotice ? ownNotice : target) || put(ownKey, record, date);
       if (group.key === ownKey && !group.date && date) group.date = date;
-      group.rows.push({ ...entry, date, procedure: procedureName(record.title), sourceTitle: summary.title,
+      group.rows.push({ ...entry, date, sourceStage: prosecutionStage(record), procedure: procedureName(record.title), sourceTitle: summary.title,
         index, linked: group.key !== ownKey, targetDate });
     }
   }
@@ -227,11 +227,83 @@ function proceedingBriefs(report) {
   return [...briefs.values()].sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999"));
 }
 
-const briefRoles = [["examiner", "심사관의 판단"], ["applicant", "출원인의 답변·보정"], ["outcome", "후속 판단"]];
+const briefRoles = [["examiner", "심사관의 판단"], ["applicant", "출원인의 답변·보정"], ["outcome", "문서상 처분"]];
+
+function findingSource(row, compact = false) {
+  const cite = [row.date, procedureName(row.sourceTitle), row.locator].filter(Boolean).join(" · ");
+  const source = el("a", compact ? [row.date, row.locator].filter(Boolean).join(" · ") : cite, "source-ref");
+  source.title = cite;
+  source.href = "#summary-" + row.index;
+  source.onclick = () => { by("summaries").parentElement.open = true; };
+  return source;
+}
+
+function claimComparison(briefs, reviewed) {
+  const claims = new Map();
+  const notices = new Set(["비최종 거절", "최종 거절", "R/R · 제한요구", "심사관 검토", "Advisory Action"]);
+  for (const group of briefs) {
+    for (const row of group.rows) {
+      let role = row.role;
+      if (role === "outcome") {
+        // A notice may describe claims as allowable or rejected before a response.
+        // Its disposition belongs with the examiner's opinion, even in older reports.
+        if (notices.has(row.sourceStage)) role = "examiner";
+        else if (!row.date || row.sourceStage === "출원인 대응·보정" ||
+          !(row.finalDisposition === true || (reviewed && row.sourceStage === "NoA · 허여 통지"))) role = null;
+      }
+      for (const number of row.claims) {
+        if (!claims.has(number)) claims.set(number, { examiner: [], applicant: [], outcome: [] });
+        if (role) claims.get(number)[role].push(row);
+      }
+    }
+  }
+  return [...claims.entries()].sort(([a], [b]) => a - b).map(([number, cells]) => {
+    for (const rows of Object.values(cells)) rows.sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999"));
+    const lastDecision = cells.outcome.at(-1)?.date;
+    const laterReview = lastDecision && cells.examiner.some(row => notices.has(row.sourceStage) && row.date > lastDecision);
+    cells.outcome = laterReview ? [] : cells.outcome.filter(row => row.date === lastDecision);
+    return { number, cells };
+  });
+}
+
+function comparisonTable(rows) {
+  const wrap = el("div", "", "table-wrap claim-comparison");
+  wrap.tabIndex = 0;
+  wrap.setAttribute("role", "region");
+  wrap.setAttribute("aria-label", "청구항별 심사 비교표");
+  const table = el("table");
+  const head = table.createTHead().insertRow();
+  for (const title of ["청구항", "심사관 의견", "출원인 대응", "최종 결과"]) {
+    const th = el("th", title);
+    th.scope = "col";
+    head.append(th);
+  }
+  const body = table.createTBody();
+  for (const { number, cells } of rows) {
+    const tr = body.insertRow();
+    const claim = el("th", number + "항");
+    claim.scope = "row";
+    tr.append(claim);
+    for (const [role, empty] of [["examiner", "의견 미확인"], ["applicant", "대응 미확인"], ["outcome", "최종 결과 미확인"]]) {
+      const td = tr.insertCell();
+      if (!cells[role].length) td.append(el("span", empty, "comparison-empty"));
+      for (const row of cells[role]) {
+        const item = el("div", "", "comparison-finding");
+        item.append(el("p", row.text), findingSource(row, true));
+        if (role === "applicant" && row.linked && row.targetDate) {
+          item.append(el("small", row.targetDate + " 통지에 대한 답변", "comparison-context"));
+        }
+        td.append(item);
+      }
+    }
+  }
+  wrap.append(table);
+  return wrap;
+}
 
 function claimAnalysis(report, panel) {
   const selected = new Map([...panel.querySelectorAll("select")].map(node => [node.dataset.filterKey, node.value]));
-  panel.replaceChildren(el("h2", "절차별 쟁점과 대응"));
+  panel.replaceChildren(el("h2", "청구항별 심사 비교"));
   const incomplete = report.summaries.filter(summary => summary.evidenceIncomplete);
   if (incomplete.length) panel.append(el("p", "청구항 근거 추출이 불완전한 문서 " + incomplete.length + "건 · " + incomplete.map(item => item.title).join(", "), "analysis-notice"));
   const briefs = proceedingBriefs(report);
@@ -239,6 +311,16 @@ function claimAnalysis(report, panel) {
     panel.append(el("p", report.autoPending ? "선택한 원문을 검토하고 있습니다." : "선택한 자료에서 청구항별로 대조할 통지와 답변 근거를 확인하지 못했습니다.", "muted"));
     return;
   }
+  const comparison = claimComparison(briefs, report.reviewed);
+  if (comparison.length) {
+    if (comparison.some(row => !row.cells.outcome.length)) {
+      panel.append(el("p", "최종 결과는 선택한 결정문에서 해당 청구항의 처분이 확인될 때 표시됩니다.", "hint muted"));
+    }
+    panel.append(comparisonTable(comparison));
+  }
+  const procedures = el("details", "", "record-fold supporting-documents");
+  procedures.append(el("summary", "절차별 쟁점과 대응"));
+  procedures.open = !comparison.length;
   const supporting = el("details", "", "record-fold supporting-documents");
   supporting.append(el("summary", "청구항 제출본·공보 등 참고 자료"));
   for (const group of briefs) {
@@ -252,7 +334,7 @@ function claimAnalysis(report, panel) {
     brief.append(head);
     const referenceOnly = !group.stage && !group.rows.some(row => row.linked) &&
       /^(?:claims|specification|drawings?|abstract|bibliographic data sheet|청구항 제출본|명세서|공보 청구항|공보 첫 면)(?:$|\s*[(·])/i.test(group.name);
-    (referenceOnly ? supporting : panel).append(brief);
+    (referenceOnly ? supporting : procedures).append(brief);
     if (!group.rows.length) {
       brief.append(el("p", "통지 기록은 확인됐습니다. 선택한 원문에서 청구항별 판단을 확인할 수 없습니다.", "muted"));
       continue;
@@ -302,11 +384,7 @@ function claimAnalysis(report, panel) {
           if (row.procedure !== group.name || row.linked) item.append(el("strong", row.procedure, "finding-procedure"));
           item.append(el("small", [claimScope(row.claims), row.issue].filter(Boolean).join(" · ")),
             el("p", row.text));
-          const cite = [row.date, procedureName(row.sourceTitle), row.locator].filter(Boolean).join(" · ");
-          const source = el("a", cite, "source-ref");
-          source.href = "#summary-" + row.index;
-          source.onclick = () => { by("summaries").parentElement.open = true; };
-          item.append(source);
+          item.append(findingSource(row));
           if (row.linked && row.reference) item.append(el("small", "대응 근거 · “" + row.reference + "”", "reference-quote"));
           if (index < 2) column.append(item);
           else extra.append(item);
@@ -325,5 +403,6 @@ function claimAnalysis(report, panel) {
       brief.append(el("p", "이 판단에 대한 출원인 답변은 선택한 자료에서 확인되지 않았습니다.", "brief-note"));
     }
   }
+  if (procedures.childElementCount > 1) panel.append(procedures);
   if (supporting.childElementCount > 1) panel.append(supporting);
 }
