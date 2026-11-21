@@ -120,6 +120,9 @@ function reportBody(text) {
   return body;
 }
 
+// A long answer is streamed. One that never arrives, or ends before its JSON, was cut on the way by a platform limit, a proxy or the network.
+const cutError = status => Object.assign(new Error("서버 응답을 끝까지 받지 못했습니다. 잠시 후 다시 시도해 주세요."), { cut: true, status });
+
 async function api(data, signal) {
   if (!isAutomaticMode()) throw new Error("검색 설정에서 자동 조회 및 요약을 선택해 주세요.");
   const code = by("access").value;
@@ -128,18 +131,33 @@ async function api(data, signal) {
   const form = data instanceof FormData;
   if (!form) headers["Content-Type"] = "application/json";
   if (data.action === "ask" || data.action === "family-compare") headers["X-Patent-Action"] = data.action;
-  const response = await fetch("/api/patent-review", {
-    method: "POST", headers, body: form ? data : JSON.stringify(data), cache: "no-store", signal,
-  });
+  let response;
+  try {
+    response = await fetch("/api/patent-review", {
+      method: "POST", headers, body: form ? data : JSON.stringify(data), cache: "no-store", signal,
+    });
+  } catch (error) {
+    if (signal?.aborted || error.name === "AbortError") throw error;
+    throw cutError();
+  }
   if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
+    const body = await response.json().catch(() => null);
+    // A server error that is not this route's own JSON comes from the platform in front of it, which gave up on the request.
+    if (!body?.error && response.status >= 500) throw cutError(response.status);
     throw summaryError({ ...body, status: response.status });
   }
   return response;
 }
 
 async function readSummary(response) {
-  const summary = await response.json();
+  let summary;
+  try {
+    summary = JSON.parse(await response.text());
+  } catch (error) {
+    if (error.name === "AbortError") throw error;
+    throw cutError();
+  }
+  if (!summary || typeof summary !== "object") throw cutError();
   if (summary.error) throw summaryError(summary);
   recordUsage(summary.usage || summary.conclusion?.usage);
   return summary;
@@ -171,13 +189,15 @@ function summaryError({ error, retryAfter, status }) {
   return Object.assign(new Error(error || "요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요."), { retryAfter, status });
 }
 
-async function summarizeWithRetry(payload, signal, progress) {
+// A request is sent again once when the server asks for a wait or, unless the caller has a better answer to a cut response, when the answer was cut.
+async function summarizeWithRetry(payload, signal, progress, retryCut = true) {
   try {
     return await readSummary(await api(payload, signal));
   } catch (error) {
     signal.throwIfAborted();
-    if (!Number.isFinite(error.retryAfter)) throw error;
-    say("status", `${progress} · ${error.retryAfter}초 후 재시도`);
+    const wait = Number.isFinite(error.retryAfter) ? error.retryAfter : error.cut && retryCut ? 5 : undefined;
+    if (wait === undefined) throw error;
+    say("status", `${progress} · ${error.cut ? "응답이 끊겨 " : ""}${wait}초 후 재시도`);
     await new Promise((resolve, reject) => {
       function abort() {
         clearTimeout(timer);
@@ -186,7 +206,7 @@ async function summarizeWithRetry(payload, signal, progress) {
       const timer = setTimeout(() => {
         signal.removeEventListener("abort", abort);
         resolve();
-      }, Math.min(error.retryAfter * 1000, 2147483647));
+      }, Math.min(wait * 1000, 2147483647));
       signal.addEventListener("abort", abort, { once: true });
     });
     say("status", progress);

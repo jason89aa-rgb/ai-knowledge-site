@@ -284,6 +284,14 @@ function dossierHandoff(report) {
       // a single batch's inflated ZIP entries are kept in memory at a time.
       let batch = [];
       let bytes = 0;
+      // A batch the server could not answer in one piece is not tried at that size again in this run.
+      let docLimit = 8;
+      let byteLimit = pdfLimit;
+      const shrinkTo = done => {
+        docLimit = Math.max(1, Math.min(docLimit, done.length));
+        byteLimit = Math.max(1, Math.min(byteLimit, done.reduce((size, item) => size + item.file.size, 0)));
+      };
+      let cuts = 0;
       let onlyConclusion;
       let groups = 0;
       // The claims as published and granted and the status of the right frame the conclusion; a failed or slow lookup only leaves them out.
@@ -314,30 +322,50 @@ function dossierHandoff(report) {
           });
           status.textContent = "선택 원문 " + fresh.length + "건 함께 분석 중";
           let response;
-          try { response = await summarizeWithRetry(form, signal, status.textContent); }
+          // A cut answer to several documents is not asked for again: the batch is halved. A single document gets one more try.
+          try { response = await summarizeWithRetry(form, signal, status.textContent, fresh.length === 1); }
           catch (error) {
             signal.throwIfAborted();
-            if (![413, 422].includes(error.status)) throw error;
-            if (work.length > 1) {
+            // 504: Claude did not start answering in time, which fewer documents also cures.
+            const overload = error.cut || error.status === 504;
+            if (!overload && ![413, 422].includes(error.status)) throw error;
+            if (fresh.length > 1) {
               groups--;
               const split = Math.ceil(work.length / 2);
-              await submitBatch(work.slice(0, split));
-              await submitBatch(work.slice(split));
+              if (overload) {
+                shrinkTo(fresh.slice(0, Math.ceil(fresh.length / 2)));
+                for (const item of fresh) item.row.info.textContent = "응답이 끊김 · 나눠서 재분석 대기";
+                // Documents analysed in an earlier run need no request. The limit may drop again while a part is sent, so each part is cut to the limit of that moment.
+                await submitBatch(work.filter(item => !fresh.includes(item)));
+                for (let rest = fresh; rest.length;) {
+                  const part = rest.slice(0, docLimit);
+                  rest = rest.slice(part.length);
+                  await submitBatch(part);
+                }
+              } else {
+                await submitBatch(work.slice(0, split));
+                await submitBatch(work.slice(split));
+              }
             } else {
-              work[0].row.info.textContent = "분석 실패 · " + error.message;
+              fresh[0].row.info.textContent = "분석 실패 · " + error.message;
               failed++;
+              // When nothing gets through, stop instead of failing every remaining document the same way.
+              if (error.cut && ++cuts >= 3) throw error;
+              // The rest of this batch was analysed in an earlier run and still counts.
+              if (work.length > 1) {
+                groups--;
+                await submitBatch(work.filter(item => item !== fresh[0]));
+              }
             }
             return;
           }
           signal.throwIfAborted();
+          cuts = 0;
           if (!Array.isArray(response.documents) || response.documents.length !== fresh.length) throw new Error("문서별 분석 결과를 확인할 수 없습니다.");
+          const missed = fresh.filter((item, i) => !response.documents[i]?.text);
           fresh.forEach((item, i) => {
             const summary = response.documents[i];
-            if (!summary?.text) {
-              item.row.info.textContent = "이번 응답에서 문서별 분석 미완료";
-              failed++;
-              return;
-            }
+            if (!summary?.text) return;
             const doc = item.doc;
             const dates = [...new Set((summary.evidence || []).map(row => calendarDay(row.documentDate)).filter(Boolean))];
             if (doc.importHash && dates.length === 1) doc.date = dates[0];
@@ -348,6 +376,15 @@ function dossierHandoff(report) {
             cachedResults.set(item.key, { doc, summary: { ...summary, id: doc.id, source: doc.importHash ? "사용자 제공 PDF" : report.source } });
           });
           if (fresh.length === work.length && response.conclusion?.text && response.documents.every(Boolean)) jointConclusions.set(key, response.conclusion);
+          if (missed.length === fresh.length) {
+            for (const item of missed) item.row.info.textContent = "이번 응답에서 문서별 분석 미완료";
+            failed += missed.length;
+          } else if (missed.length) {
+            // The answer left these out, so they are sent again. When it ran out before the last ones, later batches hold only as many as it covered.
+            if (fresh.indexOf(missed[0]) === fresh.length - missed.length) shrinkTo(fresh.slice(0, fresh.length - missed.length));
+            for (const item of missed) item.row.info.textContent = "응답에 담기지 않음 · 재분석 대기";
+            await submitBatch(missed);
+          }
         }
         onlyConclusion = jointConclusions.get(key);
         for (const item of work) {
@@ -373,14 +410,16 @@ function dossierHandoff(report) {
             }
             results.set(item.doc.id, cachedResults.get(item.key));
             row.info.textContent = "분석 완료";
+            cuts = 0;
           } catch (error) {
             signal.throwIfAborted();
             row.info.textContent = "기관 원문 분석 실패 · " + error.message;
             failed++;
+            if (error.cut && ++cuts >= 3) throw error;
           }
           continue;
         }
-        if (batch.length >= 8 || bytes + item.file.size > pdfLimit) await submitBatch();
+        if (batch.length >= docLimit || bytes + item.file.size > byteLimit) await submitBatch();
         batch.push(item);
         bytes += item.file.size;
       }
@@ -410,6 +449,8 @@ function dossierHandoff(report) {
       if (active()) {
         if (previous) Object.assign(report, previous);
         status.textContent = error.message + (previous ? " 이전 보고서는 그대로 두었습니다." : "");
+        // Finished analyses stay in this panel, so running again only sends what is still missing.
+        if (error.cut && cachedResults.size) status.textContent += " 분석을 마친 문서 " + cachedResults.size + "건은 다시 실행할 때 그대로 사용합니다.";
         say("status", status.textContent, true);
       }
     } finally {
