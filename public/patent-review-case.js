@@ -3,13 +3,13 @@
 function reviewedUsCase() {
   const application = "18/494,796";
   const documents = [
-    ["2024-05-16", "비최종 거절이유 통지", "LW6GG0CPGREENX7"],
-    ["2024-08-16", "출원인 의견서", "M02LGTDHWFYBM27"],
-    ["2024-08-16", "청구항 제출본", "M02LGTDFWFYBM27"],
-    ["2024-08-16", "Terminal disclaimer", "LZX3I5DKWFYBX50"],
-    ["2024-08-17", "Terminal disclaimer 승인", "LZYJXULTWFYBX98"],
-    ["2024-08-29", "허여 통지 및 허여 이유", "M0D1CQVJWFYGX53"],
-    ["2024-12-10", "정정 허여 통지", "M4CP76YBWFYGX62"],
+    ["2024-05-16", "Non-Final Rejection", "LW6GG0CPGREENX7"],
+    ["2024-08-16", "Applicant Arguments / Remarks Made in an Amendment", "M02LGTDHWFYBM27"],
+    ["2024-08-16", "Claims", "M02LGTDFWFYBM27"],
+    ["2024-08-16", "Terminal Disclaimer", "LZX3I5DKWFYBX50"],
+    ["2024-08-17", "Terminal Disclaimer review decision", "LZYJXULTWFYBX98"],
+    ["2024-08-29", "Notice of Allowance and Fees Due (PTOL-85)", "M0D1CQVJWFYGX53"],
+    ["2024-12-10", "Notice of Allowance and Fees Due (PTOL-85)", "M4CP76YBWFYGX62"],
   ].map(([date, title, id]) => ({ date, title, id }));
   const docket = { label: "USPTO 공식 문서 목록", url: "https://patentcenter.uspto.gov/applications/18494796/ifw/docs" };
   const espacenet = { label: "Espacenet에서 이 특허 열기", url: "https://worldwide.espacenet.com/patent/search?q=pn%3DUS12198599B2" };
