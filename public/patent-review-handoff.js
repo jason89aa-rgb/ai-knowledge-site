@@ -272,6 +272,8 @@ function dossierHandoff(report) {
     const results = new Map();
     const inputs = new Map();
     let failed = 0;
+    // A rerun that fails must not cost the report that is already there.
+    const previous = report.conclusion && { conclusion: report.conclusion, summaries: report.summaries, documents: report.documents, analysisCoverage: report.analysisCoverage };
     report.autoPending = choices.disabled = true;
     report.conclusion = undefined;
     report.summaries = [];
@@ -402,8 +404,9 @@ function dossierHandoff(report) {
       say("status", report.conclusion.partial ? "보고서가 일부 작성됐습니다." : "심사 결과 보고서를 작성했습니다.");
     } catch (error) {
       if (active()) {
-        status.textContent = error.message;
-        say("status", error.message, true);
+        if (previous) Object.assign(report, previous);
+        status.textContent = error.message + (previous ? " 이전 보고서는 그대로 두었습니다." : "");
+        say("status", status.textContent, true);
       }
     } finally {
       if (active()) {

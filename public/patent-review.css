@@ -254,9 +254,14 @@ td:first-child { white-space: nowrap; }
 }
 
 .case-flow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; list-style: none; margin: 0 0 12px; padding: 10px; background: white; border: 1px solid var(--line); border-radius: 10px; }
-.case-flow li { padding: 7px 3px; border-bottom: 3px solid #d4dee6; text-align: center; color: var(--muted); font-size: .84rem; }
+.case-flow li { border-bottom: 3px solid #d4dee6; text-align: center; color: var(--muted); font-size: .84rem; }
 .case-flow .complete { border-color: #86b4ab; }
 .case-flow [aria-current] { color: #155b50; background: #edf6f3; border-color: #207763; font-weight: 750; }
+/* Each step is a button: a step that can be opened reads as a link, the others as plain labels. */
+.case-flow button { width: 100%; height: 100%; min-height: 0; padding: 7px 3px; border: 0; border-radius: 0; background: transparent; color: #174777; font: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.case-flow button:hover:enabled { background: #edf5ff; }
+.case-flow button:disabled { opacity: 1; color: inherit; cursor: default; text-decoration: none; }
+.flow-input #result, .flow-input #back-search { display: none; }
 
 .extension-setup { margin-block: 14px; }
 .extension-heading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px 20px; }

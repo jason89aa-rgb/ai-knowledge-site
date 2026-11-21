@@ -508,14 +508,21 @@ function manualEditor(report) {
 
 function show(report) {
   const entering = current !== report;
-  workflowStep(report.collecting ? (report.conclusion || report.autoPending ? 3 : 2) : -1);
+  // While the user is on an earlier step, updates to the open case wait until they return to it.
+  if (!entering && report.collecting && flow.step >= 0 && flow.step < 2) return workflowStep(flow.step);
   current = report;
+  // Step 2 of a finished case shows the document selection again; the report itself is kept for step 3.
+  const selecting = Boolean(!entering && report.collecting && report.conclusion && !report.autoPending && flow.step === 2);
+  const drafting = Boolean(report.collecting && (!report.conclusion || selecting));
+  workflowStep(report.collecting ? (drafting && !report.autoPending ? 2 : 3) : -1);
   const area = by("result");
   area.replaceChildren();
   area.hidden = false;
   if (report.demo) area.append(el("div", "가상 데이터로 만든 예시입니다.", "panel sample"));
+  document.body.classList.remove("flow-input");
   document.body.classList.add("reading-report");
-  by("back-search").hidden = false;
+  // A case in the workflow is left through the step bar, which keeps it; other reports use the back button.
+  by("back-search").hidden = Boolean(report.collecting);
   const overview = el("section", "", "panel dossier-cover");
   const head = el("div", "", "report-head");
   const identity = el("div");
@@ -528,20 +535,23 @@ function show(report) {
   ppt.id = "report-export";
   ppt.disabled = Boolean(report.autoPending);
   head.append(identity);
-  if (!report.linksOnly && (!report.collecting || report.conclusion)) head.append(ppt);
+  if (!report.linksOnly && !drafting) head.append(ppt);
   overview.append(head);
   const useHandoff = !report.demo && !report.reviewed && !report.local;
   if (useHandoff) {
     const picker = dossierHandoff(report);
-    if (report.conclusion && !report.autoPending) {
+    if (report.conclusion && !report.autoPending && !selecting) {
       const edit = el("details", "", "report-metadata");
       edit.append(el("summary", "분석 문서 다시 선택"), picker);
       overview.append(edit);
-    } else overview.append(picker);
+    } else {
+      if (selecting) overview.append(el("p", "만들어 둔 보고서는 그대로 있습니다. 문서를 추가하거나 선택을 바꾼 뒤 보고서 생성을 누르면 다시 만들고, 이미 분석한 문서는 다시 보내지 않습니다.", "hint muted"));
+      overview.append(picker);
+    }
   }
   if (report.takeaway) overview.append(el("p", report.takeaway, "dossier-takeaway"));
   const milestones = reportMilestones(report);
-  if (!report.linksOnly && (!report.collecting || report.conclusion)) overview.append(reportMetrics(report, milestones));
+  if (!report.linksOnly && !drafting) overview.append(reportMetrics(report, milestones));
   const metadata = el("details", "", "report-metadata");
   metadata.append(el("summary", "서지 정보 및 공식 열람처"));
   const fields = el("dl", "", "facts");
@@ -573,12 +583,12 @@ function show(report) {
   if (report.local && report.country !== "UPC") overview.append(manualEditor(report));
   area.append(overview);
   showUsage(report);
-  if (report.conclusion || report.reviewed) area.append(resultDashboard(report));
+  if ((report.conclusion && !selecting) || report.reviewed) area.append(resultDashboard(report));
   if (entering) {
     title.focus({ preventScroll: true });
     window.scrollTo(0, 0);
   }
-  if (report.collecting && !report.conclusion) return;
+  if (drafting) return;
   if (report.linksOnly) {
     if (report.country === "US" && !useHandoff) area.append(usDocumentGuide(report));
     return;
@@ -778,27 +788,64 @@ by("lookup").querySelectorAll('[name="mode"]').forEach(mode => {
       current.autoPending = false;
       show(current);
     }
+    // Changing the mode ends the open case; one that is not on screen is dropped so the step bar stops offering it.
+    if (current?.collecting && flow.step >= 0 && flow.step < 2) current = undefined;
     by("search").disabled = false;
     say("status", "");
     updateMode();
   });
 });
 
+// The search result and the open case stay in memory, so each step can be reopened without redoing the ones before it.
+const flow = { step: 0, found: undefined, pick: undefined, candidate: undefined };
+const caseSignals = new WeakMap();
+const openCase = () => current?.collecting && caseSignals.get(current)?.aborted === false ? current : undefined;
+
 function workflowStep(index) {
-  const flow = by("case-flow");
-  flow.hidden = index < 0;
-  [...flow.children].forEach((item, i) => {
+  flow.step = index;
+  const bar = by("case-flow");
+  bar.hidden = index < 0;
+  const open = openCase();
+  const reachable = [true, Boolean(flow.found), Boolean(open), Boolean(open && (open.conclusion || open.autoPending))];
+  [...bar.children].forEach((item, i) => {
     if (i === index) item.setAttribute("aria-current", "step");
     else item.removeAttribute("aria-current");
     item.classList.toggle("complete", i < index);
+    item.firstElementChild.disabled = i === index || !reachable[i];
   });
 }
 
+function goStep(index) {
+  const open = openCase();
+  if (index === 0) {
+    // The result stays in the page (only hidden by the class) so files arriving for the open case still reach it.
+    document.body.classList.remove("reading-report");
+    document.body.classList.add("flow-input");
+    workflowStep(0);
+    by("number").focus();
+  } else if (index === 1 && flow.found) {
+    showCandidates(flow.found, flow.pick);
+  } else if (index >= 2 && open) {
+    flow.step = index;
+    show(open);
+    window.scrollTo(0, 0);
+  }
+}
+[...by("case-flow").children].forEach((item, index) => item.firstElementChild.addEventListener("click", () => goStep(index)));
+
+// Opening another case drops the open one, so a finished or running analysis is confirmed first.
+function leaveOpenCase() {
+  const open = openCase();
+  return !open || !(open.conclusion || open.autoPending) ||
+    window.confirm("다른 사건을 열면 현재 사건에서 만든 보고서와 추가한 문서가 지워집니다. 계속할까요?");
+}
+
 function showCandidates(found, pick, local = false) {
-  current = undefined;
   const area = by("result");
   area.replaceChildren();
   area.hidden = false;
+  document.body.classList.remove("reading-report", "flow-input");
+  by("back-search").hidden = true;
   const panel = el("section", "", "panel");
   workflowStep(local ? -1 : 1);
   const hasUnverified = found.candidates.some(item => item.linksOnly);
@@ -810,13 +857,17 @@ function showCandidates(found, pick, local = false) {
   panel.append(table(
     local ? ["관할", "번호 해석", ""] : ["관할", "명칭", "출원번호", "문헌·등록번호", "출원일", "상태", "출원인", "일치", ""],
     found.candidates.map(item => {
-      const choose = button(local ? "열람처 보기" : "심사문서 다운로드", () => {
+      // The case that is already open is continued as it is instead of being looked up again.
+      const reopen = !local && item === flow.candidate && Boolean(openCase());
+      const choose = button(local ? "열람처 보기" : reopen ? "이 사건 이어서 하기" : "심사문서 다운로드", () => {
+        if (reopen) return goStep(2);
+        if (!local && !leaveOpenCase()) return;
         panel.querySelectorAll("button").forEach(control => { control.disabled = true; });
         Promise.resolve(pick(item)).finally(() => {
           panel.querySelectorAll("button").forEach(control => { control.disabled = false; });
         });
-      }, "secondary");
-      if (!local) choose.dataset.prepareCase = "true";
+      }, reopen ? "primary" : "secondary");
+      if (!local && !reopen) choose.dataset.prepareCase = "true";
       return local ? [item.country, item.matched, choose] : [item.country, item.title, item.application,
         item.documents || item.grant || item.publication || item.number, item.filed, item.status, item.applicants, item.matched, choose];
     }), ""));
@@ -835,6 +886,7 @@ function finishReport(report) {
 }
 
 function openReviewed() {
+  if (!leaveOpenCase()) return;
   activeSearch?.abort();
   searchVersion++;
   by("search").disabled = false;
@@ -853,7 +905,7 @@ by("back-search").addEventListener("click", () => {
   by("result").replaceChildren();
   by("search").disabled = false;
   by("back-search").hidden = true;
-  document.body.classList.remove("reading-report");
+  document.body.classList.remove("reading-report", "flow-input");
   const url = new URL(location.href);
   url.searchParams.delete("patent");
   url.hash = "";
@@ -879,6 +931,8 @@ async function openCandidate(candidate, notes = [], request = "") {
     const report = { ...data, summaries: [], analysisRequest: request, collecting: true };
     controller.signal.throwIfAborted();
     report.notes.unshift(...notes);
+    caseSignals.set(report, controller.signal);
+    flow.candidate = candidate;
     show(report);
     finishReport(report);
     say("status", report.linksOnly ? "자동 조회로 사건을 확인하지 못했습니다. 직접 추가한 심사문서를 선택해 분석할 수 있습니다."
@@ -905,6 +959,7 @@ function openLocal(tools, number, reading) {
 
 by("lookup").addEventListener("submit", async event => {
   event.preventDefault();
+  if (!leaveOpenCase()) return;
   activeSearch?.abort();
   const controller = new AbortController();
   activeSearch = controller;
@@ -913,7 +968,8 @@ by("lookup").addEventListener("submit", async event => {
   const apiMode = isAutomaticMode();
   control.disabled = true;
   by("result").hidden = true;
-  current = undefined;
+  document.body.classList.remove("flow-input");
+  current = flow.found = flow.pick = flow.candidate = undefined;
   const [number, office, numberType] = [by("number").value, by("office").value, by("numberType").value];
   const request = apiMode ? by("request").value.trim() : "";
   workflowStep(apiMode ? 1 : -1);
@@ -923,7 +979,9 @@ by("lookup").addEventListener("submit", async event => {
       const found = await (await api({ action: "search", number, country: office, numberType, source: by("source").value }, controller.signal)).json();
       controller.signal.throwIfAborted();
       if (!found.candidates.length) throw new Error(["일치하는 특허를 찾지 못했습니다.", ...found.notes].join(" "));
-      showCandidates(found, candidate => openCandidate(candidate, found.notes, request));
+      flow.found = found;
+      flow.pick = candidate => openCandidate(candidate, found.notes, request);
+      showCandidates(found, flow.pick);
       say("status", "특허를 찾았습니다. 해당 사건의 심사문서 다운로드를 누르세요.");
     } else {
       const tools = await localTools();
@@ -942,6 +1000,7 @@ by("lookup").addEventListener("submit", async event => {
 });
 
 by("example").addEventListener("click", () => {
+  if (!leaveOpenCase()) return;
   activeSearch?.abort();
   searchVersion++;
   by("search").disabled = false;
