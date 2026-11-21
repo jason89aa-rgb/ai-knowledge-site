@@ -22,7 +22,7 @@ function loadCaseRecord(report) {
       state.status = "error";
       state.error = error.message;
     }
-    if (current === report) renderRecord(report);
+    if (current === report) (by("claim-analysis") ? renderAnalysis : renderRecord)(report);
   })();
   recordLoads.set(report, load);
   return load;
@@ -120,11 +120,11 @@ function comparedClaims(claims) {
 const claimChange = row => !row.source ? "대응하는 공개 청구항 없음" : !row.runs ? "문언이 길어 대조 생략"
   : !row.added.length && !row.removed.length ? "출원 당시 문언 그대로 등록" : [row.added.length && `추가 ${row.added.length}곳`, row.removed.length && `삭제 ${row.removed.length}곳`].filter(Boolean).join(" · ");
 
-// The amendment that introduced a phrase, found by shared wording with the amended language the applicant quoted.
-function amendmentFor(phrase, rows) {
+// The amendments that introduced a phrase, found by shared wording with the amended language the applicant quoted.
+function amendmentsFor(phrase, rows) {
   const keys = new Set(claimWords(phrase).map(word => word.key).filter(key => key.length > 2));
-  if (keys.size < 2) return undefined;
-  return rows.find(row => {
+  if (keys.size < 2) return [];
+  return rows.filter(row => {
     if (row.role !== "applicant" || !["amend", "add"].includes(row.responseType) || !row.element) return false;
     const words = [...new Set(claimWords(row.element).map(word => word.key).filter(key => key.length > 2))];
     return words.length > 1 && words.filter(key => keys.has(key)).length / Math.min(words.length, keys.size) >= 0.6;
@@ -260,8 +260,9 @@ function fillClaims(report, rows) {
       const items = el("ul");
       for (const phrase of phrases) {
         const item = el("li", "“" + phrase.replace(/\s+/g, " ") + "”");
-        const amendment = label.startsWith("등록") && amendmentFor(phrase, rows);
-        if (amendment) item.append(" ", el("small", "보정 기록"), " ", findingSource(amendment, true));
+        const amendments = label.startsWith("등록") ? amendmentsFor(phrase, rows) : [];
+        if (amendments.length) item.append(" ", el("small", "보정 기록"));
+        for (const amendment of amendments) item.append(" ", findingSource(amendment, true));
         items.append(item);
       }
       block.append(items);
