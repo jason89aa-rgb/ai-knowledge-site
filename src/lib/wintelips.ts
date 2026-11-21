@@ -234,6 +234,78 @@ export async function wintelipsReport(token: string, input: unknown): Promise<Re
   return r;
 }
 
+// The family list comes from WIPS' extended family; the reviewed patent is located by SKEY or, for official-API reports, by its number.
+export async function wintelipsFamily(token: string, input: { skey?: unknown; number?: unknown; country?: unknown }) {
+  let skey = typeof input.skey === "string" && /^\d{10,16}$/.test(input.skey) ? input.skey : undefined;
+  if (!skey) {
+    const { candidates } = await wintelipsCandidates(token, input.number, input.country);
+    skey = candidates.find(item => !input.country || item.country === input.country)?.skey;
+    if (!skey) throw new PatentError("WINTELIPS에서 이 특허를 찾지 못해 패밀리를 조회하지 못했습니다.", 404);
+  }
+  const call = await connect(token);
+  const first = await call("get_patent_family", { section: "wips_fmly", skey });
+  if (!first) return { members: [], total: 0 };
+  const pages = Math.min(Number(first.last_page_no) || 1, 3);
+  const rest = await Promise.all(Array.from({ length: pages - 1 }, (_, i) =>
+    call("get_patent_family", { section: "wips_fmly", skey, current_page_no: String(i + 2) })));
+  const members = [first, ...rest].flatMap(page => list(page)).slice(0, 80).map(item => ({
+    country: item.ctry ?? "", number: item.doc_num ?? "", kind: item.doc_kind, date: item.doc_dt ? date(item.doc_dt) : undefined, title: item.title,
+  })).filter(item => item.country && item.number);
+  return {
+    subject: { country: String(first.ctry ?? ""), number: String(first.doc_num ?? ""), application: first.appl_num, filed: first.appl_dt ? date(first.appl_dt) : undefined },
+    members, total: Number(first.total_cnt) || members.length,
+  };
+}
+
+const related = (data: Data | undefined, key: string) => (Array.isArray(data?.[key]) ? data[key] : []) as Row[];
+
+// One family member: its representative claim and the filings it descends from (CA/DA/CIP, PCT national stage, original application, priority).
+export async function wintelipsFamilyMember(token: string, input: unknown) {
+  const row = (input && typeof input === "object" ? input : {}) as Record<string, unknown>;
+  const country = typeof row.country === "string" ? row.country.toUpperCase() : "";
+  const number = typeof row.number === "string" ? row.number.trim() : "";
+  const kind = typeof row.kind === "string" ? row.kind.toUpperCase() : "";
+  if (!/^[A-Z]{2}$/.test(country) || !/^[A-Z0-9][A-Z0-9/.-]{2,23}$/i.test(number) || (kind && !/^[A-Z]\d?$/.test(kind))) {
+    throw new PatentError("패밀리 문헌 번호를 확인해 주세요.", 400);
+  }
+  const target = { ctry: country, mng_num: number, ...(kind ? { doc_kind: kind } : {}) };
+  const call = await connect(token);
+  const notes: string[] = [];
+  const optional = (label: string, run: () => Promise<Data | undefined>) => run().catch(error => {
+    if (error instanceof AuthError) throw error;
+    notes.push(`${label} 조회 실패`);
+    return undefined;
+  });
+  const [claim, continuity, international, original, priority] = await Promise.all([
+    optional("대표청구항", () => call("get_patent_spec_text", { section: "rept_claim", ...target })),
+    ["US", "WO", "AU"].includes(country) ? optional("관련출원", () => call("get_patent_related_appl", { section: "rel_appl", ...target })) : undefined,
+    country === "WO" ? undefined : optional("국제출원", () => call("get_patent_intl_appl", { section: "intr_appl", ...target })),
+    ["KR", "JP", "CN", "EP", "CA"].includes(country) ? optional("원출원", () => call("get_patent_related_appl", { section: "org_appl", ...target })) : undefined,
+    optional("우선권", () => call("get_patent_related_appl", { section: "pr", ...target })),
+  ]);
+  const info = (claim ?? continuity ?? original ?? priority ?? (international?.info as Data | undefined)) as Data | undefined;
+  const text = (claim?.cl as { cl?: string; lang_cd?: string } | undefined);
+  const filing = (item: Row) => ({ country: item.ctry, application: item.appl_num, filed: item.appl_dt ? date(item.appl_dt) : undefined, number: item.mng_num, type: item.ra_type });
+  const pct = related(international, "intr_appl_list")[0];
+  return {
+    country, number, kind: kind || undefined,
+    application: typeof info?.appl_num === "string" ? info.appl_num : undefined,
+    filed: typeof info?.appl_dt === "string" ? date(info.appl_dt) : undefined,
+    claim: text?.cl ? clean(text.cl.replace(/<\/?ul>/gi, "\n")).split("\n").map(line => line.trim()).filter(Boolean).join("\n").slice(0, 6000) : undefined,
+    claimLanguage: text?.lang_cd,
+    parents: related(continuity, "pa_list").map(filing), children: related(continuity, "ch_list").map(filing),
+    provisionals: related(continuity, "pa_provs_list").map(filing),
+    pct: pct ? { application: pct.appl_num, filed: pct.appl_dt ? date(pct.appl_dt) : undefined, publication: [pct.publ_num, pct.doc_kind].filter(Boolean).join(" ") } : undefined,
+    original: related(original, "org_appl_list").map(item => {
+      const key = (suffix: string) => Object.keys(item).find(name => name.endsWith(suffix));
+      const filed = item[key("appl_dt") ?? ""];
+      return { country: item.ctry ?? country, application: item[key("appl_num") ?? ""], filed: filed ? date(filed) : undefined };
+    }).filter(item => item.application),
+    priorities: related(priority, "pr_list").map(item => ({ country: item.ctry, application: item.pr_num, filed: item.pr_dt ? date(item.pr_dt) : undefined })),
+    notes,
+  };
+}
+
 export async function wintelipsDocument(token: string, input: unknown, code: unknown, id: unknown) {
   const skey = validSkey(input);
   const action = typeof code === "string" ? officeActions[code] : undefined;
