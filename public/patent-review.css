@@ -129,7 +129,7 @@ td:first-child { white-space: nowrap; }
 .zip-row small { margin-left: auto; flex: none; }
 .zip-list > button { margin-top: 12px; }
 .search-footer { flex-wrap: wrap; }
-.reading-report .intro, .reading-report #lookup { display: none; }
+.reading-report .intro, .reading-report #lookup, .reading-report #extension-setup { display: none; }
 .reading-report .workspace { margin-top: 18px; }
 #back-search { color: #325967; background: transparent; padding-inline: 2px; border: 0; }
 .reading-report #result { margin-top: 8px; gap: 18px; }
@@ -175,6 +175,10 @@ td:first-child { white-space: nowrap; }
 .comparison-empty { font-size: .82rem; color: var(--muted); }
 .comparison-context { display: block; color: var(--muted); font-size: .76rem; }
 .procedure-brief { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--line); }
+#process-analysis > .procedure-brief { position: relative; padding: 2px 0 12px 22px; border-top: 0; border-left: 2px solid #c7d9dc; }
+#process-analysis > .procedure-brief::before { content: ""; position: absolute; left: -6px; top: 8px; width: 10px; height: 10px; border-radius: 50%; background: #26646b; }
+.finding-scope { display: block; color: var(--muted); margin-bottom: 4px; }
+.reference-quote summary { cursor: pointer; font-size: .78rem; }
 .procedure-head { display: flex; justify-content: space-between; align-items: end; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
 .procedure-head > div { flex: 1 1 280px; min-width: 0; }
 .procedure-head small { color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -264,3 +268,70 @@ td:first-child { white-space: nowrap; }
 #extension-guide summary { cursor: pointer; color: var(--accent); font-weight: 700; }
 #extension-guide ol { margin-bottom: 0; padding-left: 1.5em; }
 #extension-guide li + li { margin-top: 6px; }
+.dossier-cover .report-usage { margin-top: 14px; color: #c4d6dc; font-variant-numeric: tabular-nums; }
+@media (max-width: 760px) {
+  .claim-comparison table { min-width: 0; table-layout: auto; }
+  .claim-comparison thead { display: none; }
+  .claim-comparison table, .claim-comparison tbody, .claim-comparison tr, .claim-comparison tbody th, .claim-comparison td { display: block; width: 100%; box-sizing: border-box; }
+  .claim-comparison tr { border: 1px solid var(--line); border-radius: 8px; margin-bottom: 12px; overflow: hidden; }
+  .claim-comparison tbody th { position: static; padding: 10px 12px; }
+  .claim-comparison td { border-inline-start: 0; border-top: 1px solid var(--line); }
+  .claim-comparison td::before { content: attr(data-label); display: block; margin-bottom: 6px; font-size: .78rem; font-weight: 700; color: #244952; }
+}
+/* Stage flow: each examiner notice with the applicant's answer and the result. */
+.stage-number { font-weight: 700; color: #26646b; }
+.stage-chip { display: inline-block; margin-top: 4px; padding: 2px 9px; border-radius: 999px; background: #e8f0f1; color: #214751; font-size: .78rem; }
+.round-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.round-result { margin-top: 12px; padding: 12px 16px; border-left: 3px solid #1b7463; border-radius: 3px 9px 9px 3px; background: #eff6f2; }
+.round-result h4 { margin: 0; color: #1b7463; font-size: .95rem; }
+.round-result > p { margin: 8px 0 0; }
+.stage-decision .claim-role { max-width: 760px; }
+.docket-finding p { font-size: .9rem; }
+
+/* Family: filing tree and members by country. */
+.family-panel h3 { margin: 24px 0 10px; font-size: 1.05rem; color: #173d46; }
+.family-overview { margin: 4px 0; font-weight: 700; color: #173d46; }
+.family-status { margin: 4px 0; color: var(--accent); font-size: .9rem; }
+.family-tree-wrap { overflow-x: auto; }
+.family-tree, .family-tree ul { list-style: none; margin: 0; padding: 0; }
+.family-tree ul { margin-left: 16px; padding-left: 18px; border-left: 2px solid #c7d9dc; }
+.family-tree li { position: relative; padding-top: 10px; }
+.family-tree ul > li::before { content: ""; position: absolute; left: -18px; top: 30px; width: 14px; border-top: 2px solid #c7d9dc; }
+.family-edge { display: table; margin-bottom: 4px; padding: 1px 9px; border-radius: 999px; background: #244952; color: #fff; font-size: .74rem; font-weight: 700; }
+.family-node { display: inline-grid; gap: 2px; min-width: min(100%, 220px); padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+.family-node strong { color: #173d46; overflow-wrap: anywhere; }
+.family-node small { color: var(--muted); font-size: .78rem; }
+.family-node em { font-style: normal; font-size: .74rem; font-weight: 700; color: var(--accent); }
+.family-node.is-subject { border: 2px solid var(--accent); background: #eef5fd; }
+.family-node.is-outside { border-style: dashed; background: #f7f9fb; }
+.family-table table { table-layout: fixed; min-width: 880px; }
+.family-table thead th { color: #fff; background: #244952; }
+.family-table thead th:nth-child(1) { width: 15%; }
+.family-table thead th:nth-child(2) { width: 12%; }
+.family-table thead th:nth-child(3) { width: 15%; }
+.family-table thead th:nth-child(4) { width: 31%; }
+.family-table .family-country th { background: #e8f0f1; color: #214751; text-align: left; font-size: .85rem; }
+.family-table tr.is-subject td { background: #f3f8fe; }
+.family-table td { vertical-align: top; font-size: .88rem; white-space: normal; overflow-wrap: anywhere; border-inline-start: 1px solid var(--line); }
+.family-table td:first-child { border-inline-start: 0; }
+.family-table td small { display: block; color: var(--muted); font-size: .76rem; }
+.family-claim p, .family-compare p { margin: 0 0 6px; line-height: 1.55; }
+.family-claim details p { margin: 4px 0; font-size: .84rem; }
+.family-compare .family-verdict + p { margin-top: 6px; }
+.family-diff { color: var(--muted); font-size: .8rem; }
+.family-verdict { display: inline-block; padding: 2px 9px; border-radius: 999px; background: #6a7c8f; color: #fff; font-size: .76rem; font-weight: 700; }
+.verdict-same { background: #1b7463; }
+.verdict-narrower { background: #295e8e; }
+.verdict-broader { background: #a4442a; }
+.verdict-overlap { background: #85621a; }
+.verdict-subject { background: var(--accent); }
+@media (max-width: 760px) {
+  .round-grid { grid-template-columns: 1fr; }
+  .family-table table { min-width: 0; table-layout: auto; }
+  .family-table thead { display: none; }
+  .family-table table, .family-table tbody, .family-table tr, .family-table th, .family-table td { display: block; width: 100%; box-sizing: border-box; }
+  .family-table tr:not(.family-country) { border: 1px solid var(--line); border-radius: 8px; margin-bottom: 12px; overflow: hidden; }
+  .family-table td { border-top: 1px solid var(--line); }
+  .family-table td:first-child { border-top: 0; }
+  .family-table td::before { content: attr(data-label); display: block; margin-bottom: 4px; font-size: .78rem; font-weight: 700; color: #244952; }
+}

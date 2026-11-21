@@ -127,7 +127,7 @@ async function api(data, signal) {
   if (code) headers["X-Patent-Access"] = code;
   const form = data instanceof FormData;
   if (!form) headers["Content-Type"] = "application/json";
-  if (data.action === "ask") headers["X-Patent-Action"] = "ask";
+  if (data.action === "ask" || data.action === "family-compare") headers["X-Patent-Action"] = data.action;
   const response = await fetch("/api/patent-review", {
     method: "POST", headers, body: form ? data : JSON.stringify(data), cache: "no-store", signal,
   });
@@ -141,7 +141,30 @@ async function api(data, signal) {
 async function readSummary(response) {
   const summary = await response.json();
   if (summary.error) throw summaryError(summary);
+  recordUsage(summary.usage || summary.conclusion?.usage);
   return summary;
+}
+
+// Every Claude response passes through readSummary, so the report keeps a running total of tokens and cost.
+const usageLabel = usage => `입력 ${usage.input.toLocaleString("ko-KR")} · 출력 ${usage.output.toLocaleString("ko-KR")} 토큰 · 약 $${usage.cost.toFixed(2)}`;
+
+function recordUsage(usage) {
+  if (!current || !usage) return;
+  const total = current.usage || { input: 0, output: 0, cost: 0 };
+  current.usage = { input: total.input + usage.input, output: total.output + usage.output, cost: total.cost + usage.cost };
+  showUsage(current);
+}
+
+function showUsage(report) {
+  const cover = document.querySelector(".dossier-cover");
+  if (current !== report || !report.usage || !cover) return;
+  let line = by("report-usage");
+  if (!line) {
+    line = el("p", "", "muted hint report-usage");
+    line.id = "report-usage";
+    cover.append(line);
+  }
+  line.textContent = "Claude 사용량 · " + usageLabel(report.usage);
 }
 
 function summaryError({ error, retryAfter, status }) {
@@ -197,7 +220,8 @@ function resultDashboard(report) {
     else {
       const findings = report.summaries.flatMap(source => (source.evidence || [])
         .filter(row => row.role === roles[index]).map(entry => ({ source, entry })));
-      if (roles[index] === "outcome") findings.sort((a, b) =>
+      // A decision that disposes of the claims outranks later procedural notices about them.
+      if (roles[index] === "outcome") findings.sort((a, b) => Number(b.entry.finalDisposition === true) - Number(a.entry.finalDisposition === true) ||
         (calendarDay(b.entry.documentDate) || "").localeCompare(calendarDay(a.entry.documentDate) || ""));
       const { source, entry } = findings[0] || {};
       if (!entry) continue;
@@ -223,7 +247,8 @@ function resultDashboard(report) {
 function summaryCard(summary, index) {
   const item = el("article", "", "summary");
   if (Number.isInteger(index)) item.id = "summary-" + index;
-  item.append(el("h3", summary.title), el("small", [summary.source, summary.id, summary.model].filter(Boolean).join(" · ")), reportBody(summary.text));
+  item.append(el("h3", summary.title), el("small", [summary.source, summary.id, summary.model,
+    summary.usage && usageLabel(summary.usage)].filter(Boolean).join(" · ")), reportBody(summary.text));
   if (summary.partial) item.append(el("p", "출력 한도에 도달해 요약 일부만 표시됩니다.", "muted"));
   if (summary.evidenceIncomplete) item.append(el("p", "청구항 근거 추출이 불완전합니다. 원문에서 추가 근거를 확인하세요.", "muted"));
   return item;
@@ -263,7 +288,7 @@ function exportButton(report, status) {
 function showSummaries(report) {
   const slot = by("summaries");
   if (current !== report || !slot) return;
-  if (by("claim-analysis")) claimAnalysis(report, by("claim-analysis"));
+  if (by("claim-analysis")) renderAnalysis(report);
   slot.replaceChildren(...report.summaries.map(summaryCard));
   if (!report.summaries.length) {
     const message = report.autoPending ? "공개 기록과 원문을 확인하고 있습니다."
@@ -278,10 +303,7 @@ function addSummary(report, summary) {
   else report.summaries[index] = summary;
   const slot = by("summaries");
   if (current !== report || !slot) return;
-  if (summary.evidence || index >= 0) {
-    const panel = by("claim-analysis");
-    if (panel) claimAnalysis(report, panel);
-  }
+  if (by("claim-analysis")) renderAnalysis(report);
   if (index < 0) {
     if (report.summaries.length === 1) slot.replaceChildren();
     slot.append(summaryCard(summary, report.summaries.length - 1));
@@ -550,6 +572,7 @@ function show(report) {
   overview.append(notes, metadata);
   if (report.local && report.country !== "UPC") overview.append(manualEditor(report));
   area.append(overview);
+  showUsage(report);
   if (report.conclusion || report.reviewed) area.append(resultDashboard(report));
   if (entering) {
     title.focus({ preventScroll: true });
@@ -564,7 +587,7 @@ function show(report) {
   if (report.country !== "UPC") {
     const nav = el("nav", "", "report-nav");
     nav.setAttribute("aria-label", "리포트 목차");
-    for (const [id, label] of [["claim-analysis", "청구항별 심사 비교"], ["report-timeline", "주요 심사 타임라인"], ["report-documents", "심사 문서"], ["report-history", "전체 이력"]]) {
+    for (const [id, label] of [["process-analysis", "단계별 심사 흐름"], ["claim-analysis", "청구항별 심사 비교"], ["report-timeline", "주요 심사 타임라인"], ["report-family", "패밀리 분석"], ["report-documents", "심사 문서"], ["report-history", "전체 이력"]]) {
       const jump = el("a", label);
       jump.href = "#" + id;
       jump.onclick = () => { const target = by(id); if (target?.tagName === "DETAILS") target.open = true; };
@@ -572,13 +595,9 @@ function show(report) {
     }
     const analysis = el("section", "", "panel claim-panel");
     analysis.id = "claim-analysis";
-    area.append(nav, analysis, timeline(milestones));
-    const family = el("details", "", "panel record-fold");
-    family.append(el("summary", `패밀리 및 연계 출원 (${report.family.length})`), table(
-      ["관할", "공개·등록번호", "출원번호", "조회 관계", "일자"],
-      report.family.map(row => [row.country, familyCell(row), row.application, row.relation, row.date]),
-      "표시할 패밀리 자료가 없습니다.",
-    ));
+    const process = el("section", "", "panel claim-panel");
+    process.id = "process-analysis";
+    area.append(nav, process, analysis, timeline(milestones), familySection(report));
     const history = el("details", "", "panel record-fold");
     history.id = "report-history";
     history.append(el("summary", `심사·행정 이력 (${report.events.length})`), table(
@@ -595,7 +614,7 @@ function show(report) {
     ));
     if (report.country === "EP" && !report.local && !report.demo) docs.append(registerZipBox(report));
     if (report.country === "US" && !useHandoff) docs.append(usDocumentGuide(report));
-    area.append(docs, history, family);
+    area.append(docs, history);
   }
   const summaries = el("details", "", "panel record-fold");
   const slot = el("div");
