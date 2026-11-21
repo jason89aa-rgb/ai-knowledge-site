@@ -806,10 +806,12 @@ const askSystem = "특허 리포트 데이터를 바탕으로 사용자가 요�
 const evidenceMarker = "<claim-evidence>";
 const evidenceInstructions = [
   "요약은 핵심 심사 단계, 심사관 쟁점, 출원인 대응, 결과 중 원문에 있는 내용만 짧은 글머리표로 쓴다. 수수료·접수는 절차 결과를 바꾼 경우에만 언급한다. 평문 요약은 3,000토큰 이내에서 주요 판단과 근거를 먼저 완결한다. 다음 줄에 <claim-evidence>를 쓴 뒤 근거 한 건마다 한 줄짜리 JSON 객체를 쓴다. 마지막 줄에 </claim-evidence>를 쓴다. 배열이나 마크다운 코드 블록은 쓰지 않는다.",
-  '각 원소는 {"claims":[1,2],"role":"examiner|applicant|outcome","roundDate":"","documentDate":"","text":"","locator":""} 형식이다.',
+  '각 원소는 {"claims":[1,2],"role":"examiner|applicant|outcome","roundDate":"","documentDate":"","procedureTitle":"","issue":"","noticeTitle":"","noticeSource":null,"reference":"","text":"","locator":""} 형식이다.',
   "청구항 번호와 의견·대응·결과가 원문에서 명시적으로 연결된 경우만 기록한다. 공통 근거는 한 항목에 실제 해당 항 번호를 모두 넣는다. 항마다 이유를 만들어내지 않는다.",
   "role은 세 값 중 하나, text는 한국어 요지, locator는 확인한 PDF 페이지 또는 본문 절 번호다. 근거 위치가 없으면 제외한다.",
-  "documentDate는 원문의 작성·발송일, roundDate는 해당 쟁점을 제기한 심사 통지일이다. 답변서나 허여서가 어느 통지에 대응하는지 문서가 날짜로 명시할 때만 그 회차에 연결한다. 날짜 형식은 YYYY-MM-DD이고 불명확하면 빈 문자열이다. 해당 근거가 없으면 태그 사이를 비워 둔다.",
+  "procedureTitle은 현재 서류 첫 장이나 기관 기록에 적힌 절차명 원문이다. 의견서에서 언급된 거절통지명을 의견서의 이름으로 사용하지 않는다. issue에는 실제 다룬 거절 근거, 인용문헌 또는 보정 대상 구성을 짧게 쓴다.",
+  "documentDate는 현재 문서 작성·발송일이다. roundDate와 noticeTitle에는 이 쟁점이 대응하는 특정 심사통지의 명시된 날짜와 명칭만 쓴다. 날짜는 YYYY-MM-DD 형식이다. reference에는 그 통지를 특정하는 원문 구절을 짧게 인용하고 locator에 위치를 쓴다.",
+  "함께 제공된 원문 중 reference의 날짜·문서번호 또는 구체적인 지칭으로 통지를 유일하게 식별할 수 있을 때만 noticeSource에 그 통지의 입력 자료 번호를 적는다. 단순한 날짜 순서, 같은 청구항 또는 같은 거절유형만으로 연결하지 않는다. 우선일·출원일을 통지일로 쓰지 않는다. 모르면 빈 문자열 또는 null을 쓴다.",
 ].join(" ");
 
 function documentFindings(output: string, stopped: boolean) {
@@ -830,7 +832,9 @@ function documentFindings(output: string, stopped: boolean) {
         continue;
       }
       evidence.push({ claims, role: row.role, text: clip(row.text, 1600), locator: clip(row.locator, 200),
-        documentDate: clip(row.documentDate, 10), roundDate: clip(row.roundDate, 10) });
+        documentDate: clip(row.documentDate, 10), roundDate: clip(row.reference, 350) ? clip(row.roundDate, 10) : undefined,
+        procedureTitle: clip(row.procedureTitle, 200), issue: clip(row.issue, 160), noticeTitle: clip(row.noticeTitle, 200),
+        reference: clip(row.reference, 350), noticeSource: Number.isInteger(row.noticeSource) && row.noticeSource > 0 ? row.noticeSource : undefined });
     } catch {
       evidenceIncomplete = true;
     }
@@ -855,6 +859,7 @@ export async function jointReport(files: File[], context: string, focus: string)
   content.push({ type: "text", text: [
     "사건 기록과 원문을 함께 읽고, 실제 통지·답변의 내용과 날짜가 연결될 때만 같은 회차로 묶으세요. 공보 청구항만으로 거절이유를 추론하지 마세요. 수수료 등 결과에 영향 없는 절차는 생략하세요.",
     "먼저 ## 심사 결과, ## 심사관의 쟁점, ## 출원인의 대응, ## 확인할 쟁점 네 제목 아래 각각 두 개 이하의 짧은 항목으로 종합하세요. 항목마다 근거 문서명과 원문 페이지 또는 이력 날짜를 붙이고 미확인은 명시하세요.",
+    "회사 내부 보고용으로 첫 문장에 최신 확인 결과와 그 결과가 적용되는 청구항을 제시하세요. 쟁점별로 심사관의 법적 근거·인용문헌, 출원인이 다툰 사항 또는 변경한 구성, 이후 유지·철회·허여된 범위를 원문에 나타난 만큼만 연결하세요. 절차명은 문서 표제 원문을 사용하고 임의의 회차 번호는 쓰지 마세요.",
     "그 뒤 입력 순서대로 각 자료를 <source n=\"1\">와 </source>처럼 번호를 붙인 별도 블록으로 작성하세요. 각 블록 안에는 해당 자료만의 짧은 요약과 다음 형식의 청구항 근거를 넣으세요.",
     evidenceInstructions, "각 자료 요약은 세 문장 이내로 작성하고, 응답 한도 내에서 모든 입력 자료를 다루세요. 문서 번호를 빠뜨리지 마세요. 해당 문서에 근거가 없으면 빈 근거 태그를 사용하세요.",
     focus && "보고서에 반영할 사용자 요청 (위 구조 유지): " + focus,

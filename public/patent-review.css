@@ -152,17 +152,25 @@ td:first-child { white-space: nowrap; }
 .report-nav a:hover { text-decoration: underline; }
 .time-panel, .claim-panel { padding: clamp(18px, 3.5vw, 34px); }
 .time-panel h2, .claim-panel h2 { font-size: clamp(1.3rem, 3vw, 1.65rem); color: #143d46; }
-.review-round { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 14px; }
-.review-round > summary { cursor: pointer; color: #1b5360; }
-.review-round summary span, .review-round summary small { margin-inline: 8px; }
-.review-round summary small { font-size: .82rem; color: var(--muted); }
-.claim-picker { display: flex; gap: 10px; align-items: center; margin: 16px 0; }
-.claim-picker select { width: 105px; }
-.claim-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; }
+.supporting-documents { margin-top: 18px; }
+.procedure-brief { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--line); }
+.procedure-head { display: flex; justify-content: space-between; align-items: end; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.procedure-head > div { flex: 1 1 280px; min-width: 0; }
+.procedure-head small { color: var(--muted); font-variant-numeric: tabular-nums; }
+.procedure-head h3 { font-size: clamp(1.1rem, 2vw, 1.4rem); color: #173d46; margin: 3px 0; }
+.brief-filter { display: grid; gap: 3px; font-size: .78rem; color: var(--muted); }
+.brief-filter { max-width: 100%; }
+.brief-filter select { width: auto; max-width: min(100%, 21rem); height: 35px; font-size: .88rem; }
+.brief-note, .extra-findings { color: var(--muted); font-size: .85rem; margin: 12px 0 0; }
+.extra-findings summary { cursor: pointer; }
+.claim-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: 12px; }
+.finding-procedure { display: block; font-size: .92rem; overflow-wrap: anywhere; margin-bottom: 4px; }
+.reference-quote { display: block; margin-top: 5px; color: var(--muted); }
 .claim-role { --role: #855329; border-top: 3px solid var(--role); background: #fbf7f1; border-radius: 3px 3px 9px 9px; padding: 16px; }
 .claim-role.applicant { --role: #295e8e; background: #f1f6fa; }
 .claim-role.outcome { --role: #1b7463; background: #eff6f2; }
-.claim-role h3, .finding > small:first-child { color: var(--role); }
+.claim-role h4, .finding > small:first-child { color: var(--role); }
+.claim-role h4 { margin: 0; font-size: 1rem; }
 .finding { margin-top: 14px; }
 .finding + .finding { border-top: 1px solid #b9c9cd; padding-top: 14px; }
 .finding p { font-size: .96rem; line-height: 1.7; margin: 5px 0 10px; }

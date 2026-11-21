@@ -100,6 +100,7 @@
       slidesForText("서지 상세", [pptx.title, ...overview.map(([key, label]) => label + "  " + report[key]), report.abstract].filter(Boolean).join("\n\n"));
     }
     if (report.conclusion) slidesForText("심사 결과 보고서", report.conclusion.text + (report.conclusion.partial ? "\n\n일부 출력" : ""));
+    if (report.procedureRows?.length) tabulate("절차별 쟁점과 대응", ["심사 절차", "청구항", "구분", "쟁점과 판단", "근거"], report.procedureRows, [2.35, 1.3, 1.3, 4.34, 2.75]);
     if (report.timelineRows) tabulate("주요 심사 타임라인", ["날짜", "심사 단계", "근거 기록"], report.timelineRows, [1.7, 3.25, 7.09]);
     tabulate("패밀리 및 연계 출원", ["관할", "공개·등록번호", "출원번호", "조회 관계", "일자"],
       report.family.map(row => [row.country, row.publication, row.application, row.relation, row.date]), [1.05, 2.65, 2.53, 4.02, 1.79]);
