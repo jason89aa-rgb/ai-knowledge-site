@@ -414,3 +414,6 @@ td:first-child { white-space: nowrap; }
 .trial-cell details { margin-top: 4px; font-size: .82rem; }
 .trial-cell summary { cursor: pointer; color: #274b59; }
 .trial-cell details p { margin: 4px 0 0; }
+/* Why an answer stands under a rejection: named by the response, or placed there only because the claims overlap. */
+.answer-link { display: block; margin-top: 6px; font-size: .78rem; color: #17594b; }
+.answer-link.link-claims, .answer-link.link-shared { padding: 4px 8px; border-inline-start: 3px solid #f2bc60; border-radius: 3px; background: #fff5de; color: #563a11; }
