@@ -18,6 +18,19 @@ for (const [id, name] of [["patent-app", "patent-review"], ["patent-handoff", "p
   fs.writeFileSync(path.join(assets, "app", filename), source);
   built = built.replace(new RegExp('(id="' + id + '" defer src=")[^"]+"'), '$1/patent-assets/app/' + filename + '"');
 }
+const extensionDir = path.join(__dirname, "../extensions/ez-patents-report");
+const manifest = JSON.parse(fs.readFileSync(path.join(extensionDir, "manifest.json"), "utf8"));
+const archiveName = "ez-patents-report-" + manifest.version + ".zip";
+const zip = new (require("jszip"))();
+const extensionFiles = ["manifest.json", manifest.background.service_worker, ...manifest.content_scripts.flatMap(script => script.js)];
+for (const file of new Set(extensionFiles)) {
+  zip.file(file, fs.readFileSync(path.join(extensionDir, file)), { date: new Date("2000-01-01T00:00:00Z") });
+}
+fs.mkdirSync(path.join(assets, "extensions"), { recursive: true });
+zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" }).then(buffer => {
+  fs.writeFileSync(path.join(assets, "extensions", archiveName), buffer);
+}).catch(error => { console.error(error); process.exitCode = 1; });
+built = built.replace(/(id="extension-download" href=")[^"]+"/, '$1/patent-assets/extensions/' + archiveName + '"');
 if (built !== page) fs.writeFileSync(pagePath, built);
 const packageDir = name => path.dirname(require.resolve(name + "/package.json"));
 function copy(root, file, destination) {

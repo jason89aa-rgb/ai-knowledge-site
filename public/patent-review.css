@@ -224,3 +224,14 @@ td:first-child { white-space: nowrap; }
 .case-flow li { padding: 7px 3px; border-bottom: 3px solid #d4dee6; text-align: center; color: var(--muted); font-size: .84rem; }
 .case-flow .complete { border-color: #86b4ab; }
 .case-flow [aria-current] { color: #155b50; background: #edf6f3; border-color: #207763; font-weight: 750; }
+
+.extension-setup { margin-block: 14px; }
+.extension-heading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px 20px; }
+.extension-heading h2 { font-size: 1.05rem; margin: 0; }
+.extension-heading p { margin: 4px 0; color: var(--muted); font-size: .9rem; }
+#extension-download { display: inline-block; padding: 8px 14px; border: 1px solid var(--accent); border-radius: 7px; font-weight: 700; text-decoration: none; }
+#extension-download:hover { background: #edf5ff; }
+#extension-guide { margin-top: 8px; }
+#extension-guide summary { cursor: pointer; color: var(--accent); font-weight: 700; }
+#extension-guide ol { margin-bottom: 0; padding-left: 1.5em; }
+#extension-guide li + li { margin-top: 6px; }

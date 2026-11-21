@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex">
   <title>특허 심사 리포트 | AI-ALL</title>
-  <link rel="stylesheet" href="/patent-review.css?v=20261121-flow">
+  <link rel="stylesheet" href="/patent-review.css?v=20261121-extension">
   <script defer src="/patent-pptx.bundle.js"></script>
   <script defer src="/patent-review-pptx.js?v=20261121-stages"></script>
   <script defer src="/patent-review-case.js?v=20261120-dossier-guide"></script>
@@ -65,6 +65,24 @@
           <button id="example" type="button" class="secondary">예시 보고서</button>
         </div>
       </form>
+      <section id="extension-setup" class="panel extension-setup" aria-labelledby="extension-title">
+        <div class="extension-heading">
+          <div>
+            <h2 id="extension-title">미국 심사철 자동 다운로드</h2>
+            <p>Chrome 확장 기능을 설치하면 EZ Patents의 심사문서 ZIP이 리포트에 자동으로 들어옵니다.</p>
+          </div>
+          <a id="extension-download" href="/patent-assets/extensions/ez-patents-report-1.2.0.zip" download>확장 기능 다운로드 (.zip)</a>
+        </div>
+        <details id="extension-guide">
+          <summary>Chrome 설치 방법</summary>
+          <ol>
+            <li>위 버튼으로 ZIP을 내려받고 이 컴퓨터에 계속 보관할 폴더에 <strong>압축을 풉니다.</strong></li>
+            <li>데스크톱 Chrome 148 이상에서 주소창에 <code>chrome://extensions</code>를 입력하고 오른쪽 위 <strong>개발자 모드</strong>를 켭니다.</li>
+            <li><strong>압축해제된 확장 프로그램을 로드합니다</strong>를 누르고 <code>manifest.json</code>이 들어 있는 폴더를 선택합니다.</li>
+            <li>목록에 <strong>AI-ALL 미국 심사철 ZIP</strong>이 표시되면 <a href="https://ai-all.co.kr/patent-review">운영 리포트 페이지</a>를 다시 엽니다. 미국 특허를 찾아 <strong>심사문서 다운로드</strong>를 누르세요.</li>
+          </ol>
+        </details>
+      </section>
       <button id="back-search" type="button" class="secondary" hidden>← 특허 검색으로</button>
       <p id="status" class="status" role="status" aria-live="polite"></p>
       <p id="preview-environment" class="hint" hidden>미리보기는 운영과 별도의 EPO 인증 설정을 사용합니다. <a href="https://ai-all.co.kr/patent-review">운영 리포트 열기</a></p>
