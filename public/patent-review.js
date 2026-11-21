@@ -133,7 +133,7 @@ async function api(data, signal) {
   });
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    throw summaryError(body);
+    throw summaryError({ ...body, status: response.status });
   }
   return response;
 }
@@ -144,8 +144,8 @@ async function readSummary(response) {
   return summary;
 }
 
-function summaryError({ error, retryAfter }) {
-  return Object.assign(new Error(error || "요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요."), { retryAfter });
+function summaryError({ error, retryAfter, status }) {
+  return Object.assign(new Error(error || "요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요."), { retryAfter, status });
 }
 
 async function summarizeWithRetry(payload, signal, progress) {
@@ -324,7 +324,8 @@ function familyCell(row) {
       row.country === "US" && /^US\d{5,8}[BS]\d?$/.test(number) ? "grant" : "publication") : "application";
     by("office").dispatchEvent(new Event("change"));
     by("lookup").requestSubmit();
-    by("number").focus();
+    workflowStep(isAutomaticMode() ? 0 : -1);
+  by("number").focus();
   }, "text-button");
 }
 
@@ -385,6 +386,7 @@ function manualEditor(report) {
 
 function show(report) {
   const entering = current !== report;
+  workflowStep(report.collecting ? (report.conclusion || report.autoPending ? 3 : 2) : -1);
   current = report;
   const area = by("result");
   area.replaceChildren();
@@ -404,7 +406,7 @@ function show(report) {
   ppt.id = "report-export";
   ppt.disabled = Boolean(report.autoPending);
   head.append(identity);
-  if (!report.linksOnly) head.append(ppt);
+  if (!report.linksOnly && (!report.collecting || report.conclusion)) head.append(ppt);
   overview.append(head);
   const useHandoff = !report.demo && !report.reviewed && !report.local;
   if (useHandoff) {
@@ -417,7 +419,7 @@ function show(report) {
   }
   if (report.takeaway) overview.append(el("p", report.takeaway, "dossier-takeaway"));
   const milestones = reportMilestones(report);
-  if (!report.linksOnly) overview.append(reportMetrics(report, milestones));
+  if (!report.linksOnly && (!report.collecting || report.conclusion)) overview.append(reportMetrics(report, milestones));
   const metadata = el("details", "", "report-metadata");
   metadata.append(el("summary", "서지 정보 및 공식 열람처"));
   const fields = el("dl", "", "facts");
@@ -453,6 +455,7 @@ function show(report) {
     title.focus({ preventScroll: true });
     window.scrollTo(0, 0);
   }
+  if (report.collecting && !report.conclusion) return;
   if (report.linksOnly) {
     if (report.country === "US" && !useHandoff) area.append(usDocumentGuide(report));
     return;
@@ -535,7 +538,7 @@ async function requestAnswer(report, text, signal) {
 async function finishDossierAnalysis(report, signal) {
   if (!report.canSummarize || report.linksOnly) return;
   const context = askContext(report);
-  const base = { ...context, events: report.events.filter(row => prosecutionStage(row)), documents: [], summaries: [] };
+  const base = { ...context, userFocus: report.analysisRequest, events: report.events.filter(row => prosecutionStage(row)), documents: [], summaries: [] };
   let pieces = report.summaries.filter(item => !item.id?.startsWith("AI 요청")).map(item => ({
     title: item.title, source: [item.source, item.id].filter(Boolean).join(" · "),
     text: item.text.slice(0, 9000) + (item.text.length > 9000 || item.partial ? "\n[일부 발췌]" : ""),
@@ -556,7 +559,7 @@ async function finishDossierAnalysis(report, signal) {
     pieces = condensed;
   }
   const final = await request(pieces, [
-    "선택한 원문과 기관 이력만 근거로 읽기 쉬운 한국어 심사 보고서를 작성하세요.",
+    "선택한 원문과 기관 이력만 근거로 읽기 쉬운 한국어 심사 보고서를 작성하세요. userFocus에 있는 사용자 요청을 네 섹션에 반영하세요.",
     "다음 네 제목을 순서대로 정확히 사용하세요. 각 제목은 ## 로 시작하는 별도 줄입니다.",
     resultHeadings.join(", "),
     "심사 결과는 확인된 최신 판단 한 문장, 다른 섹션은 핵심 사항을 각각 최대 두 개의 짧은 글머리표로 쓰세요.",
@@ -618,9 +621,10 @@ function updateMode() {
   by("numberType").disabled = office === "UPC";
   by("source").disabled = !apiMode;
   by("requestGroup").hidden = !apiMode;
-  by("search").textContent = apiMode ? "리포트 만들기" : "공식 열람처 찾기";
+  by("search").textContent = apiMode ? "특허 찾기" : "공식 열람처 찾기";
   by("accessGroup").hidden = !apiMode;
   by("manualUpload").hidden = apiMode;
+  if (!current) workflowStep(apiMode ? 0 : -1);
   by("scanGroup").hidden = apiMode;
   by("pdf").multiple = !apiMode;
   by("fileLabel").textContent = apiMode ? "PDF 파일 · 최대 3.5 MiB" : "PDF 파일 · 파일당 최대 20 MiB";
@@ -660,22 +664,39 @@ by("lookup").querySelectorAll('[name="mode"]').forEach(mode => {
   });
 });
 
+function workflowStep(index) {
+  const flow = by("case-flow");
+  flow.hidden = index < 0;
+  [...flow.children].forEach((item, i) => {
+    if (i === index) item.setAttribute("aria-current", "step");
+    else item.removeAttribute("aria-current");
+    item.classList.toggle("complete", i < index);
+  });
+}
+
 function showCandidates(found, pick, local = false) {
   current = undefined;
   const area = by("result");
   area.replaceChildren();
   area.hidden = false;
   const panel = el("section", "", "panel");
+  workflowStep(local ? -1 : 1);
   const hasUnverified = found.candidates.some(item => item.linksOnly);
   const heading = el("h2", local || hasUnverified ? `가능한 번호 해석 ${found.candidates.length}가지` : `검색 결과 ${found.candidates.length}건`, "report-title");
   heading.id = "report-title";
   heading.tabIndex = -1;
   panel.append(heading, el("p", local ? "국가 코드가 없어 여러 관할의 번호로 읽을 수 있습니다. 확인할 번호를 고르세요."
-    : hasUnverified ? "자동 조회 미확인 항목은 원문을 연결해 검토할 수 있습니다." : "리포트를 만들 특허를 선택하세요.", "muted"));
+    : hasUnverified ? "자동 조회 미확인 항목은 원문을 연결해 검토할 수 있습니다." : "심사문서를 내려받을 특허를 선택하세요.", "muted"));
   panel.append(table(
     local ? ["관할", "번호 해석", ""] : ["관할", "명칭", "출원번호", "문헌·등록번호", "출원일", "상태", "출원인", "일치", ""],
     found.candidates.map(item => {
-      const choose = button(local ? "열람처 보기" : "리포트 만들기", () => pick(item), "secondary");
+      const choose = button(local ? "열람처 보기" : "심사문서 다운로드", () => {
+        panel.querySelectorAll("button").forEach(control => { control.disabled = true; });
+        Promise.resolve(pick(item)).finally(() => {
+          panel.querySelectorAll("button").forEach(control => { control.disabled = false; });
+        });
+      }, "secondary");
+      if (!local) choose.dataset.prepareCase = "true";
       return local ? [item.country, item.matched, choose] : [item.country, item.title, item.application,
         item.documents || item.grant || item.publication || item.number, item.filed, item.status, item.applicants, item.matched, choose];
     }), ""));
@@ -718,6 +739,7 @@ by("back-search").addEventListener("click", () => {
   url.hash = "";
   history.replaceState(null, "", url);
   say("status", "");
+  workflowStep(isAutomaticMode() ? 0 : -1);
   by("number").focus();
 });
 
@@ -734,13 +756,13 @@ async function openCandidate(candidate, notes = [], request = "") {
       : { number: candidate.number, country: candidate.country, numberType: candidate.numberType };
     const response = await api({ action: "lookup", ...query }, controller.signal);
     const data = await response.json();
-    const report = { ...data, summaries: [], analysisRequest: request };
+    const report = { ...data, summaries: [], analysisRequest: request, collecting: true };
     controller.signal.throwIfAborted();
     report.notes.unshift(...notes);
     show(report);
     finishReport(report);
     say("status", report.linksOnly ? "자동 조회로 사건을 확인하지 못했습니다. 직접 추가한 심사문서를 선택해 분석할 수 있습니다."
-      : "공개 자료 조회 완료 · 분석할 자료를 선택해 주세요.");
+      : "원문 준비 · 사용할 문서를 체크한 뒤 보고서 생성을 누르세요.");
   } catch (error) {
     if (searchVersion === version) say("status", error.message, true);
   } finally {
@@ -774,18 +796,15 @@ by("lookup").addEventListener("submit", async event => {
   current = undefined;
   const [number, office, numberType] = [by("number").value, by("office").value, by("numberType").value];
   const request = apiMode ? by("request").value.trim() : "";
+  workflowStep(apiMode ? 1 : -1);
   say("status", apiMode ? "번호와 일치하는 특허를 찾고 있습니다." : "공식 열람처를 준비하고 있습니다.");
   try {
     if (apiMode) {
       const found = await (await api({ action: "search", number, country: office, numberType, source: by("source").value }, controller.signal)).json();
       controller.signal.throwIfAborted();
       if (!found.candidates.length) throw new Error(["일치하는 특허를 찾지 못했습니다.", ...found.notes].join(" "));
-      if (found.candidates.length === 1) {
-        await openCandidate(found.candidates[0], found.notes, request);
-        return;
-      }
       showCandidates(found, candidate => openCandidate(candidate, found.notes, request));
-      say("status", "확인할 번호와 자료를 선택해 주세요.");
+      say("status", "특허를 찾았습니다. 해당 사건의 심사문서 다운로드를 누르세요.");
     } else {
       const tools = await localTools();
       if (searchVersion !== version) return;

@@ -5,33 +5,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex">
   <title>특허 심사 리포트 | AI-ALL</title>
-  <link rel="stylesheet" href="/patent-review.css?v=20261121-stages">
+  <link rel="stylesheet" href="/patent-review.css?v=20261121-flow">
   <script defer src="/patent-pptx.bundle.js"></script>
   <script defer src="/patent-review-pptx.js?v=20261121-stages"></script>
   <script defer src="/patent-review-case.js?v=20261120-dossier-guide"></script>
   <script id="patent-dashboard" defer src="/patent-assets/app/patent-review-dashboard.5ebf49c6c23efbb0.js"></script>
-  <script id="patent-handoff" defer src="/patent-assets/app/patent-review-handoff.6fb4231c3be94290.js"></script>
-  <script id="patent-app" defer src="/patent-assets/app/patent-review.454e516983ed08d0.js"></script>
+  <script id="patent-handoff" defer src="/patent-assets/app/patent-review-handoff.a7af4ca508c0232e.js"></script>
+  <script id="patent-app" defer src="/patent-assets/app/patent-review.0058349a52c765de.js"></script>
 </head>
 <body>
   <header class="top"><div class="shell"><a class="brand" href="/">AI-ALL<span>.</span></a><a class="home" href="/">사이트 홈 ↗</a></div></header>
   <main>
     <section class="intro"><div class="shell">
       <h1>특허 심사 리포트</h1>
-      <p>특허번호를 입력하고 리포트 만들기를 누르세요. 공개 이력과 문서 목록이 열립니다. 분석할 문서를 체크하고 분석 시작을 누르면 심사 경과와 청구항별 쟁점을 담은 보고서가 생성됩니다.</p>
+      <p>특허번호를 찾고 해당 사건의 심사문서를 내려받으세요. 보고서 생성을 누르면 선택한 원문과 공개 이력을 함께 분석합니다.</p>
     </div></section>
     <div class="shell workspace">
+      <ol id="case-flow" class="case-flow" aria-label="보고서 생성 단계">
+        <li aria-current="step">특허번호 입력</li><li>특허 찾기</li><li>심사문서 다운로드</li><li>보고서 생성</li>
+      </ol>
       <form id="lookup" class="panel">
         <div class="search-grid">
           <div><label for="number">특허번호 또는 UPC 사건번호</label><input id="number" required maxlength="64" placeholder="예: 10-2023-0010262, US 11,234,231, EP4286919" autocomplete="off" spellcheck="false" aria-describedby="numberHint"></div>
-          <button id="search" class="primary" type="submit">리포트 만들기</button>
+          <button id="search" class="primary" type="submit">특허 찾기</button>
         </div>
         <p id="numberHint" class="muted hint">국가 코드, 하이픈, 쉼표는 있어도 없어도 됩니다. 같은 번호를 가진 특허가 여러 건이면 목록에서 골라 리포트를 만듭니다.</p>
         <a id="espacenet-search" href="https://worldwide.espacenet.com/" target="_blank" rel="noopener noreferrer" hidden>EPO Espacenet에서 직접 검색 ↗</a>
         <div class="ask-field" id="requestGroup">
           <label for="request">AI에게 요청할 내용 <span class="optional">선택</span></label>
           <textarea id="request" maxlength="2000" rows="2" placeholder="예: 거절이유와 인용발명을 표로 정리하고, 출원인이 어떻게 대응했는지 설명해 줘" aria-describedby="requestHint"></textarea>
-          <p id="requestHint" class="muted hint">분석 시작을 누르면 선택한 자료를 바탕으로 Claude가 답변을 작성해 문서 요약과 PowerPoint에 넣습니다. 비워 두면 리포트만 만듭니다.</p>
+          <p id="requestHint" class="muted hint">보고서 생성 시 선택한 원문과 함께 반영할 요청을 입력하세요.</p>
         </div>
         <details class="search-settings">
           <summary>검색 설정</summary>

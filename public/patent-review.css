@@ -219,3 +219,8 @@ td:first-child { white-space: nowrap; }
   .decision-grid { grid-template-columns: 1fr; }
   .stage-step { padding-left: 20px; }
 }
+
+.case-flow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; list-style: none; margin: 0 0 12px; padding: 10px; background: white; border: 1px solid var(--line); border-radius: 10px; }
+.case-flow li { padding: 7px 3px; border-bottom: 3px solid #d4dee6; text-align: center; color: var(--muted); font-size: .84rem; }
+.case-flow .complete { border-color: #86b4ab; }
+.case-flow [aria-current] { color: #155b50; background: #edf6f3; border-color: #207763; font-weight: 750; }
