@@ -119,8 +119,72 @@ function reviewedUsCase() {
         ["초기화 신호선", "전원 배선과 초기화 신호선의 동일 층·비중첩 배치"], []],
     ].map(([id, verdict, summary, onlyMember, onlySubject]) => [id, { id, verdict, summary, onlyMember, onlySubject }])),
   };
+  // WINTELIPS record retrieved on 2026-11-21: independent claims of the grant and of the pre-grant publication, backward citations, term, post-grant proceedings.
+  const grid = start => `wherein projections of at least one of the power lines and at least one of the power leads on the base substrate intersect, and the at least one of the power lines and the at least one of the power leads are connected through a via hole, and ${start}projections of the power lines and the power leads on the base substrate form a grid-like structure.`;
+  const independent = [
+    { number: "1", text: ["An array substrate comprising a plurality of pixel units arranged in an array, each of the pixel units comprising a plurality of sub-pixels, wherein the array substrate comprises:",
+      "a plurality of power lines which are arranged in a conductive layer on a base substrate, are arranged at intervals along a first direction and extend along a second direction, and are used for providing power signals to the sub-pixels; and", "a plurality of power leads which are arranged in another conductive layer, are arranged at intervals along the second direction and extend along the first direction;", grid("")].join("\n") },
+    { number: "19", text: ["A display device, comprising an array substrate;",
+      "wherein the array substrate comprising a plurality of pixel units arranged in an array, each of the pixel units comprising a plurality of sub-pixels, wherein the array substrate comprises:",
+      "a plurality of power lines which are arranged in a conductive layer on a base substrate, are arranged at intervals along a first direction and extend along a second direction, and are used for providing power signals to the sub-pixels; and", "a plurality of power leads which are arranged in another conductive layer, are arranged at intervals along the second direction and extend along the first direction;", grid("the ")].join("\n") },
+  ];
+  const cited = (country, number, kind, date, title, applicant, step = "출원서 인용") => ({ country, number, kind, date, title, applicant, step });
+  const caseRecord = { status: "done", data: {
+    retrieved: "2026-11-21",
+    subject: { country: "US", application: "18/494796", filed: "2023-10-26", status: "등록",
+      granted: { number: "12198599", kind: "B2", date: "2025-01-14" }, published: { number: "2024-0078956", kind: "A1", date: "2024-03-07" } },
+    claims: { scope: "independent",
+      granted: { label: "US 12198599 B2", date: "2025-01-14", language: "US", claims: independent },
+      original: { label: "US 2024-0078956 A1", date: "2024-03-07", language: "US", claims: independent.map(claim => ({ ...claim })) } },
+    citations: { total: 19, nonPatent: [
+      "Notice of Allowance from U.S. Appl. No. 17/638,836 dated Jul. 26, 2023.", "Office action from U.S. Appl. No. 17/638,836 dated Jul. 26, 2023.",
+      "Written Opinion from PCT/CN2021/075289 dated Nov. 3, 2021.", "International Search Report from PCT/CN2021/075289 dated Nov. 3, 2021.",
+    ], items: [
+      cited("US", "11837142", "B2", "2023-12-05", "Array substrate and display device", "BOE TECHNOLOGY GROUP CO., LTD.", "심사관 인용"),
+      cited("JP", "4838571", "B2", "2011-10-07", "발광 표시 장치 및 그 제조 방법", "SAMSUNG MOBILE DISPLAY CO LTD"),
+      cited("KR", "10-0698697", "B1", "2007-03-15", "발광표시장치 및 그의 제조방법", "삼성에스디아이 주식회사"),
+      cited("US", "11176898", "B2", "2021-11-16", "Display panel and electronic apparatus", "CHONGQING BOE DISPLAY TECHNOLOGY CO., LTD."),
+      cited("US", "11282909", "B2", "2022-03-22", "Display panel and manufacturing method thereof, display device", "CHENGDU BOE OPTOELECTRONICS TECHNOLOGY CO., LTD."),
+      cited("US", "11380257", "B2", "2022-07-05", "Display panel and display device", "BEIJING BOE TECHNOLOGY DEVELOPMENT CO., LTD."),
+      cited("US", "11469291", "B2", "2022-10-11", "Display panel, method of manufacturing the same, and display device", "CHENGDU BOE OPTOELECTRONICS TECHNOLOGY CO., LTD."),
+      cited("US", "11749689", "B2", "2023-09-05", "Array substrate mother board, array substrate, display panel and display device", "Xiamen Tianma Micro-Electronics Co., Ltd."),
+      cited("US", "2006-0132055", "A1", "2006-06-22", "Organic light emitting display and method of fabricating the same", "SAMSUNG SDI CO., LTD."),
+      cited("CN", "100525566", "C", "2009-08-05", "유기발광 표시장치 및 그 제조방법", "Samsung Mobile Display Co.,Ltd."),
+      cited("CN", "111584610", "A", "2020-08-25", "표시 패널 및 표시 장치", "BOE TECHNOLOGY GROUP CO., LTD."),
+      cited("CN", "109686314", "B", "2021-01-29", "화소 회로, 표시 기판 및 표시 장치", "BOE TECHNOLOGY GROUP Co.,Ltd."),
+      cited("CN", "111653238", "B", "2021-08-13", "화소 구동 회로 및 그 구동 방법, 표시 패널", "SHANGHAI TIANMA AM-OLED Co.,Ltd."),
+      cited("CN", "111462694", "B", "2022-06-10", "화소 회로 및 그 구동 방법, 표시 패널", "KUNSHAN GO-VISIONOX OPTO-ELECTRONICS Co.,Ltd."),
+      cited("CN", "111463255", "B", "2022-06-24", "표시 패널 및 그 제조 방법, 표시 장치", "BOE TECHNOLOGY GROUP Co.,Ltd."),
+      cited("CN", "112038381", "B", "2022-09-20", "디스플레이 패널 및 디스플레이 장치", "WUHAN TIANMA MICROELECTRONICS Co.,Ltd."),
+      cited("CN", "111477669", "B", "2023-04-18", "표시 패널 및 그 제조 방법, 표시 장치", "BOE TECHNOLOGY GROUP Co.,Ltd."),
+      cited("CN", "107342292", "B", "2023-06-30", "디스플레이 장치", "Samsung Display Co., Ltd."),
+      cited("CN", "111508977", "B", "2024-05-17", "표시 패널 및 그 제조 방법, 표시 장치", "BOE TECHNOLOGY GROUP Co.,Ltd."),
+    ] },
+    term: { expiry: "2041-02-04", adjustment: { total: 0, applicantDelay: 90 }, fees: [], owners: ["BOE TECHNOLOGY GROUP CO., LTD."] },
+    postGrant: { trials: [], litigation: { count: 0, cases: [] } },
+    notes: [],
+  } };
+  // The one-page conclusion, written by the reviewer from the documents and records above.
+  const conclusion = { text: [
+    "## 심사 결과",
+    "- 제1~19항 전부 허여. 2024-08-29 Notice of Allowance는 terminal disclaimer로 이중특허 문제가 해소됐다고 적고 19개 항을 허여했다 (Notice of Allowance, PDF pp. 5–6).",
+    "- 제1~19항 — 비법정 이중특허 · 모특허 US 11,837,142 제1항, 제3~18항, 제20항 — 보정 없이 terminal disclaimer 제출 — 거절 철회 후 허여 (Non-Final Rejection, PDF p. 4 · Applicant Arguments, PDF p. 1).",
+    "- 2024-12-10 정정 허여 통지는 2024-11-27 정보공개서(IDS)를 검토한 뒤에도 허여를 유지했다 (Notice of Allowance, PDF p. 2).",
+    "## 등록의 핵심 구성",
+    "- 독립항 제1항과 제19항은 출원 공개 당시 문언 그대로 등록됐다. 심사 중 청구항 문언은 바뀌지 않았다 (공개 US 2024/0078956 A1과 등록공보 대조).",
+    "- 선행기술에 근거한 신규성·진보성 거절은 없었다. 유일한 거절은 모특허와의 이중특허였고, 허여통지는 선행기술과 구별되는 구성을 따로 적지 않았다. 허여 이유 미기재.",
+    "- 독립항의 골자는 한 도전층의 전원 라인(power lines)과 다른 도전층의 전원 리드(power leads)가 교차하고 비아 홀로 연결돼 격자형 구조를 이루는 배치다.",
+    "## 포기·제한된 범위",
+    "- 감축 보정, 청구항 삭제, 인용발명과 구별하는 한정 주장은 확인되지 않았다.",
+    "- Terminal disclaimer(2024-08-16 제출, 2024-08-17 승인): 모특허 US 11,837,142의 존속기간을 넘는 부분을 포기했고, 두 특허를 같은 권리자가 보유하는 동안에만 권리를 행사할 수 있다 (Terminal Disclaimer, PDF p. 1).",
+    "## 남은 쟁점과 위험",
+    "- 선행기술 대비 특허성이 심사 기록에서 다퉈지지 않았다. 거절에 쓰인 문헌은 모특허뿐이고, 기록에 있는 나머지 특허문헌 18건은 출원인이 제출한 것이다 (WINTELIPS 인용 기록).",
+    "- 예상 만료일은 2041-02-04이고 존속기간 조정은 0일이다 (WINTELIPS 기준).",
+    "- 이 특허에서 나온 계속출원 US 18/962,357(US 12,469,425)과 US 19/357,267(US 12,776,239)이 등록됐다. 그 뒤에 심사 중인 출원이 있는지는 USPTO에서 확인이 필요하다.",
+    "- WINTELIPS 기준 PTAB 심판과 미국 소송 기록은 없다 (2026-11-21 조회).",
+  ].join("\n") };
   return {
-    reviewed: true, country: "US", query: "US12198599B2", application, familyAnalysis, grant: "US 12,198,599 B2",
+    reviewed: true, country: "US", query: "US12198599B2", application, familyAnalysis, caseRecord, conclusion, grant: "US 12,198,599 B2",
     publication: "US 2024/0078956 A1", title: "Array substrate and display device",
     applicants: "BOE Technology Group Co., Ltd.", inventors: "Long Han, Libin Liu, Lujiang Huangfu",
     status: "특허 등록", filed: events[0].date, published: events[1].date, granted: events.at(-1).date,

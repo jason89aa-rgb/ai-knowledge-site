@@ -194,24 +194,28 @@ async function summarizeWithRetry(payload, signal, progress) {
   }
 }
 
-const resultHeadings = ["심사 결과", "심사관의 쟁점", "출원인의 대응", "확인할 쟁점"];
+// The one-page conclusion a practitioner writes after reading the history in the order of the sections below.
+const resultHeadings = ["심사 결과", "등록의 핵심 구성", "포기·제한된 범위", "남은 쟁점과 위험"];
+const headingKey = text => text.replace(/\s+/g, "").replace(/[ㆍ・∙•/]/g, "·");
 
 function resultDashboard(report) {
   const panel = el("section", "", "panel decision-panel");
   panel.id = "analysis-result";
   panel.append(el("h2", "심사 결과 보고서"));
+  panel.append(el("p", "아래 1~9단계를 종합한 한 장 결론입니다. 근거는 각 단계에서 확인할 수 있습니다.", "muted hint"));
   if (report.analysisCoverage) panel.append(el("p", report.analysisCoverage, "muted hint"));
   const grid = el("div", "", "decision-grid");
   const sections = new Map();
   let active;
   for (const line of (report.conclusion?.text || "").split(/\r?\n/)) {
-    const heading = line.trim().replace(/^#{1,6}\s*|\*\*/g, "").replace(/[:：]$/, "");
-    if (resultHeadings.includes(heading)) {
+    const heading = resultHeadings.find(name => headingKey(name) === headingKey(line.trim().replace(/^#{1,6}\s*|\*\*/g, "").replace(/[:：]$/, "")));
+    if (heading) {
       active = heading;
       if (!sections.has(active)) sections.set(active, []);
     } else if (active && line.trim()) sections.get(active).push(line);
   }
-  const roles = ["outcome", "examiner", "applicant"];
+  // Without a written conclusion, only the result can be taken straight from a decision document.
+  const roles = ["outcome"];
   for (const [index, heading] of resultHeadings.entries()) {
     const lines = sections.get(heading);
     const card = el("article", "", "decision-card decision-" + index);
@@ -275,7 +279,7 @@ function exportButton(report, status) {
         briefRoles.find(([role]) => role === row.role)?.[1], [row.issue, ...findingDetailText(row), row.text].filter(Boolean).join("\n"),
         [row.date, row.procedure, row.locator].filter(Boolean).join(" · "),
       ]));
-      await window.exportPatentPptx({ ...report, timelineRows, procedureRows }, report.reviewed ? "원문 검토일 " + report.reviewedAt : dateLabel(report.retrievedAt), facts, download);
+      await window.exportPatentPptx({ ...report, timelineRows, procedureRows, recordSheets: recordSheets(report) }, report.reviewed ? "원문 검토일 " + report.reviewedAt : dateLabel(report.retrievedAt), facts, download);
       say(status, "PowerPoint 파일을 만들었습니다.");
     } catch {
       say(status, "PowerPoint를 만들지 못했습니다. 페이지를 새로 열고 다시 시도해 주세요.", true);
@@ -597,17 +601,18 @@ function show(report) {
   if (report.country !== "UPC") {
     const nav = el("nav", "", "report-nav");
     nav.setAttribute("aria-label", "리포트 목차");
-    for (const [id, label] of [["process-analysis", "단계별 심사 흐름"], ["claim-analysis", "청구항별 심사 비교"], ["report-timeline", "주요 심사 타임라인"], ["report-family", "패밀리 분석"], ["report-documents", "심사 문서"], ["report-history", "전체 이력"]]) {
+    // The sections follow the order in which a practitioner reads a prosecution history.
+    for (const [id, label] of [["case-frame", "1 사건의 틀"], ["claim-evolution", "2 청구항 대조"], ["allowance-reasons", "3 등록 사유"], ["process-analysis", "4 단계별 흐름"],
+      ["claim-analysis", "청구항별 비교"], ["scope-limits", "5 좁힌 기록"], ["prior-art", "6 선행기술"], ["report-family", "7 패밀리"], ["rights-record", "8 존속기간"],
+      ["post-grant", "9 등록 후"], ["report-timeline", "타임라인"], ["report-documents", "심사 문서"], ["report-history", "전체 이력"]]) {
       const jump = el("a", label);
       jump.href = "#" + id;
       jump.onclick = () => { const target = by(id); if (target?.tagName === "DETAILS") target.open = true; };
       nav.append(jump);
     }
-    const analysis = el("section", "", "panel claim-panel");
-    analysis.id = "claim-analysis";
-    const process = el("section", "", "panel claim-panel");
-    process.id = "process-analysis";
-    area.append(nav, process, analysis, timeline(milestones), familySection(report));
+    const section = id => Object.assign(el("section", "", "panel claim-panel"), { id });
+    area.append(nav, section("case-frame"), section("claim-evolution"), section("allowance-reasons"), section("process-analysis"), section("claim-analysis"),
+      section("scope-limits"), section("prior-art"), familySection(report), section("rights-record"), section("post-grant"), timeline(milestones));
     const history = el("details", "", "panel record-fold");
     history.id = "report-history";
     history.append(el("summary", `심사·행정 이력 (${report.events.length})`), table(
@@ -668,7 +673,9 @@ async function requestAnswer(report, text, signal) {
 async function finishDossierAnalysis(report, signal) {
   if (!report.canSummarize || report.linksOnly) return;
   const context = askContext(report);
-  const base = { ...context, userFocus: report.analysisRequest, events: report.events.filter(row => prosecutionStage(row)), documents: [], summaries: [] };
+  const record = caseContext(report);
+  const base = { ...context, userFocus: report.analysisRequest, record: record.record ? JSON.stringify(record).slice(0, 9000) : undefined,
+    events: report.events.filter(row => prosecutionStage(row)), documents: [], summaries: [] };
   let pieces = report.summaries.filter(item => !item.id?.startsWith("AI 요청")).map(item => ({
     title: item.title, source: [item.source, item.id].filter(Boolean).join(" · "),
     text: item.text.slice(0, 9000) + (item.text.length > 9000 || item.partial ? "\n[일부 발췌]" : ""),
@@ -689,13 +696,15 @@ async function finishDossierAnalysis(report, signal) {
     pieces = condensed;
   }
   const final = await request(pieces, [
-    "선택한 원문과 기관 이력만 근거로 읽기 쉬운 한국어 심사 보고서를 작성하세요. userFocus에 있는 사용자 요청을 네 섹션에 반영하세요.",
+    "문서 요약과 기관 이력, record(등록·공개 청구항 대조와 WINTELIPS 권리 기록)만 근거로 사내 보고용 한국어 심사 보고서를 작성하세요. userFocus에 있는 사용자 요청을 네 섹션에 반영하세요.",
     "다음 네 제목을 순서대로 정확히 사용하세요. 각 제목은 ## 로 시작하는 별도 줄입니다.",
     resultHeadings.join(", "),
-    "심사 결과는 확인된 최신 판단 한 문장, 다른 섹션은 핵심 사항을 각각 최대 두 개의 짧은 글머리표로 쓰세요.",
-    "권리범위에 영향을 준 판단과 근거 문서의 실제 절차명으로 사내 보고용 결론을 작성하세요. 거절·제한의 이유, 대상 청구항, 무엇을 보정하거나 반박했는지, 그 결과를 명확히 구분하고 각 항목에 문서명과 페이지 또는 이력 날짜를 붙이세요.",
-    "R/R, 비최종·최종 거절, Advisory Action, 불복, 허여 통지는 실제 확인된 전환점만 다루세요. 허여 통지와 등록을 구분하세요.",
-    "수수료·접수·서지 변경은 생략하세요. 다만 미납에 따른 권리 상실처럼 결과를 바꾼 결정은 포함하세요. 자료가 부족하면 선택 자료에서 미확인이라고 한 줄로 표시하세요.",
+    "각 제목 아래 네 개 이하의 짧은 글머리표로 쓰고, 항목마다 문서의 실제 절차명과 페이지 또는 이력 날짜를 붙이세요.",
+    "심사 결과: 첫 항목은 청구항 처분을 확정한 결정, 이어서 거절 근거별로 '제n항 — 부정된 특허요건·인용문헌 — 보정한 문언 또는 보정 없이 의견서 — 그 뒤의 처분'. 허여 통지와 등록을 구분하세요.",
+    "등록의 핵심 구성: 허여 이유, 마지막 거절을 푼 보정 문언, record의 청구항 대조를 근거로 독립항이 선행기술과 구별된 구성을 청구항 문언 그대로. 문언이 그대로 등록됐으면 그렇다고 쓰고, 허여 이유가 없으면 '허여 이유 미기재'라고 쓰세요.",
+    "포기·제한된 범위: 감축 보정으로 추가된 한정, 삭제한 청구항, 인용발명과 구별한 한정 주장, terminal disclaimer의 조건. 없으면 '확인된 감축·한정 없음'.",
+    "남은 쟁점과 위험: 보정 없이 주장만으로 극복한 거절, record의 만료일·심판·소송·이의신청, 심사 중인 후속 출원처럼 확인이 더 필요한 사실. 무효·침해 같은 법적 결론과 자료에 없는 추정은 쓰지 마세요.",
+    "수수료·접수·서지 변경은 생략하되 미납에 따른 권리 상실처럼 결과를 바꾼 결정은 포함하세요. 자료가 부족하면 미확인이라고 한 줄로 표시하세요.",
   ].join(" "));
   signal.throwIfAborted();
   if (current !== report) return;

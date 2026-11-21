@@ -351,3 +351,33 @@ td:first-child { white-space: nowrap; }
 .stage-overview { list-style: none; margin: 8px 0 0; padding: 8px 10px; border-radius: 6px; background: rgba(255, 255, 255, .7); font-size: .84rem; }
 .stage-overview li + li { margin-top: 3px; }
 .stage-overview strong { color: var(--role, #244952); }
+/* Sections in the order a practitioner reads the history: case frame, claim comparison, allowance, limits, prior art, term, post-grant. */
+.claim-panel h3 { margin: 22px 0 8px; font-size: 1.02rem; color: #173d46; }
+.claim-panel .table-wrap td:first-child { white-space: normal; min-width: 6.5em; }
+.frame-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 0 24px; margin: 14px 0 0; }
+.frame-facts div { padding: 10px 0; border-top: 1px solid var(--line); min-width: 0; }
+.frame-facts dt { color: var(--muted); font-size: .8rem; }
+.frame-facts dd { margin: 2px 0 0; font-weight: 700; overflow-wrap: anywhere; white-space: pre-line; }
+.frame-facts small { display: block; margin-top: 2px; color: var(--muted); font-size: .76rem; }
+.claim-card { margin-top: 16px; padding: 16px 18px; border: 1px solid var(--line); border-top: 3px solid #244952; border-radius: 4px 4px 10px 10px; background: #fbfcfd; }
+.claim-card header { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-bottom: 8px; }
+.claim-card header h3 { margin: 0; }
+.claim-card header small { color: var(--muted); font-size: .78rem; }
+.claim-diff, .claim-text p { font-size: .95rem; line-height: 1.75; overflow-wrap: anywhere; }
+.claim-diff { margin: 0; white-space: pre-wrap; }
+.claim-text p { margin: 0 0 6px; }
+.claim-diff ins { background: #dff3e4; color: #0f5132; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+.claim-diff del { background: #fde2e1; color: #8a1f17; }
+.claim-changes { margin-top: 10px; font-size: .88rem; }
+.claim-changes h4, .claim-dropped h4 { margin: 8px 0 4px; font-size: .82rem; color: var(--muted); }
+.claim-changes ul { margin: 0; padding-left: 1.2em; }
+.claim-card details, .claim-dropped { margin-top: 10px; font-size: .88rem; }
+.claim-card summary, .claim-dropped summary { cursor: pointer; color: #274b59; font-weight: 700; }
+.allowance-reason { padding: 8px 12px; border-inline-start: 3px solid #1b7463; border-radius: 4px; background: #eff6f2; }
+.allowance-element { color: var(--muted); }
+.allowance-last { margin-top: 16px; }
+.allowance-last .stage-overview { background: #f1f6fa; }
+.limit-entry p { margin: 0 0 4px; }
+.limit-entry small { color: var(--muted); }
+.art-sources a { display: block; }
+.family-followers { margin: 8px 0; padding: 10px 14px; border-inline-start: 3px solid #6e5191; border-radius: 4px; background: #f5f1fa; font-size: .9rem; }

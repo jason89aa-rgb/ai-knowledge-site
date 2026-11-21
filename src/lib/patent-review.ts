@@ -785,6 +785,7 @@ export function askReport(input: unknown, question: unknown) {
       "granted", "status", "applicants", "inventors"], 400),
     userFocus: clip(input && typeof input === "object" ? (input as Record<string, unknown>).userFocus : undefined, 2000),
     abstract: clip(input && typeof input === "object" ? (input as Record<string, unknown>).abstract : undefined, 4000),
+    record: clip(input && typeof input === "object" ? (input as Record<string, unknown>).record : undefined, 9000),
     family: rows((input as Record<string, unknown> | undefined)?.family, 60).map(row => pick(row, ["country", "publication", "application", "date", "relation"], 120)),
     events: rows((input as Record<string, unknown> | undefined)?.events, 150).map(row => pick(row, ["date", "title", "detail", "id"], 300)),
     documents: rows((input as Record<string, unknown> | undefined)?.documents, 60).map(row => pick(row, ["date", "title", "id"], 200)),
@@ -807,7 +808,7 @@ const evidenceMarker = "<claim-evidence>";
 const responseTypes = ["amend", "argue", "cancel", "add", "disclaimer", "other"];
 const evidenceInstructions = [
   "요약은 핵심 심사 단계, 심사관 쟁점, 출원인 대응, 결과 중 원문에 있는 내용만 짧은 글머리표로 쓴다. 수수료·접수는 절차 결과를 바꾼 경우에만 언급한다. 평문 요약은 3,000토큰 이내에서 주요 판단과 근거를 먼저 완결한다. 다음 줄에 <claim-evidence>를 쓴 뒤 근거 한 건마다 한 줄짜리 JSON 객체를 쓴다. 마지막 줄에 </claim-evidence>를 쓴다. 배열이나 마크다운 코드 블록은 쓰지 않는다.",
-  '각 원소는 {"claims":[1,2],"role":"examiner|applicant|outcome","finalDisposition":false,"roundDate":"","documentDate":"","procedureTitle":"","issue":"","noticeTitle":"","noticeSource":null,"reference":"","ground":"","references":[{"doc":"","where":""}],"element":"","responseType":"","text":"","locator":""} 형식이다.',
+  '각 원소는 {"claims":[1,2],"role":"examiner|applicant|outcome","finalDisposition":false,"roundDate":"","documentDate":"","procedureTitle":"","issue":"","noticeTitle":"","noticeSource":null,"reference":"","ground":"","references":[{"doc":"","where":""}],"element":"","responseType":"","support":"","statement":"","reason":"","text":"","locator":""} 형식이다.',
   "청구항 번호와 의견·대응·결과가 원문에서 명시적으로 연결된 경우만 기록한다. 공통 근거는 한 항목에 실제 해당 항 번호를 모두 넣는다. 항마다 이유를 만들어내지 않는다.",
   "청구항 번호 없이도 원문에서 확인되는 주요 절차상 의견·대응(예: 제한요구와 발명 선택, 도면 이의와 교체, 면담·불복에서의 쟁점)은 claims:[], scope:\"proceeding\"으로 적고 같은 role, 날짜, locator 규칙을 따른다. 번호가 없는 근거에 항 번호를 추정하지 않는다. 수수료·접수 같은 행정 이력은 제외한다.",
   "주요 통지·답변·결정마다 해당 문서가 실제로 밝힌 핵심 의견, 대응 또는 판단을 절차 단위로 한두 문장에 종합해 scope:\"proceeding\", claims:[]인 첫 근거로 제공한다. 여러 통지에 각각 답한 문서는 대상 통지별로 구분한다. 구체적인 항별 근거는 뒤에 적는다.",
@@ -824,6 +825,10 @@ const evidenceInstructions = [
   "심사관 근거(role examiner)에는 ground에 부정된 특허요건과 조문을 '진보성 (35 U.S.C. §103)', '신규성 (§102(a)(1))', '기재불비 (§112(b))', '이중특허', '특허적격 (§101)', '진보성 (특허법 제29조 제2항)'처럼 요건명을 앞에 두고 쓴다. references에는 그 거절이 의존한 인용문헌마다 doc(원문에 적힌 문헌번호와 약칭, 예: 'Kim, US 2015/0123456 A1')과 where(심사관이 대응시킨 단락·도면·청구항, 예: '¶[0045], Fig. 3')를 쓴다. element에는 심사관이 문제 삼은 청구항 구성의 문언을 원문 언어 그대로 25단어 이내로 인용한다. text에는 그 구성이 어느 문헌의 어느 부분에 개시됐다고 봤는지 쓰고, 진보성 거절이면 심사관이 인정한 차이점과 결합 이유도 쓴다. 문헌별로 대응시킨 구성이 다르면 독립항의 쟁점 구성 위주로 근거를 나눈다.",
   "출원인 근거(role applicant)에는 responseType을 amend(해당 항의 문언을 보정), argue(보정 없이 의견서 주장만), cancel(항 삭제), add(항 신설), disclaimer(terminal disclaimer 등 포기서 제출), other 중 하나로 쓴다. 보정서·청구항 제출본의 밑줄(추가)과 취소선·이중괄호(삭제) 표시 또는 의견서의 보정 설명으로 실제 바뀐 문언을 확인한다. amend면 element에 추가·변경된 문언을 원문 언어 그대로 25단어 이내로 인용하고, text에 무엇을 추가·삭제·변경했는지와 그 보정으로 어느 거절이유·인용문헌을 다투는지 쓴다. argue면 element에 인용문헌에 없다고 주장한 구성을, text에 주장의 요지를 쓴다. 보정 여부를 원문에서 확인할 수 없으면 responseType을 비운다.",
   "후속 통지나 허여통지가 이전 거절을 철회·유지한 이유(보정으로 해소, 주장 인정, 주장 불인정 등)를 밝히면 text에 그 이유를 쓴다. 해당 없는 필드는 빈 문자열이나 빈 배열로 둔다. 원문에 없는 문헌번호, 단락, 청구항 문언은 만들지 않는다.",
+  // What the prosecution left on the scope of the right: why it was allowed, what the applicant gave up, and what the applicant said.
+  "허여통지·등록결정·심결이 허여 이유(reasons for allowance)나 거절을 철회한 이유를 적었으면 그 근거(role outcome 또는 examiner)의 reason에 '인용문헌 A·B 어디에도 ○○ 구성이 없음', '보정으로 해소', '출원인 주장 인정', 'terminal disclaimer 승인'처럼 원문에 적힌 이유를 한 문장으로 쓴다. 원문이 이유를 밝히지 않으면 reason을 비우고 추정하지 않는다. 면담 기록(Interview Summary)에서 합의한 내용과 심사관 직권보정(Examiner's Amendment)으로 바뀐 문언은 examiner 근거로 기록하고, 직권보정이면 element에 바뀐 문언을 쓴다.",
+  "출원인 근거가 amend 또는 add면 support에 출원인이 보정의 근거로 든 명세서 단락·도면·원청구항을 원문 표기대로 쓴다(예: '¶[0052], Fig. 4, 원청구항 5'). 원문이 근거를 밝히지 않으면 비운다.",
+  "출원인이 인용발명과 구별하거나 청구항 용어의 의미·범위를 한정하려고 쓴 문장이 있으면 statement에 그 문장 하나를 원문 언어 그대로 45단어 이내로 인용한다. 발명이 반드시 갖추거나 갖추지 않는다고 한 구성, 용어의 정의, 인용발명과 다르다고 한 점이 대상이다. '따라서 거절은 철회되어야 한다' 같은 결론 문장이나 법리 설명은 인용하지 않는다. 그런 문장이 없으면 비운다.",
 ].join(" ");
 
 function documentFindings(output: string, stopped: boolean) {
@@ -851,7 +856,9 @@ function documentFindings(output: string, stopped: boolean) {
         reference: clip(row.reference, 350), noticeSource: Number.isInteger(row.noticeSource) && row.noticeSource > 0 ? row.noticeSource : undefined,
         ground: clip(row.ground, 120), element: clip(row.element, 400),
         references: rows(row.references, 6).map(item => pick(item, ["doc", "where"], 200)).filter(item => item.doc),
-        responseType: row.role === "applicant" && responseTypes.includes(row.responseType) ? row.responseType : undefined });
+        responseType: row.role === "applicant" && responseTypes.includes(row.responseType) ? row.responseType : undefined,
+        support: row.role === "applicant" ? clip(row.support, 200) : undefined, statement: row.role === "applicant" ? clip(row.statement, 600) : undefined,
+        reason: row.role === "applicant" ? undefined : clip(row.reason, 500) });
     } catch {
       evidenceIncomplete = true;
     }
@@ -875,11 +882,12 @@ export async function jointReport(files: File[], context: string, focus: string)
   }
   content.push({ type: "text", text: [
     "사건 기록과 원문을 함께 읽고, 실제 통지·답변의 내용과 날짜가 연결될 때만 같은 회차로 묶으세요. 공보 청구항만으로 거절이유를 추론하지 마세요. 수수료 등 결과에 영향 없는 절차는 생략하세요.",
-    "먼저 ## 심사 결과, ## 심사관의 쟁점, ## 출원인의 대응, ## 확인할 쟁점 네 제목 아래 각각 네 개 이하의 짧은 항목으로 종합하세요. 항목마다 근거 문서명과 원문 페이지 또는 이력 날짜를 붙이고 미확인은 명시하세요.",
+    "먼저 ## 심사 결과, ## 등록의 핵심 구성, ## 포기·제한된 범위, ## 남은 쟁점과 위험 네 제목 아래 각각 네 개 이하의 짧은 항목으로 종합하세요. 항목마다 근거 문서명과 원문 페이지 또는 이력 날짜를 붙이고 미확인은 명시하세요.",
     "회사 내부 보고용으로 첫 문장에 최신 확인 결과와 그 결과가 적용되는 청구항을 제시하세요. 쟁점별로 심사관의 법적 근거·인용문헌, 출원인이 다툰 사항 또는 변경한 구성, 이후 유지·철회·허여된 범위를 원문에 나타난 만큼만 연결하세요. 절차명은 문서 표제 원문을 사용하고 임의의 회차 번호는 쓰지 마세요.",
-    "## 심사 결과의 첫 항목은 청구항 처분을 실제로 확정한 결정(허여통지·거절결정·심결 등)으로 쓰고, 그 뒤의 정정 통지·정보공개서 재검토처럼 처분을 바꾸지 않은 절차는 그 다음에 쓰세요. 같은 이유가 여러 항에 적용되면 '제1~19항'처럼 한 번에 묶으세요.",
-    "## 심사관의 쟁점 항목은 '제n항의 어떤 구성 — 부정된 특허요건과 조문 — 인용문헌과 그 대응 부분' 순서로 쓰세요. ## 출원인의 대응 항목은 '제n항 — 보정(추가·삭제·변경한 문언) 또는 보정 없이 의견서 — 주장 요지' 순서로 쓰고, 보정 없이 의견서만으로 대응한 항은 그렇다고 명시하세요. 후속 통지나 허여통지에 거절이 풀린 이유가 적혀 있으면 ## 심사 결과에 보정으로 해소됐는지 주장이 받아들여졌는지 함께 쓰세요.",
-    "## 확인할 쟁점에는 원문에 기록된 행위가 권리에 남긴 효과를 근거와 함께 쓰세요. 예를 들어 terminal disclaimer가 있으면 그 서류에 적힌 조건(기준 특허의 만료일 이후 존속기간 포기, 두 특허를 같은 권리자가 보유할 때만 권리 행사)과 기준 특허 번호를, 청구항 감축 보정이나 의견서의 한정 주장이 있으면 좁아진 구성을 쓰세요. 사건 기록에 예상 만료일이 있으면 함께 적고, 원문·기록에 없는 효과나 날짜는 추정하지 마세요.",
+    "## 심사 결과의 첫 항목은 청구항 처분을 실제로 확정한 결정(허여통지·거절결정·심결 등)으로 쓰고, 그 뒤의 정정 통지·정보공개서 재검토처럼 처분을 바꾸지 않은 절차는 그 다음에 쓰세요. 이어서 거절이 어떻게 풀렸는지를 거절 근거별로 '제n항 — 부정된 특허요건과 조문·인용문헌 — 보정(추가·삭제·변경한 문언) 또는 보정 없이 의견서 — 그 뒤의 처분' 순서로 쓰고, 보정 없이 의견서만으로 대응한 항은 그렇다고 명시하세요. 같은 이유가 여러 항에 적용되면 '제1~19항'처럼 한 번에 묶으세요.",
+    "## 등록의 핵심 구성에는 독립항이 선행기술과 구별된 구성을 청구항 문언 그대로 쓰세요. 근거는 허여통지의 허여 이유, 마지막 거절을 푼 보정 문언, 사건 자료의 claims(등록 독립항과 출원 당시 공개 청구항 대비 추가된 문언) 순서로 찾으세요. 출원 당시 문언 그대로 등록됐으면 그렇다고 쓰고, 등록을 가능하게 한 다른 사유(terminal disclaimer, 주장 인정 등)를 쓰세요. 원문이 허여 이유를 밝히지 않았으면 '허여 이유 미기재'라고 쓰고 구별 구성을 추정하지 마세요.",
+    "## 포기·제한된 범위에는 감축 보정으로 추가된 한정, 삭제·철회한 청구항, 의견서에서 인용발명과 구별하려고 한 한정 주장(원문 문장을 짧게 인용), terminal disclaimer의 조건(기준 특허 번호, 기준 특허의 만료일 이후 존속기간 포기, 두 특허를 같은 권리자가 보유할 때만 권리 행사)을 쓰세요. 그런 기록이 없으면 '확인된 감축·한정 없음'이라고 쓰세요.",
+    "## 남은 쟁점과 위험에는 원문과 사건 자료에 기록된 사실 가운데 확인이 더 필요한 지점을 쓰세요. 대상은 보정 없이 주장만으로 극복한 거절, 심사관이 주인용문헌에 없다고 인정한 구성, 사건 자료의 record에 있는 예상 만료일·존속기간 조정·심판·소송·이의신청, 아직 심사 중인 후속 출원입니다. 무효·침해 여부 같은 법적 결론은 쓰지 말고, 원문·기록에 없는 효과나 날짜는 추정하지 마세요.",
     "그 뒤 입력 순서대로 각 자료를 <source n=\"1\">와 </source>처럼 번호를 붙인 별도 블록으로 작성하세요. 각 블록 안에는 해당 자료만의 짧은 요약과 다음 형식의 청구항 근거를 넣으세요.",
     evidenceInstructions, "각 자료 요약은 세 문장 이내로 작성하고, 응답 한도 내에서 모든 입력 자료를 다루세요. 문서 번호를 빠뜨리지 마세요. 해당 문서에 근거가 없으면 빈 근거 태그를 사용하세요.",
     focus && "보고서에 반영할 사용자 요청 (위 구조 유지): " + focus,

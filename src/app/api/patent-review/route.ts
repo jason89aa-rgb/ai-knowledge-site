@@ -2,7 +2,8 @@ import {
   addEpoPublicationPages, askReport, compareFamilyClaims, jointReport, isPdf, lookup, maxUpload, normalizePatent, officialCandidates, officialPdf, PatentError, summarizeEvents, summarizePdf, summarizeText,
 } from "../../../lib/patent-review";
 import {
-  wintelipsCandidates, wintelipsConfigured, wintelipsDocument, wintelipsFamily, wintelipsFamilyMember, wintelipsReport, withWintelips,
+  wintelipsCandidates, wintelipsCaseRecord, wintelipsConfigured, wintelipsDocument, wintelipsFamily, wintelipsFamilyCitations, wintelipsFamilyMember,
+  wintelipsReport, withWintelips,
 } from "../../../lib/wintelips";
 
 export const runtime = "edge";
@@ -94,7 +95,7 @@ export async function POST(request: Request) {
         const files = form.getAll("document");
         const context = form.get("context");
         const focus = form.get("focus") || "";
-        if (typeof context !== "string" || context.length > 22000 || typeof focus !== "string" || focus.length > 2000 ||
+        if (typeof context !== "string" || context.length > 30000 || typeof focus !== "string" || focus.length > 2000 ||
             !files.length || files.length > 8 || !files.every((file): file is File => typeof file !== "string" && file.size > 0) ||
             files.reduce((size, file) => size + file.size, 0) > maxUpload) throw new PatentError("선택한 원문 묶음의 크기 또는 형식을 확인해 주세요.", 400);
         return streamSummary(() => jointReport(files, context, focus));
@@ -115,6 +116,8 @@ export async function POST(request: Request) {
     if (large === "family-compare" && body?.action === "family-compare") return streamSummary(() => compareFamilyClaims(body));
     if (body?.action === "family") return json(await withWintelips(token => wintelipsFamily(token, body)));
     if (body?.action === "family-member") return json(await withWintelips(token => wintelipsFamilyMember(token, body)));
+    if (body?.action === "family-citations") return json(await withWintelips(token => wintelipsFamilyCitations(token, body)));
+    if (body?.action === "case-record") return json(await withWintelips(token => wintelipsCaseRecord(token, body)));
     if (body?.action === "search") {
       const result = json(await search(body));
       if (request.headers.get("X-Patent-Access")) {

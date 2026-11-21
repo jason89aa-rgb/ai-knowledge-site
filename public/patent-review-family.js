@@ -174,7 +174,8 @@ function familyTableView(state, nodes) {
       const node = nodeOf(member);
       const parent = node?.parent;
       const doc = el("div");
-      doc.append(el("strong", familyLabel(member)), el("small", [member.date && "발행 " + member.date, member.title].filter(Boolean).join(" · ")));
+      const stage = /^[BC]/.test(member.kind || "") ? "등록" : /^A/.test(member.kind || "") ? "공개" : "";
+      doc.append(el("strong", familyLabel(member)), el("small", [stage, member.date && "발행 " + member.date, member.title].filter(Boolean).join(" · ")));
       const relation = member.subject ? "조사 대상" : node?.edge ? node.edge + " ← " + (parent.member ? familyLabel(parent.member) : parent.label) :
         !member.detail ? "관계 미조회" : member.country === "WO" ? "PCT 국제출원" : node?.children.length ? "기초 출원" : "WIPS 확장 패밀리";
       const filing = el("div");
@@ -202,10 +203,37 @@ function basicFamilyTable(report) {
     "표시할 패밀리 자료가 없습니다.");
 }
 
+// Later filings that descend from the reviewed patent: while one is pending, the owner can still draft new claims on the same disclosure.
+function familyFollowerList(state) {
+  const subject = state?.members?.find(member => member.subject);
+  const own = subject?.detail?.application && filingKey(subject.country, subject.detail.application);
+  if (!own) return [];
+  const known = new Map();
+  for (const member of state.members) {
+    if (member.subject || !member.detail?.application) continue;
+    if ((member.detail.parents || []).some(row => filingKey(row.country || member.country, row.application) === own)) {
+      known.set(filingKey(member.country, member.detail.application), familyLabel(member) + (/^[BC]/.test(member.kind || "") ? " (등록)" : " (공개 · 등록 전)"));
+    }
+  }
+  for (const child of subject.detail.children || []) {
+    const key = filingKey(child.country || subject.country, child.application);
+    if (key && !known.has(key)) known.set(key, `${child.country || subject.country} ${child.application} (패밀리 목록에 문헌 없음 · 심사 중이거나 미공개일 수 있음)`);
+  }
+  return [...known.values()];
+}
+
+function familyFollowers(state) {
+  const followers = familyFollowerList(state);
+  if (!followers.length) return null;
+  const note = el("p", "", "family-followers");
+  note.append(el("strong", `조사 대상에서 나온 후속 출원 ${followers.length}건 `), followers.join(" · "));
+  return note;
+}
+
 function familySection(report) {
   const section = el("section", "", "panel family-panel");
   section.id = "report-family";
-  section.append(el("h2", "패밀리 분석"));
+  section.append(el("h2", "7 · 패밀리와 병행 심사"));
   const live = !report.reviewed && !report.demo && !report.local && !report.linksOnly;
   if (!report.familyAnalysis && live && isAutomaticMode()) void loadFamily(report);
   const state = report.familyAnalysis;
@@ -223,6 +251,8 @@ function familySection(report) {
     ...[...verdicts].map(([verdict, count]) => `${verdict} ${count}건`)].join(" · ");
   section.append(el("p", overview, "family-overview"));
   if (state.source) section.append(el("p", state.source, "hint muted"));
+  const followers = familyFollowers(state);
+  if (followers) section.append(followers);
   const nodes = familyGraph(state);
   section.append(el("h3", "출원 관계도"), familyTreeView(state, nodes));
   section.append(el("h3", "국가별 패밀리와 대표청구항 비교"), familyTableView(state, nodes));
@@ -283,4 +313,6 @@ async function loadFamily(report) {
     state.error = error.message;
   }
   refreshFamily(report);
+  // The frame of the case and the family citation check read the finished family.
+  if (current === report) renderRecord(report);
 }
