@@ -256,3 +256,4 @@ td:first-child { white-space: nowrap; }
 #extension-guide summary { cursor: pointer; color: var(--accent); font-weight: 700; }
 #extension-guide ol { margin-bottom: 0; padding-left: 1.5em; }
 #extension-guide li + li { margin-top: 6px; }
+.dossier-cover .report-usage { margin-top: 14px; color: #c4d6dc; font-variant-numeric: tabular-nums; }
