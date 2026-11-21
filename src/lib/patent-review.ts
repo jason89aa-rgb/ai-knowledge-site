@@ -808,6 +808,8 @@ const evidenceInstructions = [
   "요약은 핵심 심사 단계, 심사관 쟁점, 출원인 대응, 결과 중 원문에 있는 내용만 짧은 글머리표로 쓴다. 수수료·접수는 절차 결과를 바꾼 경우에만 언급한다. 평문 요약은 3,000토큰 이내에서 주요 판단과 근거를 먼저 완결한다. 다음 줄에 <claim-evidence>를 쓴 뒤 근거 한 건마다 한 줄짜리 JSON 객체를 쓴다. 마지막 줄에 </claim-evidence>를 쓴다. 배열이나 마크다운 코드 블록은 쓰지 않는다.",
   '각 원소는 {"claims":[1,2],"role":"examiner|applicant|outcome","finalDisposition":false,"roundDate":"","documentDate":"","procedureTitle":"","issue":"","noticeTitle":"","noticeSource":null,"reference":"","text":"","locator":""} 형식이다.',
   "청구항 번호와 의견·대응·결과가 원문에서 명시적으로 연결된 경우만 기록한다. 공통 근거는 한 항목에 실제 해당 항 번호를 모두 넣는다. 항마다 이유를 만들어내지 않는다.",
+  "청구항 번호 없이도 원문에서 확인되는 주요 절차상 의견·대응(예: 제한요구와 발명 선택, 도면 이의와 교체, 면담·불복에서의 쟁점)은 claims:[], scope:\"proceeding\"으로 적고 같은 role, 날짜, locator 규칙을 따른다. 번호가 없는 근거에 항 번호를 추정하지 않는다. 수수료·접수 같은 행정 이력은 제외한다.",
+  "주요 통지·답변·결정마다 해당 문서가 실제로 밝힌 핵심 의견, 대응 또는 판단을 절차 단위로 한두 문장에 종합해 scope:\"proceeding\", claims:[]인 첫 근거로 제공한다. 여러 통지에 각각 답한 문서는 대상 통지별로 구분한다. 구체적인 항별 근거는 뒤에 적는다.",
   "role은 세 값 중 하나, text는 한국어 요지, locator는 확인한 PDF 페이지 또는 본문 절 번호다. 근거 위치가 없으면 제외한다.",
   "비최종·최종 거절통지의 판단과 허용 가능 표시는 examiner, 출원인의 보정·항 취소·철회 요청은 applicant로 기록한다. 허여통지·거절결정·심결 등 결정 원문이 그 시점에 직접 확정한 청구항별 처분만 outcome 및 finalDisposition:true로 기록한다. 과거 경과를 인용한 문장, 쟁점 하나의 해소, 사건 전체의 등록일만으로는 최종 결과를 만들지 않는다. 취소한 항을 허여 항에 포함하지 않는다.",
   "비교표 한 칸에서 바로 읽을 수 있게 text는 변경한 구성, 이유 또는 처분을 담은 한두 문장으로 쓴다. 종속항이 상위항 보정에 의존한다고 답변서에 명시되면 해당 종속항 번호를 함께 기록한다. 심사 당시 항 번호를 사용하고, 등록 시 재번호는 원문이 대응 관계를 명시할 때만 연결한다.",
@@ -829,7 +831,8 @@ function documentFindings(output: string, stopped: boolean) {
     try {
       const row = JSON.parse(line);
       const claims = Array.isArray(row?.claims) ? [...new Set<number>(row.claims.filter((n: number) => Number.isSafeInteger(n) && n > 0))] : [];
-      if (!claims.length || !["examiner", "applicant", "outcome"].includes(row.role) || !clip(row.text, 1600)?.trim() || !clip(row.locator, 200)?.trim()) {
+      const proceedingOnly = row?.scope === "proceeding" && Array.isArray(row.claims) && row.claims.length === 0;
+      if ((!claims.length && !proceedingOnly) || !["examiner", "applicant", "outcome"].includes(row.role) || !clip(row.text, 1600)?.trim() || !clip(row.locator, 200)?.trim()) {
         evidenceIncomplete = true;
         continue;
       }

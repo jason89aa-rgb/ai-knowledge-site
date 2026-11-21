@@ -167,6 +167,10 @@ td:first-child { white-space: nowrap; }
 .comparison-empty { font-size: .82rem; color: var(--muted); }
 .comparison-context { display: block; color: var(--muted); font-size: .76rem; }
 .procedure-brief { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--line); }
+#process-analysis > .procedure-brief { position: relative; padding: 2px 0 12px 22px; border-top: 0; border-left: 2px solid #c7d9dc; }
+#process-analysis > .procedure-brief::before { content: ""; position: absolute; left: -6px; top: 8px; width: 10px; height: 10px; border-radius: 50%; background: #26646b; }
+.finding-scope { display: block; color: var(--muted); margin-bottom: 4px; }
+.reference-quote summary { cursor: pointer; font-size: .78rem; }
 .procedure-head { display: flex; justify-content: space-between; align-items: end; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
 .procedure-head > div { flex: 1 1 280px; min-width: 0; }
 .procedure-head small { color: var(--muted); font-variant-numeric: tabular-nums; }
