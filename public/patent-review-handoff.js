@@ -8,15 +8,15 @@ const pdfLimit = 3.5 * 1024 * 1024;
 function dossierHandoff(report) {
   if (handoffPanels.has(report)) return handoffPanels.get(report);
   const panel = el("section", "", "panel dossier-import");
-  panel.append(el("h2", "EPO 심사문서 가져오기"));
+  panel.append(el("h2", "심사문서 추가"));
   const entry = report.links.find(item => item.url.startsWith(report.country === "US"
     ? "https://worldwide.espacenet.com/" : "https://register.epo.org/"));
   const home = report.country === "US" ? "https://worldwide.espacenet.com/" : "https://register.epo.org/";
-  panel.append(link({ url: entry?.url || home, label: report.country === "US" ? "Espacenet 열기" : "European Patent Register 열기" }));
-  panel.append(el("p", (report.country === "US"
+  const officialLink = link({ url: entry?.url || home, label: report.country === "US" ? "Espacenet 열기" : "European Patent Register 열기" });
+  const guide = el("p", (report.country === "US"
     ? "EPO 탭에서 보안 확인 후 Global Dossier의 원문 PDF를 저장하세요."
     : "EPO 탭에서 보안 확인 후 All documents에서 원문 PDF 또는 ZIP을 저장하세요.")
-    + " 이 리포트 탭을 열어 두세요. 사건번호로 이름을 지은 폴더를 먼저 연결하면 새 PDF·ZIP의 원문을 Claude에 전송하고 결과 보고서를 갱신합니다. 이미 받은 파일도 선택할 수 있습니다."));
+    + " 이 리포트 탭을 열어 두세요. 사건번호로 이름을 지은 폴더를 먼저 연결하면 새 PDF·ZIP의 원문을 Claude에 전송하고 결과 보고서를 갱신합니다. 이미 받은 파일도 선택할 수 있습니다.");
   const controls = el("fieldset", "", "import-controls");
   const picker = el("input");
   picker.type = "file";
@@ -103,7 +103,7 @@ function dossierHandoff(report) {
   stop.hidden = true;
   if (typeof window.showDirectoryPicker === "function") controls.append(watch, stop);
   signal?.addEventListener("abort", () => { stopFolder(); controls.disabled = true; }, { once: true });
-  panel.append(controls, status, problems);
+  panel.append(controls, status, problems, guide, officialLink);
 
   function failure(name, error) {
     const message = name + " · " + error.message;

@@ -504,6 +504,8 @@ function show(report) {
   head.append(identity);
   if (!report.linksOnly) head.append(ppt);
   overview.append(head);
+  const useHandoff = ["US", "EP"].includes(report.country) && !report.demo && !report.reviewed && !report.local;
+  if (useHandoff) overview.append(dossierHandoff(report));
   if (report.takeaway) overview.append(el("p", report.takeaway, "dossier-takeaway"));
   const milestones = reportMilestones(report);
   if (!report.linksOnly) overview.append(reportMetrics(report, milestones));
@@ -545,12 +547,6 @@ function show(report) {
     conclusion.append(reportBody(report.conclusion.text));
     if (report.conclusion.partial) conclusion.append(el("p", "출력 한도로 종합 분석이 일부만 작성됐습니다.", "muted"));
     area.append(conclusion);
-  }
-  const useHandoff = ["US", "EP"].includes(report.country) && !report.demo && !report.reviewed && !report.local;
-  if (useHandoff) {
-    const extra = el("details", "", "report-metadata");
-    extra.append(el("summary", "추가 심사문서 직접 연결 (선택)"), dossierHandoff(report));
-    area.append(extra);
   }
   if (entering) {
     title.focus({ preventScroll: true });
