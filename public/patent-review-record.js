@@ -291,7 +291,7 @@ function fillAllowance(report, briefs, rows) {
   const panel = recordPanel("allowance-reasons", "3 · 등록을 이끈 사유",
     "허여통지의 이유, 심사관 직권보정, 면담 기록처럼 심사관이 왜 등록시켰는지가 적힌 기록입니다.");
   if (!panel) return;
-  const decisive = rows.filter(row => row.reason || row.finalDisposition || (allowanceStages.has(row.sourceStage) && row.role !== "applicant"))
+  const decisive = rows.filter(row => row.reason || row.finalDisposition || (allowanceStages.has(row.sourceStage) && row.role !== "applicant" && row.role !== "third"))
     .sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999"));
   for (const row of decisive) {
     const item = el("div", "", "finding allowance-finding");
@@ -308,7 +308,7 @@ function fillAllowance(report, briefs, rows) {
     item.append(findingSource(row, true));
     panel.append(item);
   }
-  const last = prosecutionRounds(report, briefs).rounds.at(-1);
+  const last = prosecutionRounds(report, briefs).rounds.filter(round => round.kind === "exam").at(-1);
   if (last) {
     const answers = [...last.notice.rows, ...last.responses.flatMap(group => group.rows)].filter(row => row.role === "applicant");
     const overview = stageOverview("applicant", answers);
@@ -373,10 +373,10 @@ function referenceKeys(text) {
   return keys;
 }
 
-function rejectionArt(rows) {
+function rejectionArt(rows, third = false) {
   const used = new Map();
   for (const row of rows) {
-    if (row.role === "applicant") continue;
+    if (third ? row.role !== "third" : row.role !== "examiner" && row.role !== "outcome") continue;
     for (const item of row.references || []) {
       if (!item?.doc) continue;
       const key = referenceKeys(item.doc)[0] || item.doc.replace(/\s+/g, "").toUpperCase();
@@ -437,6 +437,16 @@ function fillPriorArt(report, rows) {
       return [entry.doc, [...entry.where].join(" / "), [...entry.grounds].join(" / "), claimScope([...entry.claims]).replace(/^청구항 /, ""), sources];
     }), ""));
   } else panel.append(el("p", report.autoPending ? "선택한 원문을 검토하고 있습니다." : "선택한 문서에서 인용문헌에 근거한 거절을 확인하지 못했습니다.", "muted"));
+  const submitted = rejectionArt(rows, true);
+  if (submitted.length) {
+    const adopted = new Set(used.flatMap(entry => entry.keys));
+    panel.append(el("h3", "제3자가 제출·주장한 문헌"), table(["문헌", "제출·주장 내용", "다툰 요건", "청구항", "기관의 인용", "근거"], submitted.map(entry => {
+      const sources = el("div", "", "art-sources");
+      sources.append(...entry.sources.slice(0, 3).map(row => findingSource(row, true)));
+      return [entry.doc, [...entry.where].join(" / "), [...entry.grounds].join(" / "), claimScope([...entry.claims]).replace(/^청구항 /, ""),
+        entry.keys.some(key => adopted.has(key)) ? "거절·결정에 인용됨" : "인용 확인 안 됨", sources];
+    }), ""));
+  }
   const state = report.caseRecord;
   if (!state && !recordLive(report)) return;
   panel.append(el("h3", "심사 기록에 있는 인용문헌"));
@@ -516,7 +526,7 @@ function rightsEntries(report, rows) {
 function fillRights(report, rows) {
   const slot = by("rights-record");
   if (!slot) return;
-  const formal = rows.filter(row => row.role !== "applicant" && formalGround.test(row.ground || ""));
+  const formal = rows.filter(row => (row.role === "examiner" || row.role === "outcome") && formalGround.test(row.ground || ""));
   const entries = rightsEntries(report, rows);
   if (!report.caseRecord && !recordLive(report) && !entries.length && !formal.length) { slot.hidden = true; return; }
   const panel = recordPanel("rights-record", "8 · 존속기간과 권리 상태", "권리가 언제까지 살아 있는지와, 기록에 남은 기재·형식 문제입니다.");
@@ -557,11 +567,27 @@ function postGrantEntries(data) {
   return entries;
 }
 
-function fillPostGrant(report) {
+function fillPostGrant(report, briefs) {
   const slot = by("post-grant");
   if (!slot) return;
-  if (!report.caseRecord && !recordLive(report)) { slot.hidden = true; return; }
-  const panel = recordPanel("post-grant", "9 · 등록 후 절차", "등록 뒤에도 무효심판·이의신청·소송으로 청구항과 그 해석이 바뀔 수 있습니다.");
+  // Proceedings found in the selected documents or the docket are read as stages of section 4.
+  const flow = prosecutionRounds(report, briefs);
+  const tracks = flow.rounds.map((round, index) => ({ round, index })).filter(({ round }) => round.kind !== "exam" && round.kind !== "appeal");
+  if (!report.caseRecord && !recordLive(report) && !tracks.length) { slot.hidden = true; return; }
+  const panel = recordPanel("post-grant", "9 · 등록 후 절차", "등록 뒤에도 무효심판·IPR·재심사·이의신청·정정·소송으로 청구항과 그 해석이 바뀔 수 있습니다.");
+  if (tracks.length) {
+    panel.append(el("h3", "문서와 이력에서 확인된 절차"));
+    const list = el("ul");
+    for (const { round, index } of tracks) {
+      const item = el("li");
+      const jump = el("a", `${index + 1}단계 · ${round.notice.date} ${round.notice.name}`);
+      jump.href = "#process-analysis";
+      item.append(jump, " · " + round.notice.stage + (round.id ? " · " + round.id : ""));
+      list.append(item);
+    }
+    panel.append(list, el("p", "주장·대응·결정은 4단계의 해당 단계에서 볼 수 있습니다.", "hint muted"));
+  }
+  if (!report.caseRecord && !recordLive(report)) return;
   const data = recordData(panel, report, "등록 후 절차를");
   if (!data) return;
   const entries = postGrantEntries(data);
@@ -585,7 +611,7 @@ function fillPostGrant(report) {
     panel.append(el("h3", "EP 이의신청"), table(["신청일", "이의신청인", "상태", "상태일"], after.opposition.items.map(item =>
       [item.filed, item.opponent, item.status, item.statusDate]), ""));
   }
-  panel.append(el("p", `WINTELIPS · ${data.retrieved} 조회 · 심판·소송의 상세 기록과 최신 상태는 각 기관에서 확인하세요.`, "hint muted"));
+  panel.append(el("p", `WINTELIPS · ${data.retrieved} 조회 · 심판·소송의 상세 기록과 최신 상태는 각 기관에서 확인하세요. 재심사(EPR)·재발행·보충심사는 이 조회에 포함되지 않으므로, 해당 서류를 심사문서로 추가하면 4단계에 단계로 표시됩니다.`, "hint muted"));
 }
 
 function renderRecord(report, briefs = proceedingBriefs(report)) {
@@ -598,7 +624,7 @@ function renderRecord(report, briefs = proceedingBriefs(report)) {
   fillLimits(report, rows);
   fillPriorArt(report, rows);
   fillRights(report, rows);
-  fillPostGrant(report);
+  fillPostGrant(report, briefs);
   for (const jump of document.querySelectorAll(".report-nav a")) jump.hidden = Boolean(by(jump.hash.slice(1))?.hidden);
 }
 

@@ -17,6 +17,13 @@ function prosecutionStage(record) {
     CTRS: "R/R · 제한요구", NOA: "NoA · 허여 통지", RCEX: "RCE · 계속심사 청구" };
   const actionCode = code.replace(/^M(?=CTNF$|CTFR$|CTRS$)/, "");
   if (Object.hasOwn(byCode, actionCode)) return byCode[actionCode];
+  // Papers from a third party and proceedings against a granted patent are read apart from the examination itself.
+  if (/third[- ]party|3rd[- ]party|preissuance submission|37\s*c\.?\s*f\.?\s*r\.?\s*§?\s*1\.29[01]|protest under|observations? (?:by|of) (?:a )?third|정보\s*제[공출]|刊行物等提出|情報提供/i.test(title)) return "제3자 정보제공";
+  if (/inter partes review|post[- ]grant review|covered business method|\b(?:IPR|PGR|CBM)\d{4}-\d+|patent owner(?:'s|’s)? (?:preliminary )?response|petitioner(?:'s|’s)? reply|institution decision|decision (?:granting|denying) institution|final written decision|motion to amend/i.test(title)) return "IPR·PGR 무효 절차";
+  if (/\bre-?exam|supplemental examination|\bNIRC\b/i.test(title)) return "재심사(Reexamination)";
+  if (/무효\s*심판|특허\s*무효|invalidation (?:trial|request)|nullity|無効審判|无效宣告/i.test(title)) return "무효심판";
+  if (/정정\s*(?:심판|청구|명세서)|訂正(?:審判|請求)|limitation (?:request|proceedings)/i.test(title)) return "정정 절차";
+  if (/\breissue\b|재발행/i.test(title)) return "재발행(Reissue)";
   if (/notice of allowance and (?:issue )?fee/i.test(title) && !/response to|withdraw/i.test(title)) return "NoA · 허여 통지";
   if (/abandon(?:ed|ment)|lapse(?:d)?|취하 간주|권리 소멸/i.test(title)) return "결정·종결";
   if (/\bfees?\b|payment|receipt|postcard|acknowledg|transmittal|수수료|납부|등록료|연차료|접수증|영수증/i.test(title)) return "";
@@ -24,7 +31,7 @@ function prosecutionStage(record) {
   if (/board.{0,22}decision|appeal decision|decision on appeal|심결/i.test(title)) return "Appeal · 불복 결정";
   if (/examiner.s answer|reply brief|appeal brief|pre[- ]?appeal/i.test(title)) return "Appeal · 불복 심리";
   if (/notice of appeal|심판청구|항고/i.test(title)) return "Appeal · 불복 청구";
-  if (/request for continued examination|\bRCE\b|계속심사\s*청구/i.test(title)) return "RCE · 계속심사 청구";
+  if (/request for continued examination|\bRCE\b|계속심사\s*청구|재심사\s*청구/i.test(title)) return "RCE · 계속심사 청구";
   if (/examiner.s amendment|심사관.{0,2}보정/i.test(title)) return "심사관 보정";
   if (/interview summary|면담\s*기록/i.test(title)) return "면담 기록";
   if (/response (?:to|after)|reply to|applicant.{0,16}(argument|remark|response)|amendment|amended claims|election (?:with|without)|보정서?|의견서|답변서|반박|청구항 제출|포기서 제출/i.test(title)) return "출원인 대응·보정";
@@ -35,7 +42,7 @@ function prosecutionStage(record) {
   if (/non[- ]?final (?:office )?(?:rejection|action)|비최종\s*(?:거절|통지)/i.test(title)) return "비최종 거절";
   if (/final (?:office )?(?:rejection|action)|최종\s*(?:거절|통지)/i.test(title)) return "최종 거절";
   if (/appeal/i.test(title)) return "Appeal · 불복 심리";
-  if (/oral proceedings|opposition|구술심리|이의신청/i.test(title)) return "이의·심리 절차";
+  if (/oral proceedings|opposition|구술심리|이의신청|취소\s*신청/i.test(title)) return "이의·심리 절차";
   if (/abandon(?:ed|ment)|application (?:deemed )?withdrawn|decision to refuse|revocation|거절결정|취하|포기 간주|취소결정/i.test(title)) return "결정·종결";
   if (/decision to grant|intention to grant|rule 71\s*\(3\)|등록결정|특허결정/i.test(title)) return "등록 결정·예고";
   if (/patent (?:was )?(?:granted|issued)|grant of (?:a |the )?patent|publication of (?:the )?grant|특허 등록|^등록$|설정등록/i.test(title)) return "특허 등록";
@@ -77,7 +84,7 @@ function reportMilestones(report) {
   for (const [field, title] of [["filed", "출원"], ["granted", "특허 등록"]]) put(report[field], title, title);
   for (const summary of report.summaries) {
     for (const row of summary.evidence || []) {
-      const stage = prosecutionStage(summary) || { examiner: "심사관 검토", applicant: "출원인 대응·보정", outcome: "심사 결과" }[row.role];
+      const stage = prosecutionStage(summary) || { examiner: "심사관 검토", applicant: "출원인 대응·보정", third: "제3자 정보제공", outcome: "심사 결과" }[row.role];
       const existing = dates.get(calendarDay(row.documentDate))?.get(stage)?.get(summary.title);
       if (!existing) put(row.documentDate, stage, summary.title, row);
     }
@@ -123,6 +130,12 @@ function timeline(dates) {
     "Appeal · 불복 결정": ["outcome", "", "불복 절차에서 내려진 판단"],
     "NoA · 허여 통지": ["outcome", "Notice of Allowance", "특허 허여를 알리는 심사관 통지"],
     "특허 등록": ["outcome", "", "특허 등록일이 확인된 기록"],
+    "제3자 정보제공": ["appeal", "", "제3자가 선행기술 등 정보를 제출"],
+    "IPR·PGR 무효 절차": ["appeal", "", "등록 특허를 PTAB에서 다투는 절차"],
+    "재심사(Reexamination)": ["appeal", "", "등록 특허를 다시 심사하는 절차"],
+    "무효심판": ["appeal", "", "등록 특허의 무효를 다투는 심판"],
+    "정정 절차": ["applicant", "", "등록 후 청구항이나 명세서를 정정하는 절차"],
+    "이의·심리 절차": ["appeal", "", "이의신청 또는 구술심리 절차"],
   };
   const axis = el("ol", "", "stage-axis");
   for (const [date, stages] of dates) {
@@ -188,7 +201,7 @@ function proceedingBriefs(report) {
     const date = calendarDay(event.date);
     if (!date || !isNotice(event)) continue;
     const same = (actions.get(date) || []).some(action => action.name === procedureName(event.title) ||
-      (action.stage === prosecutionStage(event) && ["비최종 거절", "최종 거절", "R/R · 제한요구"].includes(action.stage)));
+      (action.stage === prosecutionStage(event) && ["비최종 거절", "최종 거절", "R/R · 제한요구", "Advisory Action"].includes(action.stage)));
     if (!same) notice(event, date, "event:" + date + ":" + event.title);
   }
   for (const [index, summary] of report.summaries.entries()) {
@@ -217,6 +230,9 @@ function proceedingBriefs(report) {
         target = named && actions.get(named.date)?.includes(named) && (!targetDate || targetDate === named.date) &&
           (!date || named.date <= date) ? named : undefined;
       }
+      // Papers of an appeal, of a proceeding against the patent or from a third party are read in their own stage, not under the notice they mention.
+      const ownStage = prosecutionStage(record);
+      if (ownStage.startsWith("Appeal") || trackStages.has(ownStage) || ownStage === "제3자 정보제공") target = undefined;
       // The notice's own findings never migrate into a different notice.
       const ownNotice = briefs.get(ownKey);
       const group = (isNotice(record) && ownNotice ? ownNotice : target) || put(ownKey, record, date);
@@ -231,7 +247,7 @@ function proceedingBriefs(report) {
   return [...briefs.values()].sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999"));
 }
 
-const briefRoles = [["examiner", "심사관의 판단"], ["applicant", "출원인의 답변·보정"], ["outcome", "문서상 처분"]];
+const briefRoles = [["examiner", "심사관의 판단"], ["applicant", "출원인의 답변·보정"], ["third", "제3자의 주장·제출"], ["outcome", "문서상 처분"]];
 
 function findingSource(row, compact = false) {
   const cite = [row.date, procedureName(row.sourceTitle), row.locator].filter(Boolean).join(" · ");
@@ -246,7 +262,8 @@ function claimComparison(briefs, reviewed) {
   const claims = new Map();
   for (const group of briefs) {
     for (const row of group.rows) {
-      let role = row.role;
+      // A third party's challenge is read in the same column as the examiner's opinion.
+      let role = row.role === "third" ? "examiner" : row.role;
       if (role === "outcome") {
         // A notice may describe claims as allowable or rejected before a response.
         // Its disposition belongs with the examiner's opinion, even in older reports.
@@ -298,7 +315,7 @@ function claimRange(numbers) {
 }
 
 // Claim-level detail of a finding: the ground, limitation and prior art behind a rejection, or how the applicant answered it.
-const responseLabels = { amend: "보정", argue: "보정 없이 의견서", cancel: "청구항 삭제", add: "청구항 신설", disclaimer: "Terminal disclaimer 제출" };
+const responseLabels = { amend: "보정", argue: "보정 없이 의견서", cancel: "청구항 삭제", add: "청구항 신설", disclaimer: "Terminal disclaimer 제출", elect: "발명·종 선택" };
 
 function findingDetails(row) {
   const applicant = row.role === "applicant";
@@ -405,7 +422,7 @@ function comparisonTable(rows) {
       for (const row of cells[role]) {
         const item = el("div", "", "comparison-finding");
         const detail = findingDetailNodes(row);
-        item.append(...[detail.chip, el("p", row.text), detail.list, findingSource(row, true)].filter(Boolean));
+        item.append(...[row.role === "third" && el("small", "제3자 · " + row.procedure, "comparison-context"), detail.chip, el("p", row.text), detail.list, findingSource(row, true)].filter(Boolean));
         if (role === "applicant" && row.linked && row.targetDate) {
           item.append(el("small", row.targetDate + " 통지에 대한 답변", "comparison-context"));
         }
@@ -433,41 +450,48 @@ function referenceOnly(group) {
     /^(?:claims|specification|drawings?|abstract|bibliographic data sheet|청구항 제출본|명세서|공보 청구항|공보 첫 면)(?:$|\s*[(·])/i.test(group.name);
 }
 
+// A stage is opened by an office action, by the first paper of an appeal, or by the first paper of a proceeding against the granted patent.
+const trackStages = new Set(["IPR·PGR 무효 절차", "재심사(Reexamination)", "무효심판", "정정 절차", "재발행(Reissue)", "이의·심리 절차"]);
+const stageKind = (stage, name) => opensStage(stage, name) ? "exam" : String(stage || "").startsWith("Appeal") ? "appeal" : trackStages.has(stage) ? stage : "";
+// A case number keeps two proceedings of the same kind apart.
+const proceedingId = name => (/\b(?:IPR|PGR|CBM)\d{4}-\d{5}\b|\b9[056]\/\d{3},?\d{3}\b|\d{4}\s?(?:당|허|후|원)\s?\d+/i.exec(String(name || ""))?.[0] || "").replace(/[\s,]/g, "").toUpperCase();
+
 function prosecutionRounds(report, briefs) {
-  const notices = briefs.filter(group => opensStage(group.stage, group.name) && group.date);
-  for (const event of report.events) {
-    const date = calendarDay(event.date);
-    const name = procedureName(event.title);
-    if (date && prosecutionStage(event) === "결정·종결" && refusalDecision.test(name) && !notices.some(notice => notice.date === date)) {
-      notices.push({ key: "event:" + date + ":" + name, name, stage: "결정·종결", date, rows: [] });
-    }
-  }
-  notices.sort((a, b) => a.date.localeCompare(b.date));
-  const rounds = notices.map(notice => ({ notice, responses: [], decisions: [], docket: [], results: [] }));
-  const roundAt = date => rounds.filter(round => date && round.notice.date <= date).at(-1);
-  const decisions = [];
-  const loose = [];
-  for (const group of briefs) {
-    if (rounds.some(round => round.notice === group) || referenceOnly(group)) continue;
-    const round = roundAt(group.date);
-    // An analysed decision is the result of the stage it closes, so its reasons are read with that stage.
-    if (decisionStages.has(group.stage)) (round ? round.decisions : decisions).push(group);
-    else if (round) round.responses.push(group);
-    else loose.push(group);
-  }
-  // Docket entries without an analysed document still show what happened in the stage.
-  const known = new Set(briefs.map(group => group.date + "|" + group.name));
+  const items = briefs.filter(group => group.date && !referenceOnly(group)).map(group => ({ date: group.date, stage: group.stage, name: group.name, group }));
+  // A docket line stands in only where no analysed document covers the same step on the same day.
+  const names = new Set(briefs.map(group => group.date + "|" + group.name));
+  const stages = new Set(briefs.filter(group => group.stage).map(group => group.date + "|" + group.stage));
   const seen = new Set();
   for (const event of [...report.events].sort((a, b) => String(a.date).localeCompare(String(b.date)))) {
     const date = calendarDay(event.date);
     const stage = prosecutionStage(event);
     const name = procedureName(event.title);
-    const round = roundAt(date);
     // Several docket lines can record one decision (e.g. mailing and issuing a notice of allowance) on the same day.
     const key = date + "|" + (decisionStages.has(stage) ? stage : name);
-    if (!round || !stage || opensStage(stage, name) || known.has(date + "|" + name) || seen.has(key)) continue;
+    if (!date || !stage || names.has(date + "|" + name) || stages.has(date + "|" + stage) || seen.has(key)) continue;
     seen.add(key);
-    (decisionStages.has(stage) ? round.results : round.docket).push({ date, name, stage, detail: event.detail });
+    items.push({ date, stage, name, event: { date, name, stage, detail: event.detail } });
+  }
+  items.sort((a, b) => a.date.localeCompare(b.date));
+  const rounds = [];
+  const decisions = [];
+  const loose = [];
+  let current;
+  for (const item of items) {
+    const kind = stageKind(item.stage, item.name);
+    const id = proceedingId(item.name);
+    // An advisory action answers the reply to a final rejection, so it stays in that rejection's stage.
+    const follows = item.stage === "Advisory Action" && current?.kind === "exam";
+    if (kind === "exam" ? !follows : kind && (current?.kind !== kind || (id && current.id && id !== current.id))) {
+      current = { kind, id, responses: [], decisions: [], docket: [], results: [],
+        notice: item.group || { key: "event:" + item.date + ":" + item.name, name: item.name, stage: item.stage, date: item.date, rows: [] } };
+      rounds.push(current);
+      continue;
+    }
+    if (kind && id && current && !current.id) current.id = id;
+    const decided = decisionStages.has(item.stage);
+    if (item.group) (current ? (decided ? current.decisions : current.responses) : decided ? decisions : loose).push(item.group);
+    else if (current) (decided ? current.results : current.docket).push(item.event);
   }
   return { rounds, decisions, loose };
 }
@@ -528,17 +552,20 @@ function requirementKey(ground) {
   if (/신규성|novelty|anticipat|§\s*102|제29조\s*제1항|art\.?\s*54/.test(text)) return "신규성";
   if (/기재불비|§\s*112|indefinite|written description|enablement|제42조|art\.?\s*8[34]|명확|뒷받침/.test(text)) return "기재불비";
   if (/적격|§\s*101|eligib|성립성/.test(text)) return "특허적격";
-  if (/단일성|restriction|제한\s*요구|election|제45조/.test(text)) return "단일성";
+  if (/단일성|restriction|제한\s*요구|종\s*선택|election|§\s*121|제45조/.test(text)) return "단일성";
   return text.replace(/\s+/g, "");
 }
 
 const artKey = doc => referenceKeys(doc)[0] || doc.replace(/\s+/g, "").toUpperCase();
 const roleOf = row => row.role === "outcome" && noticeStages.has(row.sourceStage) ? "examiner" : row.role;
+const stageRows = round => [...round.notice.rows, ...round.responses.flatMap(group => group.rows)];
+const stageOutcomes = round => [...stageRows(round).filter(row => roleOf(row) === "outcome"), ...round.decisions.flatMap(group => group.rows)];
+const byRowDate = (a, b) => (a.date || "9999").localeCompare(b.date || "9999");
 
-// Rejections of one notice. Findings on the same ground are one rejection when they cite the same art or reach the same claims.
+// Rejections or challenges of one stage. Findings on the same ground are one rejection when they cite the same art or reach the same claims.
 function roundIssues(rows) {
   const issues = [];
-  for (const row of rows) {
+  for (const row of [...rows].sort(byRowDate)) {
     if (!row.claims.length) continue;
     const docs = (row.references || []).filter(item => item?.doc);
     const art = docs.map(item => artKey(item.doc));
@@ -561,19 +588,19 @@ function roundIssues(rows) {
 
 const answerSignals = [[/이중특허|double patent|terminal disclaimer/i, "이중특허"], [/§\s*103|진보성|obvious|inventive/i, "진보성"], [/§\s*102|신규성|anticipat|novelty/i, "신규성"],
   [/§\s*112|기재불비|indefinite|명확|written description|enablement/i, "기재불비"], [/§\s*101|적격|eligib/i, "특허적격"], [/신규사항|new matter/i, "신규사항"],
-  [/restriction|제한\s*요구|election|단일성/i, "단일성"]];
+  [/restriction|제한\s*요구|election|단일성|종\s*선택/i, "단일성"]];
 
 // An answer belongs to the rejections of the claims it addresses. When it names a cited document or a ground, only those rejections take it.
 function pairAnswers(issues, answers) {
   const loose = [];
-  for (const row of answers) {
+  for (const row of [...answers].sort(byRowDate)) {
     const touching = issues.filter(issue => row.claims.some(number => issue.claims.has(number)));
     if (!touching.length) {
       loose.push(row);
       continue;
     }
     const text = [row.issue, row.text, row.element, row.statement].filter(Boolean).join(" ");
-    const named = touching.filter(issue => (row.responseType === "disclaimer" && issue.requirement === "이중특허") ||
+    const named = touching.filter(issue => (row.responseType === "disclaimer" && issue.requirement === "이중특허") || (row.responseType === "elect" && issue.requirement === "단일성") ||
       answerSignals.some(([pattern, requirement]) => issue.requirement === requirement && pattern.test(text)) ||
       [...issue.references.values()].some(item => {
         const name = /^[^\s,(]{3,}/.exec(item.doc)?.[0];
@@ -584,40 +611,113 @@ function pairAnswers(issues, answers) {
   return loose;
 }
 
-// What became of a rejection: whether the next analysed notice raised the same requirement against the same claims, or how a decision disposed of them.
-function issueFate(issue, next, outcomes) {
-  if (next) {
-    if (!issue.requirement) return [];
-    const label = next.notice.date + " " + next.notice.name;
-    const later = next.notice.rows.filter(row => roleOf(row) === "examiner" && row.claims.length);
-    if (!later.length) return [{ tone: "unknown", text: `다음 통지(${label})의 원문을 분석하지 않아 이 거절이 유지됐는지 확인하지 못했습니다.` }];
-    const again = later.filter(row => row.ground && requirementKey(row.ground) === issue.requirement);
-    const kept = [...issue.claims].filter(number => again.some(row => row.claims.includes(number)));
-    const dropped = [...issue.claims].filter(number => !kept.includes(number));
-    const lines = [];
-    if (kept.length) {
-      const fresh = [...new Set(again.filter(row => row.claims.some(number => kept.includes(number)))
-        .flatMap(row => (row.references || []).map(item => item?.doc).filter(Boolean)).filter(doc => !issue.art.has(artKey(doc))))];
-      lines.push({ tone: "kept", text: `${claimScope(kept)} — ${label}에서 같은 요건으로 다시 거절` + (fresh.length ? ` · 새 인용문헌 ${fresh.join(", ")}` : "") });
-    }
-    if (dropped.length) lines.push({ tone: "dropped", text: `${claimScope(dropped)} — ${label}에서 이 거절이 다시 제기되지 않음` });
-    return lines;
+const fateLine = (row, tone) => ({ tone, date: row.date, text: [row.date, row.procedure].filter(Boolean).join(" · ") + " — " + row.text, reason: row.reason, row });
+
+// What became of a rejection: the advisory action on it, the decisions that disposed of its claims, the appeal it went to,
+// and whether the next office action raised the same requirement against the same claims.
+function issueFate(issue, span) {
+  if (issue.requirement === "단일성") {
+    const elected = [...new Set(issue.answers.filter(row => row.responseType === "elect").flatMap(row => row.claims))].sort((a, b) => a - b);
+    if (!elected.length) return [{ tone: "unknown", text: issue.answers.length ? "어느 청구항을 선택했는지는 대응 내용에서 확인하세요." : "출원인의 선택은 선택한 자료에서 확인되지 않았습니다." }];
+    const withdrawn = [...issue.claims].filter(number => !elected.includes(number));
+    return [{ tone: "decided", text: "선택 · " + claimScope(elected) },
+      ...(withdrawn.length ? [{ tone: "dropped", text: "심사 대상에서 제외 · " + claimScope(withdrawn) + " (분할출원 여부는 7단계 패밀리에서 확인)" }] : [])];
   }
-  const decided = outcomes.filter(row => row.claims.some(number => issue.claims.has(number)));
-  if (!decided.length) return [{ tone: "unknown", text: "이 거절 뒤의 통지나 결정은 선택한 자료에서 확인되지 않았습니다." }];
-  return decided.map(row => ({ tone: "decided", text: [row.date, row.procedure].filter(Boolean).join(" · ") + " — " + row.text, reason: row.reason, row }));
+  const reached = row => row.claims.some(number => issue.claims.has(number));
+  const lines = [...span.advisories.filter(row => !row.claims.length || reached(row)).map(row => fateLine(row, "advisory")),
+    ...span.outcomes.filter(reached).map(row => fateLine(row, "decided"))];
+  for (const appeal of span.appeals) {
+    lines.push({ tone: "advisory", date: appeal.round.notice.date, text: `${appeal.round.notice.date} · ${appeal.round.notice.name} — 불복 절차로 넘어갔습니다 (${appeal.index + 1}단계).` });
+    lines.push(...appeal.outcomes.filter(reached).map(row => fateLine(row, "decided")));
+  }
+  if (span.next && issue.requirement) {
+    const date = span.next.notice.date;
+    const label = date + " " + span.next.notice.name;
+    const later = span.next.notice.rows.filter(row => roleOf(row) === "examiner" && row.claims.length);
+    if (!later.length) lines.push({ tone: "unknown", date, text: `다음 통지(${label})의 원문을 분석하지 않아 이 거절이 유지됐는지 확인하지 못했습니다.` });
+    else {
+      const again = later.filter(row => row.ground && requirementKey(row.ground) === issue.requirement);
+      const kept = [...issue.claims].filter(number => again.some(row => row.claims.includes(number)));
+      const dropped = [...issue.claims].filter(number => !kept.includes(number));
+      if (kept.length) {
+        const fresh = [...new Set(again.filter(row => row.claims.some(number => kept.includes(number)))
+          .flatMap(row => (row.references || []).map(item => item?.doc).filter(Boolean)).filter(doc => !issue.art.has(artKey(doc))))];
+        lines.push({ tone: "kept", date, text: `${claimScope(kept)} — ${label}에서 같은 요건으로 다시 거절` + (fresh.length ? ` · 새 인용문헌 ${fresh.join(", ")}` : "") });
+      }
+      if (dropped.length) lines.push({ tone: "dropped", date, text: `${claimScope(dropped)} — ${label}에서 이 거절이 다시 제기되지 않음` });
+    }
+  }
+  if (!lines.length && (issue.requirement || issue.contested)) lines.push({ tone: "unknown", text: "이 다툼 뒤의 통지나 결정은 선택한 자료에서 확인되지 않았습니다." });
+  return lines.sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999"));
 }
 
-// One stage read the way a practitioner reads it: each rejection, the answer it drew, and what became of it.
-function stageIssues(round, next) {
-  const rows = [...round.notice.rows, ...round.responses.flatMap(group => group.rows)];
-  const examiner = rows.filter(row => roleOf(row) === "examiner");
+// One stage read the way a practitioner reads it: each rejection or challenge, the answer it drew, and what became of it.
+function stageIssues(flow, index) {
+  const round = flow.rounds[index];
+  const rows = stageRows(round);
+  // In a proceeding against the patent the third party is the challenger; during examination its submission only informs the examiner.
+  const track = round.kind !== "exam" && round.kind !== "appeal";
+  // An advisory action inside the stage reports on the rejections instead of raising its own.
+  const advisories = round.notice.stage === "Advisory Action" ? [] : rows.filter(row => row.sourceStage === "Advisory Action" && roleOf(row) === "examiner");
+  const challengers = rows.filter(row => !advisories.includes(row) && (roleOf(row) === "examiner" || (track && row.role === "third")));
+  const submissions = track ? [] : rows.filter(row => row.role === "third");
   const applicant = rows.filter(row => roleOf(row) === "applicant");
-  const outcomes = [...rows.filter(row => roleOf(row) === "outcome"), ...round.decisions.flatMap(group => group.rows)];
-  const issues = roundIssues(examiner);
+  const outcomes = stageOutcomes(round);
+  // Later appeal stages decide this stage's rejections; the next office action shows whether they were kept.
+  const appeals = [];
+  let next;
+  for (let later = index + 1; !track && later < flow.rounds.length; later++) {
+    const item = flow.rounds[later];
+    if (item.kind === "exam") {
+      if (["R/R · 제한요구", "Advisory Action"].includes(item.notice.stage)) continue;
+      next = item;
+      break;
+    }
+    if (item.kind !== "appeal") break;
+    if (round.kind === "exam") appeals.push({ round: item, index: later, outcomes: stageOutcomes(item) });
+  }
+  const issues = roundIssues(challengers);
   const loose = pairAnswers(issues, applicant.filter(row => row.claims.length));
-  for (const issue of issues) issue.fate = issueFate(issue, next, outcomes);
-  return { rows, examiner, applicant, outcomes, issues, loose };
+  for (const issue of issues) {
+    issue.contested = issue.rows.some(row => row.role === "third");
+    issue.fate = issueFate(issue, { advisories, outcomes, appeals, next });
+  }
+  return { round, track, rows, challengers, advisories, submissions, applicant, outcomes, issues, loose };
+}
+
+// When a third party first submitted each document during examination, and when the office last relied on it.
+function citedArt(flow) {
+  if (!flow.art) {
+    const third = new Map();
+    const examiner = new Map();
+    const note = (rows, submission) => {
+      for (const row of rows) {
+        const date = row.date || "";
+        for (const key of (row.references || []).map(item => item?.doc).filter(Boolean).map(artKey)) {
+          if (submission && row.role === "third" && (!third.has(key) || date < third.get(key))) third.set(key, date);
+          if (roleOf(row) === "examiner" && (!examiner.has(key) || date > examiner.get(key))) examiner.set(key, date);
+        }
+      }
+    };
+    // A petition against the granted patent is a challenge of its own, not a submission to the examiner.
+    for (const round of flow.rounds) note(stageRows(round), round.kind === "exam" || round.kind === "appeal");
+    note(flow.loose.flatMap(group => group.rows), true);
+    flow.art = { third, examiner };
+  }
+  return flow.art;
+}
+
+// The papers of a stage in order, so an appeal or a proceeding can be followed step by step.
+function stagePath(round) {
+  const steps = new Map();
+  const add = (date, name, stage) => {
+    const key = date + "|" + (stage || name);
+    if (date && name && !steps.has(key)) steps.set(key, { date, name });
+  };
+  for (const row of round.notice.rows) if (row.linked) add(row.date, row.procedure, row.sourceStage);
+  for (const group of [...round.responses, ...round.decisions]) add(group.date, group.name, group.stage);
+  for (const entry of [...round.docket, ...round.results]) add(entry.date, entry.name, entry.stage);
+  return [...steps.values()].sort((a, b) => a.date.localeCompare(b.date));
 }
 
 // Amended wording of this stage that is still in the granted claims.
@@ -637,8 +737,7 @@ function grantedWording(report, answers) {
 function stageFocus(report, rounds) {
   const claims = report.caseRecord?.status === "done" ? report.caseRecord.data.claims : undefined;
   if (!claims?.granted || !claims.original || !comparedClaims(claims).comparable) return "";
-  const stages = rounds.map((round, index) => ({ round, index }))
-    .filter(({ round }) => grantedWording(report, round.responses.flatMap(group => group.rows).concat(round.notice.rows)).length);
+  const stages = rounds.map((round, index) => ({ round, index })).filter(({ round }) => grantedWording(report, stageRows(round)).length);
   if (stages.length) {
     return "먼저 볼 단계 · " + stages.map(({ round, index }) => `${index + 1}단계 (${round.notice.date} ${round.notice.name})`).join(", ") + " — 등록 청구항에 남은 한정이 이 단계의 보정으로 들어왔습니다.";
   }
@@ -646,9 +745,11 @@ function stageFocus(report, rounds) {
     : "등록 독립항은 출원 공개 당시 문언과 같습니다. 문언을 바꿔 등록된 단계는 없습니다.";
 }
 
-function issueFinding(row, issue) {
+function issueFinding(row, issue, noticeName) {
   const item = el("div", "", "finding");
   const applicant = row.role === "applicant";
+  // Papers other than the notice itself are named, e.g. an appeal brief or an examiner's answer.
+  if (row.procedure !== noticeName || row.linked) item.append(el("strong", [row.date, row.procedure].filter(Boolean).join(" · "), "finding-procedure"));
   const { chip, tone, lines } = findingDetails(row);
   if (applicant && chip) item.append(el("span", chip, "detail-chip chip-" + tone));
   // The cited art is in the heading of the rejection; a finding repeats it only when the rejection has several findings.
@@ -664,16 +765,17 @@ function issueFinding(row, issue) {
   return item;
 }
 
-function issueCard(issue, unanswered) {
+function issueCard(issue, stage, art, unanswered) {
+  const { round } = stage;
   const card = el("article", "", "issue-card");
   const head = el("header");
   head.append(el("span", issue.title || "기타 판단", "detail-chip chip-ground"), el("strong", claimScope([...issue.claims])));
   if (issue.references.size) {
-    const art = el("ul", "", "issue-art");
-    for (const item of issue.references.values()) {
-      art.append(el("li", [item.doc, issue.rows.length === 1 && [...item.where].join(" / ")].filter(Boolean).join(" · ")));
+    const list = el("ul", "", "issue-art");
+    for (const [key, item] of issue.references) {
+      list.append(el("li", [item.doc, issue.rows.length === 1 && [...item.where].join(" / "), !issue.contested && art.third.has(key) && art.third.get(key) <= (issue.rows[0].date || "9999") && "제3자 제출 문헌"].filter(Boolean).join(" · ")));
     }
-    head.append(art);
+    head.append(list);
   }
   const grid = el("div", "", "issue-grid");
   const column = (title, role) => {
@@ -682,11 +784,12 @@ function issueCard(issue, unanswered) {
     grid.append(box);
     return box;
   };
-  const examiner = column("심사관의 판단", "examiner");
-  for (const row of issue.rows) examiner.append(issueFinding(row, issue));
-  const applicant = column("출원인의 대응", "applicant");
-  for (const row of issue.answers) applicant.append(issueFinding(row, issue));
-  if (!issue.answers.length) applicant.append(el("p", unanswered, "muted"));
+  const offices = issue.rows.some(row => row.role !== "third");
+  const challenger = column(!issue.contested ? "심사관의 판단" : offices ? "청구인·심사관의 주장" : "청구인·제3자의 주장", issue.contested && !offices ? "third" : "examiner");
+  for (const row of issue.rows) challenger.append(issueFinding(row, issue, round.notice.name));
+  const answer = column(stage.track ? "특허권자의 대응" : round.kind === "appeal" ? "출원인의 주장" : "출원인의 대응", "applicant");
+  for (const row of issue.answers) answer.append(issueFinding(row, issue, round.notice.name));
+  if (!issue.answers.length) answer.append(el("p", unanswered, "muted"));
   const after = column("그 뒤", "outcome");
   for (const line of issue.fate) {
     after.append(el("p", line.text, "issue-fate fate-" + line.tone));
@@ -702,22 +805,30 @@ function issueCard(issue, unanswered) {
   return card;
 }
 
-function roundCard(report, round, index, next, selected) {
+function roundCard(report, flow, index, selected) {
+  const stage = stageIssues(flow, index);
+  const { round } = stage;
   const { notice } = round;
-  const stage = stageIssues(round, next);
+  const next = flow.rounds[index + 1];
+  const art = citedArt(flow);
   const card = el("article", "", "procedure-brief stage-round");
   const head = el("header", "", "procedure-head");
   const identity = el("div");
   const [english, korean] = stageTitles[notice.stage] || ["", ""];
   identity.append(el("small", [index + 1 + "단계", notice.date].join(" · "), "stage-number"), el("h3", notice.name));
-  const chip = english && english.toLowerCase() !== notice.name.toLowerCase() ? english + " · " + korean : korean;
-  if (chip && chip !== notice.name) identity.append(el("span", chip, "stage-chip"));
+  const chip = round.kind === "appeal" ? "불복 절차 (Appeal)" : stage.track ? notice.stage
+    : english && english.toLowerCase() !== notice.name.toLowerCase() ? english + " · " + korean : korean;
+  if (chip && chip !== notice.name) identity.append(el("span", chip, "stage-chip" + (round.kind === "exam" ? "" : " stage-track")));
   const wording = grantedWording(report, stage.applicant);
   const typed = stage.applicant.filter(row => responseLabels[row.responseType]);
   if (wording.length) identity.append(" ", el("span", "등록 문언에 남은 보정", "stage-chip stage-focus"));
-  else if (typed.length && !typed.some(row => ["amend", "cancel", "add"].includes(row.responseType))) identity.append(" ", el("span", "문언 변경 없이 대응", "stage-chip"));
+  else if (round.kind === "exam" && notice.stage !== "R/R · 제한요구" && typed.length && !typed.some(row => ["amend", "cancel", "add"].includes(row.responseType))) {
+    identity.append(" ", el("span", "문언 변경 없이 대응", "stage-chip"));
+  }
   head.append(identity);
   card.append(head);
+  const path = stagePath(round);
+  if (path.length > 1) card.append(el("p", "이 단계의 서류 · " + path.map(step => step.date + " " + step.name).join(" → "), "stage-path"));
   for (const { claim, phrase } of wording) {
     card.append(el("p", `등록 제${claim}항에 남은 문언 “${phrase}”이 이 단계의 보정으로 들어왔습니다.`, "stage-wording"));
   }
@@ -737,30 +848,43 @@ function roundCard(report, round, index, next, selected) {
     head.append(label);
   }
   const grid = el("div", "", "round-grid");
+  const third = el("div", "", "stage-submissions");
   const issueList = el("div", "", "issue-list");
   const result = el("footer", "", "round-result");
+  const sides = stage.track ? ["청구인·제3자의 주장", "특허권자의 대응", "청구인의 주장은 선택한 자료에서 확인되지 않았습니다.", "특허권자의 대응은 선택한 자료에서 확인되지 않았습니다."]
+    : round.kind === "appeal" ? ["심사관의 답변", "출원인의 주장", "심사관의 답변(Examiner's Answer 등)은 선택한 자료에서 확인되지 않았습니다.", "출원인의 주장은 선택한 자료에서 확인되지 않았습니다."]
+      : ["심사관의 통지", "출원인의 대응", "통지 기록은 확인됐습니다. 선택한 자료에서 통지 내용을 확인하지 못했습니다.", "이 통지에 대한 출원인 대응은 선택한 자료에서 확인되지 않았습니다."];
   // An answer linked to this notice counts, even when its document has no card of its own.
   const answered = stage.applicant.length > 0;
   const unanswered = !answered && round.docket.length ? "대응 서류는 심사 이력에 있지만 원문을 분석하지 않았습니다 · " + round.docket.map(entry => entry.date + " " + entry.name).join(", ")
-    : "이 거절에 대한 대응은 선택한 자료에서 확인되지 않았습니다.";
+    : stage.track ? sides[3] : "이 거절에 대한 대응은 선택한 자료에서 확인되지 않았습니다.";
   function render() {
     const within = row => !picker.value || row.claims.includes(Number(picker.value));
     const issues = stage.issues.filter(issue => !picker.value || issue.claims.has(Number(picker.value)));
     const outcome = stage.outcomes.filter(within);
     const decisionSummaries = round.decisions.filter(group => group.summaryIndex !== undefined);
     const noticeExtra = notice.summaryIndex !== undefined ? [summaryFinding(report, notice)] : [];
-    if (!stage.examiner.length && !noticeExtra.length) noticeExtra.push(el("p", report.autoPending ? "통지 원문을 분석하고 있습니다." : "통지 기록은 확인됐습니다. 선택한 자료에서 통지 내용을 확인하지 못했습니다.", "muted"));
+    if (!stage.challengers.length && !stage.advisories.length && !noticeExtra.length) noticeExtra.push(el("p", report.autoPending ? "원문을 분석하고 있습니다." : sides[2], "muted"));
     // Docket entries stand in only when no analysed document covers that side of the stage.
     const analysed = round.responses.filter(group => group.summaryIndex !== undefined).map(group => summaryFinding(report, group));
     const responseExtra = analysed.length || answered ? analysed : round.docket.map(docketFinding);
-    if (!stage.applicant.length && !responseExtra.length) responseExtra.push(el("p", "이 통지에 대한 출원인 대응은 선택한 자료에서 확인되지 않았습니다.", "muted"));
+    if (!stage.applicant.length && !responseExtra.length) responseExtra.push(el("p", sides[3], "muted"));
     // The columns hold what concerns the stage as a whole; findings on particular claims are read rejection by rejection below.
     grid.replaceChildren(
-      findingColumn("examiner", "심사관의 통지", stage.examiner.filter(row => !row.claims.length), notice.name, noticeExtra, stageOverview("examiner", stage.examiner.filter(within))),
-      findingColumn("applicant", "출원인의 대응", [...stage.applicant.filter(row => !row.claims.length), ...stage.loose.filter(within)], notice.name, responseExtra,
+      findingColumn("examiner", sides[0], [...stage.challengers.filter(row => !row.claims.length), ...(stage.issues.length ? [] : stage.advisories)], notice.name, noticeExtra,
+        stageOverview("examiner", stage.challengers.filter(within))),
+      findingColumn("applicant", sides[1], [...stage.applicant.filter(row => !row.claims.length), ...stage.loose.filter(within)], notice.name, responseExtra,
         stageOverview("applicant", stage.applicant.filter(within))));
+    third.replaceChildren();
+    if (stage.submissions.length) {
+      const submitted = new Set(stage.submissions.flatMap(row => (row.references || []).map(item => item?.doc).filter(Boolean)));
+      const since = stage.submissions.map(row => row.date || "").sort()[0];
+      const used = [...submitted].filter(doc => art.examiner.has(artKey(doc)) && art.examiner.get(artKey(doc)) >= since);
+      const note = el("p", !submitted.size ? "" : used.length ? "제출 문헌 가운데 심사관이 거절에 쓴 문헌 · " + used.join(", ") : "제출 문헌을 인용한 거절은 선택한 자료에서 확인되지 않았습니다.", "hint muted");
+      third.append(findingColumn("third", "제3자 정보제공", stage.submissions, notice.name, note.textContent ? [note] : []));
+    }
     issueList.replaceChildren();
-    if (issues.length) issueList.append(el("h4", "거절별 대응과 그 뒤"), ...issues.map(issue => issueCard(issue, unanswered)));
+    if (issues.length) issueList.append(el("h4", stage.track ? "주장별 대응과 그 뒤" : "거절별 대응과 그 뒤"), ...issues.map(issue => issueCard(issue, stage, art, unanswered)));
     result.replaceChildren(el("h4", "이 단계의 결과"));
     for (const row of outcome) result.append(findingItem(row, notice.name));
     for (const group of decisionSummaries) result.append(summaryFinding(report, group));
@@ -771,14 +895,14 @@ function roundCard(report, round, index, next, selected) {
   }
   picker.onchange = render;
   render();
-  card.append(grid, issueList, result);
+  card.append(grid, third, issueList, result);
   return card;
 }
 
 // The same reading as table rows for the PowerPoint export.
 function issueRows(report) {
-  const { rounds } = prosecutionRounds(report, proceedingBriefs(report));
-  return rounds.flatMap((round, index) => stageIssues(round, rounds[index + 1]).issues.map(issue => [
+  const flow = prosecutionRounds(report, proceedingBriefs(report));
+  return flow.rounds.flatMap((round, index) => stageIssues(flow, index).issues.map(issue => [
     `${index + 1}단계 · ${round.notice.date}\n${round.notice.name}`,
     [issue.title, claimScope([...issue.claims]), ...[...issue.references.values()].map(item => item.doc)].filter(Boolean).join("\n"),
     issue.rows.map(row => [row.text, ...findingDetailText(row).filter(line => !line.startsWith("거절 근거"))].join("\n")).join("\n\n"),
@@ -786,7 +910,6 @@ function issueRows(report) {
     issue.fate.map(line => [line.text, line.reason && "이유: " + line.reason].filter(Boolean).join("\n")).join("\n"),
   ]));
 }
-
 
 function decisionCard(report, group) {
   const card = el("article", "", "procedure-brief stage-decision");
@@ -797,7 +920,8 @@ function decisionCard(report, group) {
   card.append(head);
   const extra = group.summaryIndex !== undefined ? [summaryFinding(report, group)] : [];
   if (!group.rows.length && !extra.length) extra.push(el("p", "결정 기록은 확인됐습니다. 선택한 자료에서 결정 내용을 확인하지 못했습니다.", "muted"));
-  card.append(findingColumn(group.rows.some(row => row.role === "applicant") ? "applicant" : "outcome", group.rows.some(row => row.role === "applicant") ? "제출 내용" : "결정 내용", group.rows, group.name, extra));
+  const side = group.rows.some(row => row.role === "third") ? ["third", "제3자의 제출·주장"] : group.rows.some(row => row.role === "applicant") ? ["applicant", "제출 내용"] : ["outcome", "결정 내용"];
+  card.append(findingColumn(side[0], side[1], group.rows, group.name, extra));
   return card;
 }
 
@@ -809,11 +933,11 @@ function renderAnalysis(report) {
   procedures.replaceChildren(el("h2", "4 · 단계별 심사 흐름"));
   const flow = prosecutionRounds(report, briefs);
   if (flow.rounds.length) {
-    procedures.append(el("p", "심사관의 통지마다 한 단계로 묶고, 그 안에서 거절 하나하나를 출원인의 대응과 그 뒤의 처리까지 이어서 보여 줍니다. 다음 통지 전까지 제출된 서류는 날짜 순서로 해당 단계에 넣었습니다.", "hint muted"));
+    procedures.append(el("p", "심사관의 통지, 불복 절차, 등록 후 절차마다 한 단계로 묶고, 그 안에서 거절이나 주장 하나하나를 상대방의 대응과 그 뒤의 처리까지 이어서 보여 줍니다. Advisory Action은 최종 거절 단계에, 제3자 정보제공은 제출된 시점의 단계에 넣었습니다.", "hint muted"));
     const focus = stageFocus(report, flow.rounds);
     if (focus) procedures.append(el("p", focus, "stage-focus-note"));
   }
-  const steps = [...flow.rounds.map((round, index) => ({ date: round.notice.date, node: roundCard(report, round, index, flow.rounds[index + 1], selected) })),
+  const steps = [...flow.rounds.map((round, index) => ({ date: round.notice.date, node: roundCard(report, flow, index, selected) })),
     ...flow.decisions.map(group => ({ date: group.date, node: decisionCard(report, group) })),
     ...flow.loose.map(group => ({ date: group.date, node: decisionCard(report, group) }))];
   steps.sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999")).forEach(step => procedures.append(step.node));
