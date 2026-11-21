@@ -141,7 +141,30 @@ async function api(data, signal) {
 async function readSummary(response) {
   const summary = await response.json();
   if (summary.error) throw summaryError(summary);
+  recordUsage(summary.usage || summary.conclusion?.usage);
   return summary;
+}
+
+// Every Claude response passes through readSummary, so the report keeps a running total of tokens and cost.
+const usageLabel = usage => `입력 ${usage.input.toLocaleString("ko-KR")} · 출력 ${usage.output.toLocaleString("ko-KR")} 토큰 · 약 $${usage.cost.toFixed(2)}`;
+
+function recordUsage(usage) {
+  if (!current || !usage) return;
+  const total = current.usage || { input: 0, output: 0, cost: 0 };
+  current.usage = { input: total.input + usage.input, output: total.output + usage.output, cost: total.cost + usage.cost };
+  showUsage(current);
+}
+
+function showUsage(report) {
+  const cover = document.querySelector(".dossier-cover");
+  if (current !== report || !report.usage || !cover) return;
+  let line = by("report-usage");
+  if (!line) {
+    line = el("p", "", "muted hint report-usage");
+    line.id = "report-usage";
+    cover.append(line);
+  }
+  line.textContent = "Claude 사용량 · " + usageLabel(report.usage);
 }
 
 function summaryError({ error, retryAfter, status }) {
@@ -224,7 +247,8 @@ function resultDashboard(report) {
 function summaryCard(summary, index) {
   const item = el("article", "", "summary");
   if (Number.isInteger(index)) item.id = "summary-" + index;
-  item.append(el("h3", summary.title), el("small", [summary.source, summary.id, summary.model].filter(Boolean).join(" · ")), reportBody(summary.text));
+  item.append(el("h3", summary.title), el("small", [summary.source, summary.id, summary.model,
+    summary.usage && usageLabel(summary.usage)].filter(Boolean).join(" · ")), reportBody(summary.text));
   if (summary.partial) item.append(el("p", "출력 한도에 도달해 요약 일부만 표시됩니다.", "muted"));
   if (summary.evidenceIncomplete) item.append(el("p", "청구항 근거 추출이 불완전합니다. 원문에서 추가 근거를 확인하세요.", "muted"));
   return item;
@@ -456,6 +480,7 @@ function show(report) {
   overview.append(notes, metadata);
   if (report.local && report.country !== "UPC") overview.append(manualEditor(report));
   area.append(overview);
+  showUsage(report);
   if (report.conclusion || report.reviewed) area.append(resultDashboard(report));
   if (entering) {
     title.focus({ preventScroll: true });

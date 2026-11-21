@@ -933,7 +933,7 @@ export async function compareFamilyClaims(input: unknown) {
       id: String(row.id), verdict: String(row.verdict), summary: clip(row.summary, 600) ?? "",
       onlyMember: rows(row.onlyMember, 4).map(item => clip(item, 120)).filter(Boolean), onlySubject: rows(row.onlySubject, 4).map(item => clip(item, 120)).filter(Boolean),
     }));
-  return { model: answer.model, partial: answer.partial, comparisons };
+  return { model: answer.model, partial: answer.partial, usage: answer.usage, comparisons };
 }
 
 async function summarize(title: string, source: string, content: ClaudeContent[], options: { system?: string; maxTokens?: number; effort?: string; timeout?: number; claimEvidence?: boolean; format?: object } = {}) {
@@ -951,9 +951,24 @@ async function summarize(title: string, source: string, content: ClaudeContent[]
     if (res.status === 400 || res.status === 413) throw new PatentError("Claude에서 이 자료를 요약하지 못했습니다. 원문 또는 조회된 기록을 확인해 주세요.", 422);
     throw fail("Claude", res.status);
   }
-  const response: { content?: { type: string; text?: string }[]; stop_reason?: string; model?: string } = await res.json();
+  const response: { content?: { type: string; text?: string }[]; stop_reason?: string; model?: string; usage?: ClaudeUsage } = await res.json();
   const text = response.content?.filter(item => item.type === "text").map(item => item.text).join("\n").trim();
   if (!text) throw fail("Claude", 502);
   const partial = response.stop_reason === "max_tokens";
-  return { title, source, model: response.model || claudeModel, ...(options.claimEvidence ? documentFindings(text, partial) : { text, partial }) };
+  return { title, source, model: response.model || claudeModel, usage: tokenUsage(response.usage), ...(options.claimEvidence ? documentFindings(text, partial) : { text, partial }) };
+}
+
+type ClaudeUsage = { input_tokens?: number; output_tokens?: number; cache_creation_input_tokens?: number; cache_read_input_tokens?: number };
+
+// List prices for claude-opus-5-5 in USD per million tokens (update together with claudeModel).
+// Output includes the model's thinking tokens, which are billed even when not shown.
+const price = { input: 4, cacheWrite: 5, cacheRead: 0.4, output: 20 };
+
+function tokenUsage(usage: ClaudeUsage | undefined) {
+  if (!usage) return undefined;
+  const count = (value: unknown) => (typeof value === "number" && Number.isFinite(value) && value > 0 ? value : 0);
+  const fresh = count(usage.input_tokens), written = count(usage.cache_creation_input_tokens);
+  const read = count(usage.cache_read_input_tokens), output = count(usage.output_tokens);
+  const cost = (fresh * price.input + written * price.cacheWrite + read * price.cacheRead + output * price.output) / 1e6;
+  return { input: fresh + written + read, output, cost: Math.round(cost * 10000) / 10000 };
 }
