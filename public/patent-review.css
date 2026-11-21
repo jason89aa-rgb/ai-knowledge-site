@@ -342,7 +342,7 @@ td:first-child { white-space: nowrap; }
 }
 /* Claim-level detail: ground or response chip, the limitation at issue and the cited art. */
 .detail-chip { display: inline-block; margin-bottom: 2px; padding: 2px 9px; border-radius: 999px; border: 1px solid var(--role, #244952); background: var(--role, #244952); color: #fff; font-size: .76rem; font-weight: 700; }
-.detail-chip.chip-argue, .detail-chip.chip-disclaimer { background: #fff; color: var(--role, #244952); }
+.detail-chip.chip-argue, .detail-chip.chip-disclaimer, .detail-chip.chip-elect { background: #fff; color: var(--role, #244952); }
 .finding-detail { margin: 0 0 8px; display: grid; gap: 4px; font-size: .84rem; }
 .finding-detail > div { display: grid; grid-template-columns: 5.2em minmax(0, 1fr); gap: 8px; }
 .finding-detail dt { color: var(--muted); font-size: .78rem; padding-top: 1px; }
@@ -403,3 +403,9 @@ td:first-child { white-space: nowrap; }
   .issue-grid { grid-template-columns: 1fr; }
   .issue-grid .claim-role + .claim-role { border-inline-start: 0; border-top: 1px solid var(--line); }
 }
+/* Appeals, proceedings against the patent and third-party papers inside the stage flow. */
+.claim-role.third { --role: #7a4b8f; background: #f7f2fa; }
+.stage-round .stage-submissions .claim-role { margin-top: 12px; }
+.stage-track { background: #efe7f6; color: #4d2f63; }
+.stage-path { margin: 0 0 10px; color: var(--muted); font-size: .84rem; overflow-wrap: anywhere; }
+.fate-advisory { color: #5a4a12; }
