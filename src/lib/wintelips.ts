@@ -331,7 +331,7 @@ const trialFields = ["trial_char", "trial_num", "appeal_num", "trial_type", "tri
 
 // One trial or court case about the patent. Offices name the fields differently; fields this does not know are kept as a plain detail line.
 function trialRecord(item: Row, extra: { title?: string; parties?: string; root?: string } = {}) {
-  const rest = Object.entries(item).filter(([key, value]) => !trialFields.includes(key) && value).map(([, value]) => value ?? "");
+  const rest = Object.entries(item).filter(([key, value]) => !trialFields.includes(key) && typeof value === "string" && value).map(([, value]) => value ?? "");
   const named = item.trial_char || item.appeal_num || item.trial_num;
   return {
     number: named || rest[0] || "",
@@ -431,7 +431,6 @@ export async function wintelipsCaseRecord(token: string, input: Subject) {
     opposition?.appeal_yn === "Y" ? optional("불복심판", () => call("get_patent_ep_trial", { section: "trial_info", skey: target })) : undefined,
   ]);
   const adjustment = pta?.pta as Row | undefined;
-  const text = plain;
   // A Korean court case is tied to the trial whose decision it reviews.
   const numbers = new Map(trialList.map(item => [item.trial_num, item.trial_char || item.trial_num]));
   const roots = new Map(related(trials, "rel_case_list").map(item => [item.rel_case_num, numbers.get(item.trial_num)]));
@@ -461,13 +460,13 @@ export async function wintelipsCaseRecord(token: string, input: Subject) {
       litigation: litigation ? {
         count: Number(litigation.ligt_num) || 0,
         cases: related(cases, "litigation_info_list").slice(0, 30).map(item => ({
-          number: item.case_num, title: text(item.case_title), court: item.court_nm, type: item.case_type, status: item.case_stts,
+          number: item.case_num, title: plain(item.case_title), court: item.court_nm, type: item.case_type, status: item.case_stts,
           filed: day(item.filing_dt), closed: day(item.closing_dt), outcome: [item.basis_tmnt, item.otc_judg, item.otc_comm].filter(Boolean).join(" · ") || undefined,
         })),
       } : undefined,
       opposition: opposition ? {
         count: Number(opposition.oppnt_num) || 0, appeals: Number(opposition.appeal_num) || 0,
-        items: related(opponents, "oppnt_info_list").slice(0, 30).map(item => ({ filed: day(item.oppnt_dt), opponent: text(item.oppnt), status: item.oppnt_stts, statusDate: day(item.oppnt_stts_dt) })),
+        items: related(opponents, "oppnt_info_list").slice(0, 30).map(item => ({ filed: day(item.oppnt_dt), opponent: plain(item.oppnt), status: item.oppnt_stts, statusDate: day(item.oppnt_stts_dt) })),
         boards: related(boards, "trial_info_list").slice(0, 20).map(item => ({
           number: item.appeal_num, phase: item.appeal_phase, filed: day(item.req_dt), grounds: day(item.stmnt_filed_dt), result: item.appeal_rslt, decided: day(item.dcsn_dt),
         })),
