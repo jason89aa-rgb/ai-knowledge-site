@@ -121,7 +121,7 @@ td:first-child { white-space: nowrap; }
 .ask-field .optional { color: var(--muted); font-weight: 400; margin-left: 4px; }
 .ask-field textarea { min-height: 64px; }
 .search-footer { flex-wrap: wrap; }
-.reading-report .intro, .reading-report #lookup { display: none; }
+.reading-report .intro, .reading-report #lookup, .reading-report #extension-setup { display: none; }
 .reading-report .workspace { margin-top: 18px; }
 #back-search { color: #325967; background: transparent; padding-inline: 2px; border: 0; }
 .reading-report #result { margin-top: 8px; gap: 18px; }
@@ -260,3 +260,12 @@ td:first-child { white-space: nowrap; }
 #extension-guide summary { cursor: pointer; color: var(--accent); font-weight: 700; }
 #extension-guide ol { margin-bottom: 0; padding-left: 1.5em; }
 #extension-guide li + li { margin-top: 6px; }
+@media (max-width: 760px) {
+  .claim-comparison table { min-width: 0; table-layout: auto; }
+  .claim-comparison thead { display: none; }
+  .claim-comparison table, .claim-comparison tbody, .claim-comparison tr, .claim-comparison tbody th, .claim-comparison td { display: block; width: 100%; box-sizing: border-box; }
+  .claim-comparison tr { border: 1px solid var(--line); border-radius: 8px; margin-bottom: 12px; overflow: hidden; }
+  .claim-comparison tbody th { position: static; padding: 10px 12px; }
+  .claim-comparison td { border-inline-start: 0; border-top: 1px solid var(--line); }
+  .claim-comparison td::before { content: attr(data-label); display: block; margin-bottom: 6px; font-size: .78rem; font-weight: 700; color: #244952; }
+}
