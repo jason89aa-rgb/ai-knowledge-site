@@ -737,14 +737,18 @@ export async function officialPdf(country: unknown, application: unknown, id: un
   throw new PatentError("이 문서는 공식 열람처에서 확인해 주세요.", 400);
 }
 
-export async function summarizePdf(bytes: Uint8Array, title: string, source: string) {
+function pdfContent(bytes: Uint8Array): ClaudeContent {
   let data = "";
   // Encode in chunks divisible by three so that only the final chunk has padding.
   for (let offset = 0; offset < bytes.length; offset += 24576) data += btoa(String.fromCharCode(...bytes.subarray(offset, offset + 24576)));
+  return { type: "document", source: { type: "base64", media_type: "application/pdf", data } };
+}
+
+export async function summarizePdf(bytes: Uint8Array, title: string, source: string) {
   const scope = source === "EPO OPS · 공보 원문" ? ` 공보 발췌 위치는 ${title}입니다. 이 쪽에 적힌 내용만 정리하고, 청구항이나 서지에서 심사관의 판단 또는 출원인의 주장을 추론하지 마세요.`
     : source === "EPO Publication Server" ? " PDF에 공개공보가 함께 있으면 검색보고서에 해당하는 부분만 요약하세요." : "";
   return summarize(title, source, [
-    { type: "document", source: { type: "base64", media_type: "application/pdf", data } },
+    pdfContent(bytes),
     { type: "text", text: "문서 요약, 심사관 또는 법원의 핵심 판단, 관련 청구항·인용문헌·법조문, 출원인 주장이나 보정, 명시된 결정과 기한을 해당되는 범위에서 작성하세요. 결론마다 근거가 보이는 PDF 페이지를 '(PDF p. 2)' 형태로 표시하세요. PDF 페이지를 확인할 수 없으면 페이지 번호를 만들지 마세요. 당사자 주장과 기관 판단을 구분하고 한국어 평문으로 써 주세요." + scope },
   ], { claimEvidence: true });
 }
@@ -779,6 +783,7 @@ export function askReport(input: unknown, question: unknown) {
   const data = {
     ...pick(input, ["country", "query", "title", "source", "application", "publication", "grant", "filed", "published",
       "granted", "status", "applicants", "inventors"], 400),
+    userFocus: clip(input && typeof input === "object" ? (input as Record<string, unknown>).userFocus : undefined, 2000),
     abstract: clip(input && typeof input === "object" ? (input as Record<string, unknown>).abstract : undefined, 4000),
     family: rows((input as Record<string, unknown> | undefined)?.family, 60).map(row => pick(row, ["country", "publication", "application", "date", "relation"], 120)),
     events: rows((input as Record<string, unknown> | undefined)?.events, 150).map(row => pick(row, ["date", "title", "detail", "id"], 300)),
@@ -800,7 +805,7 @@ const askSystem = "특허 리포트 데이터를 바탕으로 사용자가 요�
 
 const evidenceMarker = "<claim-evidence>";
 const evidenceInstructions = [
-  "평문 요약은 3,000토큰 이내에서 주요 판단과 근거를 먼저 완결한다. 다음 줄에 <claim-evidence>를 쓴 뒤 근거 한 건마다 한 줄짜리 JSON 객체를 쓴다. 마지막 줄에 </claim-evidence>를 쓴다. 배열이나 마크다운 코드 블록은 쓰지 않는다.",
+  "요약은 핵심 심사 단계, 심사관 쟁점, 출원인 대응, 결과 중 원문에 있는 내용만 짧은 글머리표로 쓴다. 수수료·접수는 절차 결과를 바꾼 경우에만 언급한다. 평문 요약은 3,000토큰 이내에서 주요 판단과 근거를 먼저 완결한다. 다음 줄에 <claim-evidence>를 쓴 뒤 근거 한 건마다 한 줄짜리 JSON 객체를 쓴다. 마지막 줄에 </claim-evidence>를 쓴다. 배열이나 마크다운 코드 블록은 쓰지 않는다.",
   '각 원소는 {"claims":[1,2],"role":"examiner|applicant|outcome","roundDate":"","documentDate":"","text":"","locator":""} 형식이다.',
   "청구항 번호와 의견·대응·결과가 원문에서 명시적으로 연결된 경우만 기록한다. 공통 근거는 한 항목에 실제 해당 항 번호를 모두 넣는다. 항마다 이유를 만들어내지 않는다.",
   "role은 세 값 중 하나, text는 한국어 요지, locator는 확인한 PDF 페이지 또는 본문 절 번호다. 근거 위치가 없으면 제외한다.",
@@ -831,6 +836,46 @@ function documentFindings(output: string, stopped: boolean) {
     }
   }
   return { text, evidence, evidenceIncomplete, partial: !text };
+}
+
+// A single Messages request contains all originals in this batch, the case context,
+// and the user's focus. Source numbers refer only to this request's ordered files.
+export async function jointReport(files: File[], context: string, focus: string) {
+  const content: ClaudeContent[] = [{ type: "text", text: "사건 자료\n" + context }];
+  for (const [index, file] of files.entries()) {
+    content.push({ type: "text", text: "자료 " + (index + 1) + " · " + file.name.slice(0, 240) });
+    if (file.type === "text/plain") {
+      content.push({ type: "text", text: (await file.text()).slice(0, 60000) });
+    } else {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      if (!isPdf(bytes)) throw new PatentError("유효한 PDF 원문을 선택해 주세요.", 400);
+      content.push(pdfContent(bytes));
+    }
+  }
+  content.push({ type: "text", text: [
+    "사건 기록과 원문을 함께 읽고, 실제 통지·답변의 내용과 날짜가 연결될 때만 같은 회차로 묶으세요. 공보 청구항만으로 거절이유를 추론하지 마세요. 수수료 등 결과에 영향 없는 절차는 생략하세요.",
+    "먼저 ## 심사 결과, ## 심사관의 쟁점, ## 출원인의 대응, ## 확인할 쟁점 네 제목 아래 각각 두 개 이하의 짧은 항목으로 종합하세요. 항목마다 근거 문서명과 원문 페이지 또는 이력 날짜를 붙이고 미확인은 명시하세요.",
+    "그 뒤 입력 순서대로 각 자료를 <source n=\"1\">와 </source>처럼 번호를 붙인 별도 블록으로 작성하세요. 각 블록 안에는 해당 자료만의 짧은 요약과 다음 형식의 청구항 근거를 넣으세요.",
+    evidenceInstructions, "각 자료 요약은 세 문장 이내로 작성하고, 응답 한도 내에서 모든 입력 자료를 다루세요. 문서 번호를 빠뜨리지 마세요. 해당 문서에 근거가 없으면 빈 근거 태그를 사용하세요.",
+    focus && "보고서에 반영할 사용자 요청 (위 구조 유지): " + focus,
+  ].filter(Boolean).join("\n") });
+  const answer = await summarize("심사 결과 보고서", "선택 원문 종합", content, {
+    system: summarySystem, maxTokens: 10000, timeout: 150000, effort: "medium",
+  });
+  const marker = /<source\s+n=["']?(\d+)["']?\s*>/gi;
+  const matches = [...answer.text.matchAll(marker)];
+  const conclusion = answer.text.slice(0, matches[0]?.index ?? answer.text.length).trim();
+  const documents = files.map((file, i) => {
+    const pos = matches.findIndex(match => Number(match[1]) === i + 1);
+    if (pos < 0) return null;
+    const match = matches[pos];
+    const block = answer.text.slice(match.index! + match[0].length, matches[pos + 1]?.index).split("</source>")[0];
+    const finding = documentFindings(block.trim(), answer.partial);
+    if (!finding.text) return null;
+    return { ...finding, title: file.name, model: answer.model };
+  });
+  if (!conclusion || documents.every(doc => !doc)) throw new PatentError("문서별 근거를 분리하지 못했습니다. 선택 문서로 다시 생성해 주세요.", 422);
+  return { conclusion: { ...answer, text: conclusion, partial: answer.partial || documents.some(doc => !doc) }, documents };
 }
 
 async function summarize(title: string, source: string, content: ClaudeContent[], options: { system?: string; maxTokens?: number; effort?: string; timeout?: number; claimEvidence?: boolean } = {}) {

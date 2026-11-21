@@ -9,7 +9,7 @@ function dossierHandoff(report) {
   if (handoffPanels.has(report)) return handoffPanels.get(report);
   const panel = el("section", "", "panel dossier-import");
   panel.append(el("h2", "심사문서 추가"));
-  const guide = el("p", "PDF나 ZIP을 추가하면 안에 있는 문서가 아래에 표시됩니다. 분석할 문서를 체크한 뒤 분석 시작을 누르세요.");
+  const guide = el("p", "PDF나 ZIP을 추가하면 안에 있는 문서가 아래에 표시됩니다. 분석할 문서를 체크한 뒤 보고서 생성을 누르세요.");
   const controls = el("fieldset", "", "import-controls");
   const picker = el("input");
   picker.type = "file";
@@ -98,10 +98,18 @@ function dossierHandoff(report) {
   const choices = el("fieldset", "", "analysis-choices");
   choices.append(el("legend", "분석할 문서"));
   const rows = new Map();
-  const summaries = new Map();
+  const cachedResults = new Map();
+  const jointConclusions = new Map();
+  let preparing = true;
+  let staging = 0;
   const stagedFiles = new Set();
   const officialDocs = [...report.documents];
   const list = el("div", "", "analysis-list");
+  const stopWaiting = button("현재 준비된 문서로 계속", () => {
+    panel.dataset.zipPending = "false";
+    refresh();
+  });
+  panel.addEventListener("zip-download-state", refresh);
   const selectAll = el("input");
   selectAll.type = "checkbox";
   const allLabel = el("label", "", "analysis-option");
@@ -111,14 +119,15 @@ function dossierHandoff(report) {
   const metadataLabel = el("label", "", "analysis-option");
   metadataLabel.append(metadataOnly, "서지·공개 이력만 분석");
   const count = el("span", "", "muted");
-  const start = button("분석 시작", runAnalysis, "primary");
+  const start = button("보고서 생성", runAnalysis, "primary");
   const footer = el("div", "", "analysis-footer");
-  footer.append(count, start);
+  footer.append(count, start, stopWaiting);
   choices.append(allLabel, list, metadataLabel, footer);
   panel.append(guide, controls, choices, status, problems);
   if (["EP", "US"].includes(report.country)) {
     const home = report.country === "US" ? "https://worldwide.espacenet.com/" : "https://register.epo.org/";
     const source = report.links.find(item => item.url.startsWith(home));
+    if (report.country === "US") panel.append(link({ url: "https://ez-patents.com/", label: "EZ Patents에서 심사철 ZIP 받기" }), " · ");
     panel.append(link(source || { url: home, label: report.country === "US" ? "Espacenet 열기" : "European Patent Register 열기" }));
   }
   const originalLinksOnly = Boolean(report.linksOnly);
@@ -132,7 +141,9 @@ function dossierHandoff(report) {
     metadataLabel.hidden = originalLinksOnly || eligible.length > 0;
     if (metadataLabel.hidden) metadataOnly.checked = false;
     count.textContent = "문서 " + rows.size + "건 · 선택 " + selected + "건";
-    start.disabled = !report.canSummarize || !active() || report.autoPending || !(selected || metadataOnly.checked);
+    const waitingForZip = panel.dataset.zipPending === "true";
+    stopWaiting.hidden = !waitingForZip;
+    start.disabled = waitingForZip || !report.canSummarize || !active() || preparing || staging > 0 || report.autoPending || !(selected || metadataOnly.checked);
   }
   function addRow(key, name, source, reason = "") {
     const input = el("input");
@@ -189,6 +200,8 @@ function dossierHandoff(report) {
     stagedFiles.add(hash);
   }
   function enqueue(files) {
+    staging++;
+    refresh();
     queue = queue.then(async () => {
       for (const file of files) {
         if (!active()) return;
@@ -197,42 +210,67 @@ function dossierHandoff(report) {
           if (active()) problems.append(el("li", file.name + " · " + error.message));
         }
       }
+    }).finally(() => {
+      staging--;
       if (active()) refresh();
     });
     return queue;
   }
-  async function analyze(row) {
-    if (row.result) return row.result;
-    let doc = row.doc;
-    let result;
-    if (doc) {
-      const summary = await summarizeWithRetry({ action: "summarize", ...documentPayload(report, doc) }, signal, row.name);
-      result = { doc, summary: { ...summary, id: doc.id } };
-    } else {
-      const file = await row.getFile();
-      const data = await file.arrayBuffer();
-      if (new TextDecoder().decode(data.slice(0, 5)) !== "%PDF-") throw new Error("유효한 PDF가 아닙니다.");
-      const hash = row.hash || await digest(data);
-      signal.throwIfAborted();
-      result = summaries.get(hash);
-      if (!result) {
-        const form = new FormData();
-        form.append("pdf", file);
-        const summary = await summarizeWithRetry(form, signal, row.name);
-        const dates = [...new Set((summary.evidence || []).map(item => calendarDay(item.documentDate)).filter(Boolean))];
-        const date = dates.length === 1 ? dates[0] : calendarDay(file.name.match(/^\d{4}-\d{2}-\d{2}/)?.[0]);
-        doc = { id: "PDF-" + hash.slice(0, 16), title: file.name, date: date || "", importHash: hash };
-        result = { doc, summary: { ...summary, id: doc.id, source: "사용자 제공 PDF" } };
-        summaries.set(hash, result);
+  async function prepareOfficial() {
+    for (const row of rows.values()) {
+      if (!row.doc || !active()) continue;
+      try {
+        status.textContent = "기관 원문 다운로드 중 · " + row.name;
+        const response = await api({ action: row.doc.text ? "prepare-text" : "download", ...documentPayload(report, row.doc) }, signal);
+        const data = row.doc.text ? (await response.json()).text : await response.blob();
+        if (row.doc.text && (typeof data !== "string" || !data.trim())) throw new Error("기관 본문이 비어 있습니다.");
+        row.file = new File([data], row.doc.title || row.doc.id, { type: row.doc.text ? "text/plain" : "application/pdf" });
+        row.info.textContent = "다운로드 완료";
+      } catch (error) {
+        if (!active()) return;
+        row.info.textContent = "원문 다운로드 실패 · 선택하면 기관에 다시 요청";
       }
     }
-    row.result = result;
-    return result;
+    preparing = false;
+    if (active()) {
+      status.textContent = report.canSummarize ? "사용할 문서를 선택해 주세요." : "서버에 AI 요약 키를 설정하면 보고서를 생성할 수 있습니다.";
+      refresh();
+    }
   }
+
+  async function material(row) {
+    if (row.doc && (!row.file || row.file.size > pdfLimit)) return { doc: row.doc, key: "기관:" + row.doc.id, row };
+    const file = row.file || await row.getFile();
+    const data = await file.arrayBuffer();
+    if (!row.doc?.text && new TextDecoder().decode(data.slice(0, 5)) !== "%PDF-") throw new Error("유효한 PDF가 아닙니다.");
+    const hash = row.hash || await digest(data);
+    const date = calendarDay(file.name.match(/^\d{4}-\d{2}-\d{2}/)?.[0]);
+    const doc = row.doc || { id: "PDF-" + hash.slice(0, 16), title: file.name, date: date || "", importHash: hash };
+    return { file, doc, key: hash, row };
+  }
+
+  function jointContext() {
+    const data = { country: report.country, query: report.query, application: report.application, title: report.title,
+      grant: report.grant, filed: report.filed, granted: report.granted, status: report.status, source: report.source,
+      publication: report.publication, applicants: report.applicants, inventors: report.inventors,
+      abstract: report.abstract?.slice(0, 1200), family: report.family.slice(0, 6).map(row => ({
+        country: row.country, application: row.application, publication: row.publication,
+      })), bibliographicMatch: !originalLinksOnly, events: [] };
+    let budget = 15000 - new TextEncoder().encode(JSON.stringify(data)).length;
+    for (const event of report.events.filter(event => prosecutionStage(event))) {
+      const item = { date: event.date, title: event.title?.slice(0, 230), detail: event.detail?.slice(0, 160) };
+      budget -= new TextEncoder().encode(JSON.stringify(item)).length;
+      if (budget < 0) break;
+      data.events.push(item);
+    }
+    return data;
+  }
+
   async function runAnalysis() {
     if (start.disabled || report.autoPending || !active()) return;
     const selected = [...rows.values()].filter(row => row.input.checked && !row.input.disabled);
     const results = new Map();
+    const inputs = new Map();
     let failed = 0;
     report.autoPending = choices.disabled = true;
     report.conclusion = undefined;
@@ -240,20 +278,103 @@ function dossierHandoff(report) {
     report.documents = [...officialDocs];
     show(report);
     try {
-      for (const [index, row] of selected.entries()) {
-        status.textContent = (index + 1) + "/" + selected.length + " · " + row.name;
-        try {
-          row.info.textContent = "분석 중";
-          const result = await analyze(row);
+      // Resolve the selection locally before sending a case-bound request. Only
+      // a single batch's inflated ZIP entries are kept in memory at a time.
+      let batch = [];
+      let bytes = 0;
+      let onlyConclusion;
+      let groups = 0;
+      const context = jointContext();
+      async function submitBatch(work = batch) {
+        if (!work.length) return;
+        if (work === batch) {
+          batch = [];
+          bytes = 0;
+        }
+        groups++;
+        const key = JSON.stringify(work.map(item => item.key));
+        const fresh = work.filter(item => !cachedResults.has(item.key));
+        if (fresh.length) {
+          const form = new FormData();
+          form.append("action", "joint-report");
+          const sources = fresh.map(({ doc }) => ({
+            date: doc.date, id: doc.id, title: doc.title?.slice(0, 160), source: doc.importHash ? "사용자 제공 원문" : report.source,
+          }));
+          form.append("context", JSON.stringify({ case: context, sources }));
+          form.append("focus", report.analysisRequest || "");
+          fresh.forEach(item => {
+            const type = item.row.doc?.text ? "text/plain" : "application/pdf";
+            form.append("document", item.file.slice(0, item.file.size, type), item.file.name);
+          });
+          status.textContent = "선택 원문 " + fresh.length + "건 함께 분석 중";
+          let response;
+          try { response = await summarizeWithRetry(form, signal, status.textContent); }
+          catch (error) {
+            signal.throwIfAborted();
+            if (![413, 422].includes(error.status)) throw error;
+            if (work.length > 1) {
+              groups--;
+              const split = Math.ceil(work.length / 2);
+              await submitBatch(work.slice(0, split));
+              await submitBatch(work.slice(split));
+            } else {
+              work[0].row.info.textContent = "분석 실패 · " + error.message;
+              failed++;
+            }
+            return;
+          }
           signal.throwIfAborted();
-          results.set(result.doc.id, result);
-          row.info.textContent = "분석 완료";
-        } catch (error) {
-          signal.throwIfAborted();
-          row.info.textContent = "분석 실패 · " + error.message;
-          failed++;
+          if (!Array.isArray(response.documents) || response.documents.length !== fresh.length) throw new Error("문서별 분석 결과를 확인할 수 없습니다.");
+          fresh.forEach((item, i) => {
+            const summary = response.documents[i];
+            if (!summary?.text) {
+              item.row.info.textContent = "이번 응답에서 문서별 분석 미완료";
+              failed++;
+              return;
+            }
+            const doc = item.doc;
+            const dates = [...new Set((summary.evidence || []).map(row => calendarDay(row.documentDate)).filter(Boolean))];
+            if (doc.importHash && dates.length === 1) doc.date = dates[0];
+            cachedResults.set(item.key, { doc, summary: { ...summary, id: doc.id, source: doc.importHash ? "사용자 제공 PDF" : report.source } });
+          });
+          if (fresh.length === work.length && response.conclusion?.text && response.documents.every(Boolean)) jointConclusions.set(key, response.conclusion);
+        }
+        onlyConclusion = jointConclusions.get(key);
+        for (const item of work) {
+          const result = cachedResults.get(item.key);
+          if (result) { results.set(result.doc.id, result); item.row.info.textContent = "분석 완료"; }
         }
       }
+
+      for (const row of selected) {
+        signal.throwIfAborted();
+        let item;
+        try { item = await material(row); }
+        catch (error) { failed++; row.info.textContent = "준비 실패 · " + error.message; continue; }
+        if (inputs.has(item.key)) { row.info.textContent = "동일 원문"; continue; }
+        inputs.set(item.key, true);
+        if (!item.file) {
+          await submitBatch();
+          groups++;
+          try {
+            if (!cachedResults.has(item.key)) {
+              const summary = await summarizeWithRetry({ action: "summarize", ...documentPayload(report, item.doc) }, signal, row.name);
+              cachedResults.set(item.key, { doc: item.doc, summary: { ...summary, id: item.doc.id } });
+            }
+            results.set(item.doc.id, cachedResults.get(item.key));
+            row.info.textContent = "분석 완료";
+          } catch (error) {
+            signal.throwIfAborted();
+            row.info.textContent = "기관 원문 분석 실패 · " + error.message;
+            failed++;
+          }
+          continue;
+        }
+        if (batch.length >= 8 || bytes + item.file.size > pdfLimit) await submitBatch();
+        batch.push(item);
+        bytes += item.file.size;
+      }
+      await submitBatch();
       if (!active()) return;
       if (selected.length && !results.size) throw new Error("선택한 문서를 분석하지 못했습니다. 문서 옆의 사유를 확인한 뒤 다시 시도하세요.");
       for (const { doc, summary } of results.values()) {
@@ -267,13 +388,14 @@ function dossierHandoff(report) {
       }
       report.analysisCoverage = "선택 " + selected.length + "건 · 분석한 고유 원문 " + results.size + "건 · 실패 " + failed + "건";
       status.textContent = "심사 결과 보고서 작성 중";
-      await finishDossierAnalysis(report, signal);
+      if (groups === 1 && onlyConclusion && !failed) report.conclusion = onlyConclusion;
+      else await finishDossierAnalysis(report, signal);
       signal.throwIfAborted();
       status.textContent = report.analysisCoverage + (report.conclusion.partial ? " · 일부 작성" : " · 보고서 작성 완료");
       const jump = el("a", "보고서 보기");
       jump.href = "#analysis-result";
       status.append(" ", jump);
-      if (report.analysisRequest) await requestAnswer(report, report.analysisRequest, signal);
+      say("status", report.conclusion.partial ? "보고서가 일부 작성됐습니다." : "심사 결과 보고서를 작성했습니다.");
     } catch (error) {
       if (active()) {
         status.textContent = error.message;
@@ -284,6 +406,7 @@ function dossierHandoff(report) {
         report.autoPending = choices.disabled = false;
         refresh();
         show(report);
+        if (report.conclusion) by("analysis-result")?.scrollIntoView({ block: "start" });
       }
     }
   }
@@ -295,5 +418,6 @@ function dossierHandoff(report) {
   if (!report.canSummarize) status.textContent = "서버에 AI 요약 키를 설정하면 분석을 시작할 수 있습니다.";
   refresh();
   handoffPanels.set(report, panel);
+  void prepareOfficial();
   return panel;
 }
