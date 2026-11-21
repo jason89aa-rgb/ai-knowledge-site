@@ -196,3 +196,13 @@ td:first-child { white-space: nowrap; }
   .report-nav { gap: 8px 12px; }
   .time-records span { display: block; margin: 2px 0; }
 }
+
+.analysis-choices { min-width: 0; margin: 18px 0 0; border: 0; padding: 0; }
+.analysis-choices legend { font-weight: 700; margin-bottom: 6px; }
+.analysis-list { max-height: 22rem; overflow: auto; }
+.analysis-option { display: flex; align-items: center; gap: .65rem; margin: 0; padding: .55rem .25rem; overflow-wrap: anywhere; cursor: pointer; }
+.analysis-option[hidden] { display: none; }
+.analysis-list .analysis-option { border-bottom: 1px solid #dce4ed; font-weight: 400; }
+.analysis-option input { width: 1.1rem; height: 1.1rem; flex: none; accent-color: var(--accent); }
+.analysis-option small { margin-left: auto; color: var(--muted); }
+.analysis-footer { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; margin-top: 12px; }
