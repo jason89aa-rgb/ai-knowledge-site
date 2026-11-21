@@ -5,20 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex">
   <title>특허 심사 리포트 | AI-ALL</title>
-  <link rel="stylesheet" href="/patent-review.css?v=20261121-upload-zip">
+  <link rel="stylesheet" href="/patent-review.css?v=20261121-selection-zip">
   <script defer src="/patent-pptx.bundle.js"></script>
   <script defer src="/patent-review-pptx.js?v=20261120-import"></script>
   <script defer src="/patent-review-case.js?v=20261120-dossier-guide"></script>
   <script defer src="/patent-review-dashboard.js?v=20261120-dossier-guide"></script>
-  <script defer src="/patent-review-handoff.js?v=20261121-upload"></script>
-  <script id="patent-app" defer src="/patent-assets/app/patent-review.fbdb845cb281fdea.js"></script>
+  <script id="patent-handoff" defer src="/patent-assets/app/patent-review-handoff.fc84a5ed9fa3afd9.js"></script>
+  <script id="patent-app" defer src="/patent-assets/app/patent-review.39062f6bbb387f07.js"></script>
 </head>
 <body>
   <header class="top"><div class="shell"><a class="brand" href="/">AI-ALL<span>.</span></a><a class="home" href="/">사이트 홈 ↗</a></div></header>
   <main>
     <section class="intro"><div class="shell">
       <h1>특허 심사 리포트</h1>
-      <p>특허번호를 입력하고 리포트 만들기를 누르세요. 사이트가 공개 심사 이력과 자동으로 받을 수 있는 원문을 가져와 심사 경과와 청구항별 쟁점을 정리합니다.</p>
+      <p>특허번호를 입력하고 리포트 만들기를 누르세요. 공개 이력과 문서 목록이 열립니다. 분석할 문서를 체크하고 분석 시작을 누르면 심사 경과와 청구항별 쟁점을 담은 보고서가 생성됩니다.</p>
     </div></section>
     <div class="shell workspace">
       <form id="lookup" class="panel">
@@ -31,7 +31,7 @@
         <div class="ask-field" id="requestGroup">
           <label for="request">AI에게 요청할 내용 <span class="optional">선택</span></label>
           <textarea id="request" maxlength="2000" rows="2" placeholder="예: 거절이유와 인용발명을 표로 정리하고, 출원인이 어떻게 대응했는지 설명해 줘" aria-describedby="requestHint"></textarea>
-          <p id="requestHint" class="muted hint">리포트를 만든 뒤 이 요청에 맞춘 내용을 Claude가 작성해 문서 요약과 PowerPoint에 넣습니다. 비워 두면 리포트만 만듭니다.</p>
+          <p id="requestHint" class="muted hint">분석 시작을 누르면 선택한 자료를 바탕으로 Claude가 답변을 작성해 문서 요약과 PowerPoint에 넣습니다. 비워 두면 리포트만 만듭니다.</p>
         </div>
         <details class="search-settings">
           <summary>검색 설정</summary>

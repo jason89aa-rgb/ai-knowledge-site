@@ -234,81 +234,27 @@ function addSummary(report, summary) {
   }
 }
 
-function addReportNote(report, text) {
-  report.notes.push(text);
-  if (current === report) {
-    const notes = by("report-notes");
-    notes.hidden = false;
-    notes.append(el("li", text));
-  }
-}
-
 const documentPayload = (report, doc) => report.skey
   ? { source: "wintelips", skey: report.skey, id: doc.id, code: doc.code }
   : { country: report.country, application: report.application, id: doc.id, code: doc.code };
 
-async function summarizeReport(report, query, signal) {
-  const documents = new Map(report.documents.filter(doc => doc.downloadable || doc.text).map(doc => [doc.id, doc]));
-  if (!report.canSummarize) {
-    if (documents.size || report.events.length) addReportNote(report, "Claude API 키가 서버에 설정되면 자동 요약을 사용할 수 있습니다.");
-    return;
-  }
-  let position = 0;
-  // Keep each PDF in its own worker request, even for a long document list.
-  for (const doc of documents.values()) {
-    signal.throwIfAborted();
-    const progress = `공개 원문 요약 중 (${++position}/${documents.size}) · ${doc.title}`;
-    say("status", progress);
-    try {
-      const summary = await summarizeWithRetry({ action: "summarize", ...documentPayload(report, doc) }, signal, progress);
-      signal.throwIfAborted();
-      addSummary(report, { ...summary, id: doc.id });
-    } catch (error) {
-      signal.throwIfAborted();
-      addReportNote(report, `${doc.title} (${doc.id}) · ${error.message}`);
-    }
-  }
-  if (!report.summaries.length && report.events.length) {
-    const progress = "기관에서 제공한 공개 이력을 요약하고 있습니다.";
-    say("status", progress);
-    try {
-      const summary = await summarizeWithRetry({ action: "summarize-events", ...query }, signal, progress);
-      signal.throwIfAborted();
-      addSummary(report, summary);
-    } catch (error) {
-      signal.throwIfAborted();
-      addReportNote(report, `공개 이력 요약 · ${error.message}`);
-    }
-  }
-}
-
 function documentActions(report, doc) {
   if (report.reviewed) return link(report.espacenet);
-  if (!(doc.downloadable || doc.text) || report.demo) return report.local ? "브라우저에서 처리" : "공식 열람처 참고";
+  if (doc.importHash) return "선택한 PDF";
+  if (doc.text) return "공개 텍스트";
+  if (!doc.downloadable || report.demo) return report.local ? "브라우저에서 처리" : "공식 열람처 참고";
   const wrapper = el("div", "", "document-actions");
   wrapper.hidden = !isAutomaticMode();
-  const payload = documentPayload(report, doc);
-  const actions = doc.text ? [["summarize", "Claude 요약"]] : [["download", "원문 PDF"], ["summarize", "Claude 요약"]];
-  for (const [action, title] of actions) {
-    wrapper.append(button(title, async event => {
-      const control = event.currentTarget;
-      control.disabled = true;
-      say("status", action === "download" ? "기관에서 PDF를 받고 있습니다." : "공개 원문을 Claude로 요약하고 있습니다.");
-      try {
-        const response = await api({ action, ...payload });
-        if (action === "download") download(await response.blob(), `${report.country}-${doc.id}.pdf`);
-        else {
-          addSummary(report, { ...await readSummary(response), id: doc.id });
-        }
-        if (current === report) say("status", action === "download" ? "원문 PDF를 내려받았습니다." : "문서 요약을 아래에 추가했습니다.");
-        if (action === "summarize" && current === report) by("summaries").scrollIntoView({ block: "nearest" });
-      } catch (error) {
-        if (current === report) say("status", error.message, true);
-      } finally {
-        control.disabled = false;
-      }
-    }));
-  }
+  wrapper.append(button("원문 PDF", async event => {
+    const control = event.currentTarget;
+    control.disabled = true;
+    try {
+      const response = await api({ action: "download", ...documentPayload(report, doc) });
+      download(await response.blob(), report.country + "-" + doc.id + ".pdf");
+    } catch (error) {
+      if (current === report) say("status", error.message, true);
+    } finally { control.disabled = false; }
+  }));
   return wrapper;
 }
 
@@ -504,7 +450,7 @@ function show(report) {
   head.append(identity);
   if (!report.linksOnly) head.append(ppt);
   overview.append(head);
-  const useHandoff = ["US", "EP"].includes(report.country) && !report.demo && !report.reviewed && !report.local;
+  const useHandoff = !report.demo && !report.reviewed && !report.local;
   if (useHandoff) overview.append(dossierHandoff(report));
   if (report.takeaway) overview.append(el("p", report.takeaway, "dossier-takeaway"));
   const milestones = reportMilestones(report);
@@ -541,9 +487,9 @@ function show(report) {
   area.append(overview);
   if (report.conclusion) {
     const conclusion = el("section", "", "panel summary");
+    conclusion.id = "analysis-result";
     conclusion.append(el("h2", "심사 결과 보고서"));
-    const analyzed = report.documents.filter(doc => report.summaries.some(item => item.id === doc.id));
-    conclusion.append(el("p", `원문 분석 ${analyzed.length}건 · 기관 이력 ${report.events.length}건`, "muted"));
+    conclusion.append(el("p", report.analysisCoverage + " · 기관 이력 " + report.events.length + "건", "muted"));
     conclusion.append(reportBody(report.conclusion.text));
     if (report.conclusion.partial) conclusion.append(el("p", "출력 한도로 종합 분석이 일부만 작성됐습니다.", "muted"));
     area.append(conclusion);
@@ -597,7 +543,7 @@ function show(report) {
   slot.id = "summaries";
   summaries.append(el("h2", "문서 요약"), slot);
   area.append(summaries);
-  if (!report.local && !report.demo && !report.reviewed) area.append(askPanel(report));
+  if (report.conclusion && !report.autoPending && !report.reviewed && !report.demo && !report.local) area.append(askPanel(report));
   showSummaries(report);
 }
 
@@ -616,14 +562,17 @@ function usDocumentGuide(report) {
 const askContext = report => ({
   ...Object.fromEntries(["country", "query", "title", "source", "application", "publication", "grant", "filed", "published",
     "granted", "status", "applicants", "inventors", "abstract", "family", "events", "notes"].map(key => [key, report[key]])),
-  documents: report.documents.map(({ date, title, id }) => ({ date, title, id })),
+  documents: report.documents.filter(doc => report.summaries.some(item => item.id === doc.id)).map(({ date, title, id }) => ({ date, title, id })),
   summaries: report.summaries.map(({ title, source, text }) => ({ title, source, text })),
 });
 
 async function requestAnswer(report, text, signal) {
+  const original = report.summaries;
   const progress = "AI가 요청한 내용을 작성하고 있습니다.";
   say("status", progress);
   const summary = await summarizeWithRetry({ action: "ask", prompt: text, report: askContext(report) }, signal, progress);
+  signal.throwIfAborted();
+  if (report.summaries !== original || current !== report) return;
   const number = report.summaries.filter(item => item.id?.startsWith("AI 요청")).length + 1;
   addSummary(report, { ...summary, id: `AI 요청 ${number}` });
 }
@@ -651,7 +600,7 @@ async function finishDossierAnalysis(report, signal) {
     }
     pieces = condensed;
   }
-  const final = await request(pieces, "검토한 문서와 이력만 근거로 한국어 심사 결과 보고서를 작성하세요. 심사 결과, 회차별 거절이유·출원인 대응·판단, 청구항별 적용 범위, 누락 자료 순으로 정리하고 근거 문서명·페이지 또는 이력 날짜를 표시하세요. 사용자가 제공한 문서와 기관 확인 기록을 구분하고 서지 미확인·분석 실패·원문 부재는 명시하세요.");
+  const final = await request(pieces, "검토한 문서와 이력만 근거로 한국어 심사 결과 보고서를 작성하세요. 심사 결과, 회차별 거절이유·출원인 대응·판단, 청구항별 적용 범위, 누락 자료 순으로 정리하고 근거 문서명·페이지 또는 이력 날짜를 표시하세요. 사용자가 제공한 문서와 기관 확인 기록을 구분하고 이번 분석 범위에서 확인되지 않은 내용은 미확인으로 표시하세요. 미선택 문서나 심사 절차 자체가 없다고 단정하지 마세요.");
   signal.throwIfAborted();
   if (current !== report) return;
   report.conclusion = final;
@@ -815,56 +764,23 @@ async function openCandidate(candidate, notes = [], request = "") {
   const version = ++searchVersion;
   const control = by("search");
   control.disabled = true;
-  let report;
   say("status", "선택한 특허의 공개 기록을 조회하고 있습니다.");
   try {
     const query = candidate.source === "wintelips" ? { source: "wintelips", skey: candidate.skey }
       : { number: candidate.number, country: candidate.country, numberType: candidate.numberType };
     const response = await api({ action: "lookup", ...query }, controller.signal);
     const data = await response.json();
-    report = { ...data, summaries: [], autoPending: !data.linksOnly };
+    const report = { ...data, summaries: [], analysisRequest: request };
     controller.signal.throwIfAborted();
     report.notes.unshift(...notes);
     show(report);
-    if (!report.linksOnly) await summarizeReport(report, query, controller.signal);
-    if (!report.linksOnly && report.canSummarize) {
-      try { await finishDossierAnalysis(report, controller.signal); }
-      catch (error) {
-        controller.signal.throwIfAborted();
-        addReportNote(report, "결과 보고서 작성 실패 · " + error.message);
-      }
-    }
-    // The request from the search form runs last, so the answer can draw on every document summary.
-    let answered = false;
-    if (request && !report.linksOnly) {
-      if (!report.canSummarize) addReportNote(report, "Claude API 키가 서버에 설정되면 AI 요청을 사용할 수 있습니다.");
-      else {
-        try {
-          await requestAnswer(report, request, controller.signal);
-          answered = true;
-        } catch (error) {
-          controller.signal.throwIfAborted();
-          addReportNote(report, `AI 요청 · ${error.message}`);
-        }
-      }
-    }
-    if (searchVersion !== version) return;
     finishReport(report);
-    say("status", report.linksOnly ? "자동 조회로 사건을 확인하지 못했습니다. 공식 열람 링크를 표시했습니다."
-      : `${report.conclusion ? "보고서 생성 완료" : "공개 자료 조회 완료 · 종합 보고서 미작성"}${answered ? " · AI 요청 반영" : ""} · PowerPoint 다운로드 가능`);
+    say("status", report.linksOnly ? "자동 조회로 사건을 확인하지 못했습니다. 직접 추가한 심사문서를 선택해 분석할 수 있습니다."
+      : "공개 자료 조회 완료 · 분석할 자료를 선택해 주세요.");
   } catch (error) {
     if (searchVersion === version) say("status", error.message, true);
   } finally {
-    if (searchVersion === version) {
-      control.disabled = false;
-      if (report?.autoPending) {
-        report.autoPending = false;
-        const controls = handoffPanels.get(report)?.querySelector("fieldset");
-        if (controls) controls.disabled = !report.canSummarize;
-        by("report-export").disabled = false;
-        if (!report.summaries.length || by("claim-analysis")) showSummaries(report);
-      }
-    }
+    if (searchVersion === version) control.disabled = false;
   }
 }
 
