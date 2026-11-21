@@ -808,7 +808,7 @@ const evidenceMarker = "<claim-evidence>";
 const responseTypes = ["amend", "argue", "cancel", "add", "disclaimer", "other"];
 const evidenceInstructions = [
   "요약은 핵심 심사 단계, 심사관 쟁점, 출원인 대응, 결과 중 원문에 있는 내용만 짧은 글머리표로 쓴다. 수수료·접수는 절차 결과를 바꾼 경우에만 언급한다. 평문 요약은 3,000토큰 이내에서 주요 판단과 근거를 먼저 완결한다. 다음 줄에 <claim-evidence>를 쓴 뒤 근거 한 건마다 한 줄짜리 JSON 객체를 쓴다. 마지막 줄에 </claim-evidence>를 쓴다. 배열이나 마크다운 코드 블록은 쓰지 않는다.",
-  '각 원소는 {"claims":[1,2],"role":"examiner|applicant|outcome","finalDisposition":false,"roundDate":"","documentDate":"","procedureTitle":"","issue":"","noticeTitle":"","noticeSource":null,"reference":"","ground":"","references":[{"doc":"","where":""}],"element":"","responseType":"","support":"","statement":"","reason":"","text":"","locator":""} 형식이다.',
+  '각 원소는 {"claims":[1,2],"role":"examiner|applicant|outcome","finalDisposition":false,"roundDate":"","documentDate":"","procedureTitle":"","issue":"","noticeTitle":"","noticeSource":null,"reference":"","ground":"","references":[{"doc":"","where":""}],"element":"","gap":"","responseType":"","support":"","statement":"","reason":"","text":"","locator":""} 형식이다.',
   "청구항 번호와 의견·대응·결과가 원문에서 명시적으로 연결된 경우만 기록한다. 공통 근거는 한 항목에 실제 해당 항 번호를 모두 넣는다. 항마다 이유를 만들어내지 않는다.",
   "청구항 번호 없이도 원문에서 확인되는 주요 절차상 의견·대응(예: 제한요구와 발명 선택, 도면 이의와 교체, 면담·불복에서의 쟁점)은 claims:[], scope:\"proceeding\"으로 적고 같은 role, 날짜, locator 규칙을 따른다. 번호가 없는 근거에 항 번호를 추정하지 않는다. 수수료·접수 같은 행정 이력은 제외한다.",
   "주요 통지·답변·결정마다 해당 문서가 실제로 밝힌 핵심 의견, 대응 또는 판단을 절차 단위로 한두 문장에 종합해 scope:\"proceeding\", claims:[]인 첫 근거로 제공한다. 여러 통지에 각각 답한 문서는 대상 통지별로 구분한다. 구체적인 항별 근거는 뒤에 적는다.",
@@ -827,6 +827,7 @@ const evidenceInstructions = [
   "후속 통지나 허여통지가 이전 거절을 철회·유지한 이유(보정으로 해소, 주장 인정, 주장 불인정 등)를 밝히면 text에 그 이유를 쓴다. 해당 없는 필드는 빈 문자열이나 빈 배열로 둔다. 원문에 없는 문헌번호, 단락, 청구항 문언은 만들지 않는다.",
   // What the prosecution left on the scope of the right: why it was allowed, what the applicant gave up, and what the applicant said.
   "허여통지·등록결정·심결이 허여 이유(reasons for allowance)나 거절을 철회한 이유를 적었으면 그 근거(role outcome 또는 examiner)의 reason에 '인용문헌 A·B 어디에도 ○○ 구성이 없음', '보정으로 해소', '출원인 주장 인정', 'terminal disclaimer 승인'처럼 원문에 적힌 이유를 한 문장으로 쓴다. 원문이 이유를 밝히지 않으면 reason을 비우고 추정하지 않는다. 면담 기록(Interview Summary)에서 합의한 내용과 심사관 직권보정(Examiner's Amendment)으로 바뀐 문언은 examiner 근거로 기록하고, 직권보정이면 element에 바뀐 문언을 쓴다.",
+  "진보성 거절에서 심사관이 주인용문헌에 개시되지 않았다고 인정한 구성이 있으면 그 심사관 근거의 gap에 해당 구성을 청구항 문언 그대로 25단어 이내로 쓴다(예: 'Kim does not explicitly disclose …'가 가리키는 구성). 신규성 거절이거나 원문이 차이점을 밝히지 않으면 비운다.",
   "출원인 근거가 amend 또는 add면 support에 출원인이 보정의 근거로 든 명세서 단락·도면·원청구항을 원문 표기대로 쓴다(예: '¶[0052], Fig. 4, 원청구항 5'). 원문이 근거를 밝히지 않으면 비운다.",
   "출원인이 인용발명과 구별하거나 청구항 용어의 의미·범위를 한정하려고 쓴 문장이 있으면 statement에 그 문장 하나를 원문 언어 그대로 45단어 이내로 인용한다. 발명이 반드시 갖추거나 갖추지 않는다고 한 구성, 용어의 정의, 인용발명과 다르다고 한 점이 대상이다. '따라서 거절은 철회되어야 한다' 같은 결론 문장이나 법리 설명은 인용하지 않는다. 그런 문장이 없으면 비운다.",
 ].join(" ");
@@ -858,7 +859,7 @@ function documentFindings(output: string, stopped: boolean) {
         references: rows(row.references, 6).map(item => pick(item, ["doc", "where"], 200)).filter(item => item.doc),
         responseType: row.role === "applicant" && responseTypes.includes(row.responseType) ? row.responseType : undefined,
         support: row.role === "applicant" ? clip(row.support, 200) : undefined, statement: row.role === "applicant" ? clip(row.statement, 600) : undefined,
-        reason: row.role === "applicant" ? undefined : clip(row.reason, 500) });
+        reason: row.role === "applicant" ? undefined : clip(row.reason, 500), gap: row.role === "examiner" ? clip(row.gap, 400) : undefined });
     } catch {
       evidenceIncomplete = true;
     }

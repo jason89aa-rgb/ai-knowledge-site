@@ -381,3 +381,25 @@ td:first-child { white-space: nowrap; }
 .limit-entry small { color: var(--muted); }
 .art-sources a { display: block; }
 .family-followers { margin: 8px 0; padding: 10px 14px; border-inline-start: 3px solid #6e5191; border-radius: 4px; background: #f5f1fa; font-size: .9rem; }
+/* Stage flow: each rejection with the answer it drew and what became of it. */
+.stage-focus { background: #1b7463; color: #fff; }
+.stage-wording, .stage-focus-note { margin: 0 0 12px; padding: 8px 12px; border-inline-start: 3px solid #1b7463; border-radius: 4px; background: #eff6f2; font-size: .9rem; }
+.issue-list { margin-top: 14px; }
+.issue-list > h4 { margin: 0 0 8px; color: #173d46; font-size: .95rem; }
+.issue-card { margin-top: 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; overflow: hidden; }
+.issue-card > header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; padding: 10px 14px; border-bottom: 1px solid var(--line); background: #f4f7f8; }
+.issue-card > header strong { color: #173d46; }
+.issue-art { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 2px 16px; margin: 0; padding: 0; list-style: none; color: var(--muted); font-size: .84rem; overflow-wrap: anywhere; }
+.issue-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, .8fr); }
+.issue-grid .claim-role { border-top: 0; border-radius: 0; padding: 12px 14px; }
+.issue-grid .claim-role + .claim-role { border-inline-start: 1px solid var(--line); }
+.issue-grid .claim-role h4 { margin: 0; font-size: .86rem; }
+.issue-grid .finding { margin-top: 8px; }
+.issue-fate { margin: 8px 0 4px; font-size: .92rem; line-height: 1.6; }
+.fate-kept { color: #8a3b12; font-weight: 700; }
+.fate-dropped, .fate-decided { color: #17594b; }
+.fate-unknown { color: var(--muted); }
+@media (max-width: 760px) {
+  .issue-grid { grid-template-columns: 1fr; }
+  .issue-grid .claim-role + .claim-role { border-inline-start: 0; border-top: 1px solid var(--line); }
+}
