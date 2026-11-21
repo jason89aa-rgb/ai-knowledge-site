@@ -284,6 +284,7 @@ function dossierHandoff(report) {
         report.autoPending = choices.disabled = false;
         refresh();
         show(report);
+        if (report.conclusion) by("analysis-result")?.scrollIntoView({ block: "start" });
       }
     }
   }

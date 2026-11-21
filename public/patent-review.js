@@ -171,10 +171,56 @@ async function summarizeWithRetry(payload, signal, progress) {
   }
 }
 
+const resultHeadings = ["심사 결과", "심사관의 쟁점", "출원인의 대응", "확인할 쟁점"];
+
+function resultDashboard(report) {
+  const panel = el("section", "", "panel decision-panel");
+  panel.id = "analysis-result";
+  panel.append(el("h2", "심사 결과 보고서"));
+  if (report.analysisCoverage) panel.append(el("p", report.analysisCoverage, "muted hint"));
+  const grid = el("div", "", "decision-grid");
+  const sections = new Map();
+  let active;
+  for (const line of (report.conclusion?.text || "").split(/\r?\n/)) {
+    const heading = line.trim().replace(/^#{1,6}\s*|\*\*/g, "").replace(/[:：]$/, "");
+    if (resultHeadings.includes(heading)) {
+      active = heading;
+      if (!sections.has(active)) sections.set(active, []);
+    } else if (active && line.trim()) sections.get(active).push(line);
+  }
+  const roles = ["outcome", "examiner", "applicant"];
+  for (const [index, heading] of resultHeadings.entries()) {
+    const lines = sections.get(heading);
+    const card = el("article", "", "decision-card decision-" + index);
+    card.append(el("h3", heading));
+    if (lines?.length) card.append(reportBody(lines.join("\n")));
+    else {
+      const source = report.summaries.find(item => item.evidence?.some(row => row.role === roles[index]));
+      const entry = source?.evidence.find(row => row.role === roles[index]);
+      if (!entry) continue;
+      card.append(el("p", entry.text), el("small", [source.title, entry.locator].filter(Boolean).join(" · ")));
+    }
+    grid.append(card);
+  }
+  if (grid.childElementCount) panel.append(grid);
+  if (report.conclusion && !sections.size) {
+    const body = reportBody(report.conclusion.text);
+    if (!grid.childElementCount && body.textContent) {
+      const excerpt = el("p", body.querySelector("p, li")?.textContent || body.textContent, "decision-excerpt");
+      panel.append(excerpt);
+    }
+    const full = el("details", "", "record-fold");
+    full.append(el("summary", "분석 전문 보기"), body);
+    panel.append(full);
+  }
+  if (report.conclusion?.partial) panel.append(el("p", "출력 한도로 종합 분석이 일부만 작성됐습니다.", "analysis-notice"));
+  return panel;
+}
+
 function summaryCard(summary, index) {
   const item = el("article", "", "summary");
   if (Number.isInteger(index)) item.id = "summary-" + index;
-  item.append(el("h3", summary.title), el("small", [summary.source, summary.id, summary.model].filter(Boolean).join(" · ")), el("pre", summary.text));
+  item.append(el("h3", summary.title), el("small", [summary.source, summary.id, summary.model].filter(Boolean).join(" · ")), reportBody(summary.text));
   if (summary.partial) item.append(el("p", "출력 한도에 도달해 요약 일부만 표시됩니다.", "muted"));
   if (summary.evidenceIncomplete) item.append(el("p", "청구항 근거 추출이 불완전합니다. 원문에서 추가 근거를 확인하세요.", "muted"));
   return item;
@@ -194,7 +240,9 @@ function exportButton(report, status) {
     const control = event.currentTarget;
     control.disabled = true;
     try {
-      await window.exportPatentPptx(report, report.reviewed ? "원문 검토일 " + report.reviewedAt : dateLabel(report.retrievedAt), facts, download);
+      const timelineRows = reportMilestones(report).flatMap(([date, stages]) =>
+        [...stages].map(([stage, sources]) => [date, stage, [...sources.keys()].join(" · ")]));
+      await window.exportPatentPptx({ ...report, timelineRows }, report.reviewed ? "원문 검토일 " + report.reviewedAt : dateLabel(report.retrievedAt), facts, download);
       say(status, "PowerPoint 파일을 만들었습니다.");
     } catch {
       say(status, "PowerPoint를 만들지 못했습니다. 페이지를 새로 열고 다시 시도해 주세요.", true);
@@ -359,7 +407,14 @@ function show(report) {
   if (!report.linksOnly) head.append(ppt);
   overview.append(head);
   const useHandoff = !report.demo && !report.reviewed && !report.local;
-  if (useHandoff) overview.append(dossierHandoff(report));
+  if (useHandoff) {
+    const picker = dossierHandoff(report);
+    if (report.conclusion && !report.autoPending) {
+      const edit = el("details", "", "report-metadata");
+      edit.append(el("summary", "분석 문서 다시 선택"), picker);
+      overview.append(edit);
+    } else overview.append(picker);
+  }
   if (report.takeaway) overview.append(el("p", report.takeaway, "dossier-takeaway"));
   const milestones = reportMilestones(report);
   if (!report.linksOnly) overview.append(reportMetrics(report, milestones));
@@ -393,15 +448,7 @@ function show(report) {
   overview.append(notes, metadata);
   if (report.local && report.country !== "UPC") overview.append(manualEditor(report));
   area.append(overview);
-  if (report.conclusion) {
-    const conclusion = el("section", "", "panel summary");
-    conclusion.id = "analysis-result";
-    conclusion.append(el("h2", "심사 결과 보고서"));
-    conclusion.append(el("p", report.analysisCoverage + " · 기관 이력 " + report.events.length + "건", "muted"));
-    conclusion.append(reportBody(report.conclusion.text));
-    if (report.conclusion.partial) conclusion.append(el("p", "출력 한도로 종합 분석이 일부만 작성됐습니다.", "muted"));
-    area.append(conclusion);
-  }
+  if (report.conclusion || report.reviewed) area.append(resultDashboard(report));
   if (entering) {
     title.focus({ preventScroll: true });
     window.scrollTo(0, 0);
@@ -414,30 +461,31 @@ function show(report) {
   if (report.country !== "UPC") {
     const nav = el("nav", "", "report-nav");
     nav.setAttribute("aria-label", "리포트 목차");
-    for (const [id, label] of [["report-timeline", "타임라인"], ["claim-analysis", "청구항 분석"], ["report-documents", "심사 문서"], ["report-history", "전체 이력"]]) {
+    for (const [id, label] of [["report-timeline", "주요 심사 타임라인"], ["claim-analysis", "청구항 분석"], ["report-documents", "심사 문서"], ["report-history", "전체 이력"]]) {
       const jump = el("a", label);
       jump.href = "#" + id;
+      jump.onclick = () => { const target = by(id); if (target?.tagName === "DETAILS") target.open = true; };
       nav.append(jump);
     }
     const analysis = el("section", "", "panel claim-panel");
     analysis.id = "claim-analysis";
     area.append(nav, timeline(milestones), analysis);
-    const family = el("section", "", "panel");
-    family.append(el("h2", `패밀리 및 연계 출원 (${report.family.length})`), table(
+    const family = el("details", "", "panel record-fold");
+    family.append(el("summary", `패밀리 및 연계 출원 (${report.family.length})`), table(
       ["관할", "공개·등록번호", "출원번호", "조회 관계", "일자"],
       report.family.map(row => [row.country, familyCell(row), row.application, row.relation, row.date]),
       "표시할 패밀리 자료가 없습니다.",
     ));
-    const history = el("section", "", "panel");
+    const history = el("details", "", "panel record-fold");
     history.id = "report-history";
-    history.append(el("h2", `심사·행정 이력 (${report.events.length})`), table(
+    history.append(el("summary", `심사·행정 이력 (${report.events.length})`), table(
       ["날짜", "기록", "상태·구분", "문서번호·코드"],
       report.events.map(row => [row.date, row.title, row.detail, row.id]),
       report.local ? "공식 기록을 확인한 뒤 위 입력란에 추가할 수 있습니다." : "가져온 이력이 없습니다. 공식 열람 링크를 확인해 주세요.",
     ));
-    const docs = el("section", "", "panel");
+    const docs = el("details", "", "panel record-fold");
     docs.id = "report-documents";
-    docs.append(el("h2", `심사 문서 (${report.documents.length})`), table(
+    docs.append(el("summary", `심사 문서 (${report.documents.length})`), table(
       ["날짜", "문서", "식별자", "원문 및 요약"],
       report.documents.map(doc => [doc.date, doc.title, doc.id, documentActions(report, doc)]),
       report.local ? "기관에서 받은 PDF를 아래에서 선택할 수 있습니다." : "자동으로 가져올 수 있는 공개 원문이 없습니다. 위의 공식 열람처를 확인해 주세요.",
@@ -445,10 +493,10 @@ function show(report) {
     if (report.country === "US" && !useHandoff) docs.append(usDocumentGuide(report));
     area.append(docs, history, family);
   }
-  const summaries = el("section", "", "panel");
+  const summaries = el("details", "", "panel record-fold");
   const slot = el("div");
   slot.id = "summaries";
-  summaries.append(el("h2", "문서 요약"), slot);
+  summaries.append(el("summary", "문서 요약"), slot);
   area.append(summaries);
   if (report.conclusion && !report.autoPending && !report.reviewed && !report.demo && !report.local) area.append(askPanel(report));
   showSummaries(report);
@@ -487,7 +535,7 @@ async function requestAnswer(report, text, signal) {
 async function finishDossierAnalysis(report, signal) {
   if (!report.canSummarize || report.linksOnly) return;
   const context = askContext(report);
-  const base = { ...context, documents: [], summaries: [] };
+  const base = { ...context, events: report.events.filter(row => prosecutionStage(row)), documents: [], summaries: [] };
   let pieces = report.summaries.filter(item => !item.id?.startsWith("AI 요청")).map(item => ({
     title: item.title, source: [item.source, item.id].filter(Boolean).join(" · "),
     text: item.text.slice(0, 9000) + (item.text.length > 9000 || item.partial ? "\n[일부 발췌]" : ""),
@@ -502,12 +550,20 @@ async function finishDossierAnalysis(report, signal) {
   while (pieces.length > 10) {
     const condensed = [];
     for (let i = 0; i < pieces.length; i += 10) {
-      const summary = await request(pieces.slice(i, i + 10), "각 문서에서 확인된 심사 시점, 청구항, 심사관 판단, 출원인 대응, 결과를 날짜와 문서명·근거 페이지를 유지해 압축해 주세요. 근거가 없는 판단은 추가하지 마세요.");
+      const summary = await request(pieces.slice(i, i + 10), "수수료·접수 내역은 생략하고 각 문서에서 확인된 주요 심사 시점, 청구항, 심사관 판단, 출원인 대응, 결과를 날짜와 문서명·근거 페이지를 유지해 압축해 주세요. 근거가 없는 판단은 추가하지 마세요.");
       condensed.push({ title: "문서 묶음 " + (condensed.length + 1), source: summary.source, text: summary.text + (summary.partial ? "\n[일부 요약]" : "") });
     }
     pieces = condensed;
   }
-  const final = await request(pieces, "검토한 문서와 이력만 근거로 한국어 심사 결과 보고서를 작성하세요. 심사 결과, 회차별 거절이유·출원인 대응·판단, 청구항별 적용 범위, 누락 자료 순으로 정리하고 근거 문서명·페이지 또는 이력 날짜를 표시하세요. 사용자가 제공한 문서와 기관 확인 기록을 구분하고 이번 분석 범위에서 확인되지 않은 내용은 미확인으로 표시하세요. 미선택 문서나 심사 절차 자체가 없다고 단정하지 마세요.");
+  const final = await request(pieces, [
+    "선택한 원문과 기관 이력만 근거로 읽기 쉬운 한국어 심사 보고서를 작성하세요.",
+    "다음 네 제목을 순서대로 정확히 사용하세요. 각 제목은 ## 로 시작하는 별도 줄입니다.",
+    resultHeadings.join(", "),
+    "심사 결과는 확인된 최신 판단 한 문장, 다른 섹션은 핵심 사항을 각각 최대 두 개의 짧은 글머리표로 쓰세요.",
+    "거절·제한의 이유, 대상 청구항, 무엇을 보정하거나 반박했는지, 그 결과를 명확히 구분하고 각 항목에 문서명과 페이지 또는 이력 날짜를 붙이세요.",
+    "R/R, 비최종·최종 거절, Advisory Action, 불복, 허여 통지는 실제 확인된 전환점만 다루세요. 허여 통지와 등록을 구분하세요.",
+    "수수료·접수·서지 변경은 생략하세요. 다만 미납에 따른 권리 상실처럼 결과를 바꾼 결정은 포함하세요. 자료가 부족하면 선택 자료에서 미확인이라고 한 줄로 표시하세요.",
+  ].join(" "));
   signal.throwIfAborted();
   if (current !== report) return;
   report.conclusion = final;
@@ -539,6 +595,7 @@ function askPanel(report) {
       await requestAnswer(report, text, new AbortController().signal);
       if (current === report) {
         say("status", "요청한 내용을 문서 요약에 추가했습니다.");
+        by("summaries").parentElement.open = true;
         by("summaries").scrollIntoView({ block: "nearest" });
         prompt.value = "";
       }

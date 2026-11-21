@@ -800,7 +800,7 @@ const askSystem = "특허 리포트 데이터를 바탕으로 사용자가 요�
 
 const evidenceMarker = "<claim-evidence>";
 const evidenceInstructions = [
-  "평문 요약은 3,000토큰 이내에서 주요 판단과 근거를 먼저 완결한다. 다음 줄에 <claim-evidence>를 쓴 뒤 근거 한 건마다 한 줄짜리 JSON 객체를 쓴다. 마지막 줄에 </claim-evidence>를 쓴다. 배열이나 마크다운 코드 블록은 쓰지 않는다.",
+  "요약은 핵심 심사 단계, 심사관 쟁점, 출원인 대응, 결과 중 원문에 있는 내용만 짧은 글머리표로 쓴다. 수수료·접수는 절차 결과를 바꾼 경우에만 언급한다. 평문 요약은 3,000토큰 이내에서 주요 판단과 근거를 먼저 완결한다. 다음 줄에 <claim-evidence>를 쓴 뒤 근거 한 건마다 한 줄짜리 JSON 객체를 쓴다. 마지막 줄에 </claim-evidence>를 쓴다. 배열이나 마크다운 코드 블록은 쓰지 않는다.",
   '각 원소는 {"claims":[1,2],"role":"examiner|applicant|outcome","roundDate":"","documentDate":"","text":"","locator":""} 형식이다.',
   "청구항 번호와 의견·대응·결과가 원문에서 명시적으로 연결된 경우만 기록한다. 공통 근거는 한 항목에 실제 해당 항 번호를 모두 넣는다. 항마다 이유를 만들어내지 않는다.",
   "role은 세 값 중 하나, text는 한국어 요지, locator는 확인한 PDF 페이지 또는 본문 절 번호다. 근거 위치가 없으면 제외한다.",
