@@ -255,8 +255,8 @@ function dossierHandoff(report) {
       publication: report.publication, applicants: report.applicants, inventors: report.inventors,
       abstract: report.abstract?.slice(0, 1200), family: report.family.slice(0, 6).map(row => ({
         country: row.country, application: row.application, publication: row.publication,
-      })), bibliographicMatch: !originalLinksOnly, events: [] };
-    let budget = 15000 - new TextEncoder().encode(JSON.stringify(data)).length;
+      })), bibliographicMatch: !originalLinksOnly, ...caseContext(report), events: [] };
+    let budget = 21000 - new TextEncoder().encode(JSON.stringify(data)).length;
     for (const event of report.events.filter(event => prosecutionStage(event))) {
       const item = { date: event.date, title: event.title?.slice(0, 230), detail: event.detail?.slice(0, 160) };
       budget -= new TextEncoder().encode(JSON.stringify(item)).length;
@@ -286,6 +286,10 @@ function dossierHandoff(report) {
       let bytes = 0;
       let onlyConclusion;
       let groups = 0;
+      // The claims as published and granted and the status of the right frame the conclusion; a failed or slow lookup only leaves them out.
+      status.textContent = "WINTELIPS에서 청구항과 권리 기록 조회 중";
+      await Promise.race([loadCaseRecord(report), new Promise(resolve => setTimeout(resolve, 20000))]);
+      signal.throwIfAborted();
       const context = jointContext();
       async function submitBatch(work = batch) {
         if (!work.length) return;

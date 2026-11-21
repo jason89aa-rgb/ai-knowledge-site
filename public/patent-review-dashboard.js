@@ -606,7 +606,7 @@ function renderAnalysis(report) {
   const procedures = by("process-analysis");
   const panel = by("claim-analysis");
   const selected = new Map([...procedures.querySelectorAll("select")].map(node => [node.dataset.filterKey, node.value]));
-  procedures.replaceChildren(el("h2", "단계별 심사 흐름"));
+  procedures.replaceChildren(el("h2", "4 · 단계별 심사 흐름"));
   const flow = prosecutionRounds(report, briefs);
   if (flow.rounds.length) procedures.append(el("p", "심사관의 통지마다 출원인의 대응과 그 결과를 한 단계로 묶었습니다. 다음 통지 전까지 제출된 서류는 날짜 순서로 해당 단계에 넣었습니다.", "hint muted"));
   const steps = [...flow.rounds.map((round, index) => ({ date: round.notice.date, node: roundCard(report, round, index, flow.rounds[index + 1], selected) })),
@@ -631,4 +631,5 @@ function renderAnalysis(report) {
     procedures.append(supporting);
   }
   if (!steps.length) procedures.append(el("p", report.autoPending ? "선택한 원문을 검토하고 있습니다." : "선택한 자료에서 주요 심사 절차의 의견·대응을 확인하지 못했습니다.", "muted"));
+  renderRecord(report, briefs);
 }
