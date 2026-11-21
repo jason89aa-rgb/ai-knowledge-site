@@ -409,3 +409,8 @@ td:first-child { white-space: nowrap; }
 .stage-track { background: #efe7f6; color: #4d2f63; }
 .stage-path { margin: 0 0 10px; color: var(--muted); font-size: .84rem; overflow-wrap: anywhere; }
 .fate-advisory { color: #5a4a12; }
+/* Trials and court cases about the patent. */
+.trial-cell small { display: block; margin-top: 2px; color: var(--muted); font-size: .8rem; }
+.trial-cell details { margin-top: 4px; font-size: .82rem; }
+.trial-cell summary { cursor: pointer; color: #274b59; }
+.trial-cell details p { margin: 4px 0 0; }

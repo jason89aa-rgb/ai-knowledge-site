@@ -553,18 +553,52 @@ function fillRights(report, rows) {
   } else panel.append(el("p", "선택한 문서에서 확인되지 않았습니다. 우선권 주장의 유효성과 보정의 신규사항 여부는 이 기록만으로 판단할 수 없습니다.", "muted"));
 }
 
-// Proceedings after grant as table rows, shared by the page and the PowerPoint export.
+// Proceedings after grant as label/value pairs, shared by the page and the PowerPoint export.
 function postGrantEntries(data) {
   const after = data.postGrant;
   const entries = [];
   if (after.trials) {
-    entries.push(["심판", after.trials.length ? after.trials.map(item => [item.number, item.type].filter(Boolean).join(" · ")).join("\n") : "WINTELIPS 기준 심판 기록 없음"]);
+    const kinds = after.trials.reduce((counts, item) => counts.set(item.type || "종류 미표시", (counts.get(item.type || "종류 미표시") || 0) + 1), new Map());
+    const label = data.subject.country === "KR" ? "심판·심결취소소송" : data.subject.country === "US" ? "PTAB 심판" : "심판";
+    entries.push([label, after.trials.length ? `${after.trials.length}건 · ` + [...kinds].map(([kind, count]) => `${kind} ${count}건`).join(" · ") : "WINTELIPS 기준 심판 기록 없음"]);
   }
+  if (after.appeals) entries.push(["항소심판 (ex parte appeal)", after.appeals.length ? `${after.appeals.length}건` : "WINTELIPS 기준 기록 없음"]);
   if (after.litigation) entries.push(["미국 소송", after.litigation.count ? `${after.litigation.count}건` : "WINTELIPS 기준 소송 기록 없음"]);
   if (after.opposition) {
     entries.push(["EP 이의신청", after.opposition.count ? `${after.opposition.count}건` + (after.opposition.appeals ? ` · 불복심판 ${after.opposition.appeals}건` : "") : "WINTELIPS 기준 이의신청 기록 없음"]);
   }
   return entries;
+}
+
+// A court case is listed under the trial whose decision it reviews, in the order the cases were filed.
+function orderedTrials(trials) {
+  const byFiled = (a, b) => (a.filed || "9999").localeCompare(b.filed || "9999");
+  const child = item => Boolean(item.root && item.root !== item.number && trials.some(other => other.number === item.root));
+  return trials.filter(item => !child(item)).sort(byFiled)
+    .flatMap(root => [{ ...root, child: false }, ...trials.filter(item => child(item) && item.root === root.number).sort(byFiled).map(item => ({ ...item, child: true }))]);
+}
+
+const trialSpan = item => [item.filed, item.decided].filter(Boolean).join(" – ");
+const trialResult = item => [item.result, item.status].filter(Boolean).join(" · ");
+
+function trialTable(trials) {
+  const rows = orderedTrials(trials);
+  const has = key => rows.some(item => item[key]);
+  const columns = [["사건", item => {
+    const cell = el("div", "", "trial-cell");
+    cell.append(el("strong", (item.child ? "↳ " : "") + item.number));
+    if (item.title) cell.append(el("small", item.title));
+    if (item.detail) cell.append(el("small", item.detail));
+    if (item.purport) {
+      const purport = el("details");
+      purport.append(el("summary", "청구 취지"), el("p", item.purport));
+      cell.append(purport);
+    }
+    return cell;
+  }], has("forum") && ["기관", item => item.forum], has("type") && ["종류", item => item.type], has("parties") && ["당사자", item => item.parties],
+  (has("filed") || has("decided")) && ["청구일 – 종결일", trialSpan], (has("result") || has("status")) && ["결과 · 상태", trialResult],
+  has("finality") && ["확정 상태", item => item.finality]].filter(Boolean);
+  return table(columns.map(([title]) => title), rows.map(item => columns.map(([, value]) => value(item))), "");
 }
 
 function fillPostGrant(report, briefs) {
@@ -603,6 +637,13 @@ function fillPostGrant(report, briefs) {
   }
   panel.append(facts);
   const after = data.postGrant;
+  if (after.trials?.length) {
+    const korean = data.subject.country === "KR";
+    panel.append(el("h3", korean ? "심판과 심결취소소송" : data.subject.country === "US" ? "PTAB 심판" : "심판"), trialTable(after.trials));
+    if (korean) panel.append(el("p", "↳ 표시는 위 심판의 심결에 불복한 특허법원·대법원 사건입니다.", "hint muted"));
+    if (data.subject.country === "US") panel.append(el("p", "PTAB 심판의 개시 결정과 최종 결정은 WINTELIPS가 제공하지 않습니다. 결정문을 심사문서로 추가하면 4단계에 표시됩니다.", "hint muted"));
+  }
+  if (after.appeals?.length) panel.append(el("h3", "항소심판 (ex parte appeal)"), trialTable(after.appeals));
   if (after.litigation?.cases.length) {
     panel.append(el("h3", "미국 소송"), table(["사건번호", "사건명", "법원", "제소일 – 종결일", "상태 · 결과"], after.litigation.cases.map(item =>
       [item.number, item.title, item.court, [item.filed, item.closed].filter(Boolean).join(" – "), [item.status, item.outcome].filter(Boolean).join(" · ")]), ""));
@@ -610,6 +651,10 @@ function fillPostGrant(report, briefs) {
   if (after.opposition?.items.length) {
     panel.append(el("h3", "EP 이의신청"), table(["신청일", "이의신청인", "상태", "상태일"], after.opposition.items.map(item =>
       [item.filed, item.opponent, item.status, item.statusDate]), ""));
+  }
+  if (after.opposition?.boards?.length) {
+    panel.append(el("h3", "EP 불복심판"), table(["사건번호", "단계", "청구일", "이유서 제출일", "결과", "결정일"], after.opposition.boards.map(item =>
+      [item.number, item.phase, item.filed, item.grounds, item.result, item.decided]), ""));
   }
   panel.append(el("p", `WINTELIPS · ${data.retrieved} 조회 · 심판·소송의 상세 기록과 최신 상태는 각 기관에서 확인하세요. 재심사(EPR)·재발행·보충심사는 이 조회에 포함되지 않으므로, 해당 서류를 심사문서로 추가하면 4단계에 단계로 표시됩니다.`, "hint muted"));
 }
@@ -649,7 +694,9 @@ function caseContext(report) {
     record: {
       source: "WINTELIPS " + data.retrieved, expectedExpiry: data.term.expiry, termAdjustmentDays: data.term.adjustment?.total, owners: data.term.owners,
       citations: data.citations ? { total: data.citations.total, byStep: steps } : undefined,
-      trials: after.trials, litigation: after.litigation && { count: after.litigation.count, cases: after.litigation.cases.slice(0, 5).map(item => [item.title, item.status].filter(Boolean).join(" · ")) },
+      trials: after.trials?.slice(0, 14).map(item => ({ number: item.number, type: item.type, forum: item.forum, decided: item.decided, result: item.result, finality: item.finality })),
+      appeals: after.appeals?.slice(0, 6).map(item => ({ number: item.number, decided: item.decided, result: item.result })),
+      boards: after.opposition?.boards?.slice(0, 6), litigation: after.litigation && { count: after.litigation.count, cases: after.litigation.cases.slice(0, 5).map(item => [item.title, item.status].filter(Boolean).join(" · ")) },
       opposition: after.opposition && { count: after.opposition.count, appeals: after.opposition.appeals },
     },
   };
@@ -682,6 +729,12 @@ function recordSheets(report) {
     sheets.push({ title: "심사 기록에 있는 인용문헌", headers: ["문헌", "인용 단계", "발행일", "명칭 · 출원인"], widths: [3, 1.8, 1.6, 5.64],
       rows: [...data.citations.items].sort((a, b) => Number(examinerStep(b.step)) - Number(examinerStep(a.step))).slice(0, 40)
         .map(item => [citationLabel(item), item.step, item.date, [item.title, item.applicant].filter(Boolean).join(" · ")]) });
+  }
+  const trials = [...(data?.postGrant.trials || []), ...(data?.postGrant.appeals || [])];
+  if (trials.length) {
+    sheets.push({ title: "심판·불복 기록", headers: ["사건", "기관 · 종류", "청구일 – 종결일", "결과 · 상태", "확정 상태 · 당사자"], widths: [2.8, 2.2, 2.4, 2.6, 2.04],
+      rows: orderedTrials(trials).map(item => [(item.child ? "↳ " : "") + item.number + (item.title ? "\n" + item.title : ""), [item.forum, item.type].filter(Boolean).join(" · "),
+        trialSpan(item), trialResult(item), [item.finality, item.parties].filter(Boolean).join("\n")]) });
   }
   const status = [...rightsEntries(report, rows), ...(data ? postGrantEntries(data) : [])];
   if (status.length) sheets.push({ title: "존속기간과 등록 후 절차", headers: ["항목", "내용"], widths: [3, 9.04], rows: status });

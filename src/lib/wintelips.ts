@@ -325,6 +325,29 @@ export async function wintelipsFamilyMember(token: string, input: unknown) {
   };
 }
 
+const plain = (value: string | undefined) => (value ?? "").replace(/&amp;/g, "&");
+const trialFields = ["trial_char", "trial_num", "appeal_num", "trial_type", "trial_title", "case_info", "inst", "req_dt", "filing_dt", "dcsn_dt", "trial_stts", "dcsn",
+  "dcsn_rslt", "appeal_rslt", "dcsn_stts", "pprt_claim", "claim_cnt", "dcsn_dtl", "cons_trial_num", "cons_dt", "appeal_phase", "stmnt_filed_dt"];
+
+// One trial or court case about the patent. Offices name the fields differently; fields this does not know are kept as a plain detail line.
+function trialRecord(item: Row, extra: { title?: string; parties?: string; root?: string } = {}) {
+  const rest = Object.entries(item).filter(([key, value]) => !trialFields.includes(key) && value).map(([, value]) => value ?? "");
+  const named = item.trial_char || item.appeal_num || item.trial_num;
+  return {
+    number: named || rest[0] || "",
+    type: item.trial_type || item.appeal_phase || undefined,
+    title: plain(extra.title || item.trial_title || item.case_info) || undefined,
+    forum: item.inst || undefined,
+    filed: day(item.req_dt || item.filing_dt), decided: day(item.dcsn_dt),
+    status: item.trial_stts || undefined,
+    result: item.dcsn || item.appeal_rslt || item.dcsn_rslt || undefined,
+    finality: item.dcsn_stts || undefined,
+    purport: item.pprt_claim ? clean(item.pprt_claim).slice(0, 400) : undefined,
+    parties: extra.parties || undefined, root: extra.root || undefined,
+    detail: (named ? rest : rest.slice(1)).slice(0, 5).join(" · ").slice(0, 400) || undefined,
+  };
+}
+
 const citation = (item: Row) => ({
   country: item.ctry ?? "", number: item.doc_num ?? "", kind: item.doc_kind || undefined, date: day(item.doc_dt),
   step: item.refer_step || undefined, title: item.title || undefined, applicant: item.appt || undefined,
@@ -388,22 +411,36 @@ export async function wintelipsCaseRecord(token: string, input: Subject) {
   };
   const rights = (section: string, offices: string[], label: string) => offices.includes(country)
     ? optional(label, () => call("get_patent_rights", { section, skey: target })) : undefined;
-  const trialTool = ({ US: ["get_patent_us_trial", "trial_exist"], KR: ["get_patent_kr_trial", "exist"], JP: ["get_patent_jp_trial", "exist"] } as Record<string, string[]>)[country];
-  const [grantedClaims, originalClaims, citations, expiry, fees, owner, pta, trials, litigation, opposition] = await Promise.all([
+  // Korean and Japanese trial details come in one call. US trial parties and EP board appeals are fetched only when such a proceeding exists.
+  const trialTool = ({ US: ["get_patent_us_trial", "trial_exist"], KR: ["get_patent_kr_trial", "info"], JP: ["get_patent_jp_trial", "info"] } as Record<string, string[]>)[country];
+  const [grantedClaims, originalClaims, citations, expiry, fees, owner, pta, trials, appeals, litigation, opposition] = await Promise.all([
     claimsOf(granted, "등록 청구항"), claimsOf(published, "공개 청구항"), optional("인용문헌", backward),
     rights("grt_expiry_date", ["KR", "US", "JP", "CN", "CA", "AU"], "예상 만료일"), rights("fee_grt", ["KR", "US", "EP", "AU"], "연차료"),
     rights("crrt_assn", ["KR", "US", "JP", "CA", "AU"], "현재 권리자"),
     country === "US" ? optional("존속기간 조정", () => call("get_patent_us_rights", { section: "pta", skey: target })) : undefined,
     trialTool ? optional("심판", () => call(trialTool[0], { section: trialTool[1], skey: target })) : undefined,
+    country === "US" ? optional("항소심판", () => call("get_patent_us_trial", { section: "bpai_trial_info", skey: target })) : undefined,
     country === "US" ? optional("소송", () => call("get_patent_us_litigation", { section: "ligt_exist", skey: target })) : undefined,
     country === "EP" ? optional("이의신청", () => call("get_patent_ep_trial", { section: "oppnt_is_exist", skey: target })) : undefined,
   ]);
-  const [cases, opponents] = await Promise.all([
+  const trialList = related(trials, "trial_list");
+  const [cases, opponents, parties, boards] = await Promise.all([
     litigation?.ligt_exis === "Y" ? optional("소송 목록", () => call("get_patent_us_litigation", { section: "ligt_info", skey: target })) : undefined,
     opposition?.oppnt_yn === "Y" ? optional("이의신청 목록", () => call("get_patent_ep_trial", { section: "oppnt_info", skey: target })) : undefined,
+    country === "US" && trialList.length ? optional("심판 당사자", () => call("get_patent_us_trial", { section: "ptab_trial_pers", skey: target })) : undefined,
+    opposition?.appeal_yn === "Y" ? optional("불복심판", () => call("get_patent_ep_trial", { section: "trial_info", skey: target })) : undefined,
   ]);
   const adjustment = pta?.pta as Row | undefined;
-  const text = (value: string | undefined) => (value ?? "").replace(/&amp;/g, "&");
+  const text = plain;
+  // A Korean court case is tied to the trial whose decision it reviews.
+  const numbers = new Map(trialList.map(item => [item.trial_num, item.trial_char || item.trial_num]));
+  const roots = new Map(related(trials, "rel_case_list").map(item => [item.rel_case_num, numbers.get(item.trial_num)]));
+  const titles = new Map(related(parties, "trial_list").map(item => [item.trial_num, item.trial_title]));
+  const people = related(parties, "trial_pers_list");
+  const sides = (number: string | undefined) => ["청구인", "피청구인"].map(side => {
+    const names = [...new Set(people.filter(item => item.trial_num === number && item.trial_pers_type === side).map(item => plain(item.nm)))];
+    return names.length ? `${side} ${names.join(", ")}` : "";
+  }).filter(Boolean).join(" / ");
   const docket = (row: Row | undefined) => row && { number: row.XN_D, kind: row.KC_D, date: day(row.XD) };
   return {
     retrieved: new Date().toISOString().slice(0, 10),
@@ -419,10 +456,8 @@ export async function wintelipsCaseRecord(token: string, input: Subject) {
       owners: related(owner, "crrt_assnee_list").map(item => item.crrt_assn || item.crrt_assn_eng).filter(Boolean),
     },
     postGrant: {
-      trials: trials ? related(trials, "trial_list").slice(0, 30).map(item => {
-        const values = Object.values(item).filter((value): value is string => typeof value === "string" && Boolean(value));
-        return { number: item.trial_num ?? values[0] ?? "", type: item.trial_type ?? values.slice(1, 4).join(" · ") };
-      }) : undefined,
+      trials: trials ? trialList.slice(0, 40).map(item => trialRecord(item, { title: titles.get(item.trial_num), parties: sides(item.trial_num), root: roots.get(item.trial_num) })) : undefined,
+      appeals: appeals ? related(appeals, "trial_list").slice(0, 20).map(item => trialRecord(item)) : undefined,
       litigation: litigation ? {
         count: Number(litigation.ligt_num) || 0,
         cases: related(cases, "litigation_info_list").slice(0, 30).map(item => ({
@@ -433,6 +468,9 @@ export async function wintelipsCaseRecord(token: string, input: Subject) {
       opposition: opposition ? {
         count: Number(opposition.oppnt_num) || 0, appeals: Number(opposition.appeal_num) || 0,
         items: related(opponents, "oppnt_info_list").slice(0, 30).map(item => ({ filed: day(item.oppnt_dt), opponent: text(item.oppnt), status: item.oppnt_stts, statusDate: day(item.oppnt_stts_dt) })),
+        boards: related(boards, "trial_info_list").slice(0, 20).map(item => ({
+          number: item.appeal_num, phase: item.appeal_phase, filed: day(item.req_dt), grounds: day(item.stmnt_filed_dt), result: item.appeal_rslt, decided: day(item.dcsn_dt),
+        })),
       } : undefined,
     },
     notes,
