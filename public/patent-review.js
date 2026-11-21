@@ -197,7 +197,8 @@ function resultDashboard(report) {
     else {
       const findings = report.summaries.flatMap(source => (source.evidence || [])
         .filter(row => row.role === roles[index]).map(entry => ({ source, entry })));
-      if (roles[index] === "outcome") findings.sort((a, b) =>
+      // A decision that disposes of the claims outranks later procedural notices about them.
+      if (roles[index] === "outcome") findings.sort((a, b) => Number(b.entry.finalDisposition === true) - Number(a.entry.finalDisposition === true) ||
         (calendarDay(b.entry.documentDate) || "").localeCompare(calendarDay(a.entry.documentDate) || ""));
       const { source, entry } = findings[0] || {};
       if (!entry) continue;

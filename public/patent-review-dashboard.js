@@ -263,10 +263,38 @@ function claimComparison(briefs, reviewed) {
   return [...claims.entries()].sort(([a], [b]) => a - b).map(([number, cells]) => {
     for (const rows of Object.values(cells)) rows.sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999"));
     const lastDecision = cells.outcome.at(-1)?.date;
-    const laterReview = lastDecision && cells.examiner.some(row => noticeStages.has(row.sourceStage) && row.date > lastDecision);
-    cells.outcome = laterReview ? [] : cells.outcome.filter(row => row.date === lastDecision);
+    const notices = cells.examiner.filter(row => noticeStages.has(row.sourceStage)).map(row => row.date).filter(Boolean).sort();
+    const laterReview = lastDecision && notices.some(date => date > lastDecision);
+    // Keep every decision since the last office action, so the deciding allowance is not hidden by a later corrected notice.
+    const lastNotice = notices.at(-1);
+    cells.outcome = laterReview ? [] : cells.outcome.filter(row => !lastNotice || (row.date && row.date > lastNotice));
     return { number, cells };
   });
+}
+
+// Claims whose three columns hold exactly the same findings share one row, labelled as a range such as "1~19항".
+function groupClaims(rows) {
+  const ids = new Map();
+  const id = row => ids.get(row) ?? ids.set(row, ids.size).get(row);
+  const groups = [];
+  for (const row of rows) {
+    const key = ["examiner", "applicant", "outcome"].map(role => row.cells[role].map(id).join(",")).join("|");
+    const last = groups.at(-1);
+    if (last && last.key === key) last.numbers.push(row.number);
+    else groups.push({ key, numbers: [row.number], cells: row.cells });
+  }
+  return groups.map(({ numbers, cells }) => ({ number: numbers[0], label: claimRange(numbers), cells }));
+}
+
+function claimRange(numbers) {
+  const parts = [];
+  for (let i = 0; i < numbers.length; i++) {
+    let j = i;
+    while (j + 1 < numbers.length && numbers[j + 1] === numbers[j] + 1) j++;
+    parts.push(j > i ? numbers[i] + "~" + numbers[j] : String(numbers[i]));
+    i = j;
+  }
+  return parts.join(", ") + "항";
 }
 
 function comparisonTable(rows) {
@@ -282,13 +310,15 @@ function comparisonTable(rows) {
     head.append(th);
   }
   const body = table.createTBody();
-  for (const { number, cells } of rows) {
+  for (const { number, label, cells } of rows) {
     const tr = body.insertRow();
-    const claim = el("th", number + "항");
+    const claim = el("th", label || number + "항");
     claim.scope = "row";
     tr.append(claim);
-    for (const [role, empty] of [["examiner", "의견 미확인"], ["applicant", "대응 미확인"], ["outcome", "최종 결과 미확인"]]) {
+    for (const [role, empty, title] of [["examiner", "의견 미확인", "심사관 의견"], ["applicant", "대응 미확인", "출원인 대응"],
+      ["outcome", "최종 결과 미확인", "최종 결과"]]) {
       const td = tr.insertCell();
+      td.dataset.label = title;
       if (!cells[role].length) td.append(el("span", empty, "comparison-empty"));
       for (const row of cells[role]) {
         const item = el("div", "", "comparison-finding");
@@ -318,7 +348,7 @@ function renderAnalysis(report) {
     if (comparison.some(row => !row.cells.outcome.length)) {
       panel.append(el("p", "최종 결과는 선택한 결정문에서 해당 청구항의 처분이 확인될 때 표시됩니다.", "hint muted"));
     }
-    panel.append(comparisonTable(comparison));
+    panel.append(comparisonTable(groupClaims(comparison)));
   } else panel.append(el("p", report.autoPending ? "선택한 원문을 검토하고 있습니다." : "선택한 자료에서 청구항별로 대조할 근거를 확인하지 못했습니다.", "muted"));
   const supporting = el("details", "", "record-fold supporting-documents");
   supporting.append(el("summary", "청구항 제출본·공보 등 참고 자료"));
