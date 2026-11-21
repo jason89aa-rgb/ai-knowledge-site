@@ -335,3 +335,14 @@ td:first-child { white-space: nowrap; }
   .family-table td:first-child { border-top: 0; }
   .family-table td::before { content: attr(data-label); display: block; margin-bottom: 4px; font-size: .78rem; font-weight: 700; color: #244952; }
 }
+/* Claim-level detail: ground or response chip, the limitation at issue and the cited art. */
+.detail-chip { display: inline-block; margin-bottom: 2px; padding: 2px 9px; border-radius: 999px; border: 1px solid var(--role, #244952); background: var(--role, #244952); color: #fff; font-size: .76rem; font-weight: 700; }
+.detail-chip.chip-argue, .detail-chip.chip-disclaimer { background: #fff; color: var(--role, #244952); }
+.finding-detail { margin: 0 0 8px; display: grid; gap: 4px; font-size: .84rem; }
+.finding-detail > div { display: grid; grid-template-columns: 5.2em minmax(0, 1fr); gap: 8px; }
+.finding-detail dt { color: var(--muted); font-size: .78rem; padding-top: 1px; }
+.finding-detail dd { margin: 0; overflow-wrap: anywhere; }
+.finding-detail dd span { display: block; }
+.stage-overview { list-style: none; margin: 8px 0 0; padding: 8px 10px; border-radius: 6px; background: rgba(255, 255, 255, .7); font-size: .84rem; }
+.stage-overview li + li { margin-top: 3px; }
+.stage-overview strong { color: var(--role, #244952); }

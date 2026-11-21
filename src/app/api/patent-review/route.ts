@@ -35,10 +35,14 @@ async function search(body: { number?: unknown; country?: unknown; numberType?: 
 
 function streamSummary(summarize: () => Promise<unknown>) {
   let cancelled = false;
+  let beat: ReturnType<typeof setInterval> | undefined;
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
       controller.enqueue(encoder.encode("\n"));
+      // Whitespace every few seconds keeps proxies from closing a connection that waits minutes for Claude; JSON parsing ignores it.
+      beat = setInterval(() => { if (!cancelled) controller.enqueue(encoder.encode("\n")); }, 10000);
       const finish = (result: unknown) => {
+        clearInterval(beat);
         if (cancelled) return;
         controller.enqueue(encoder.encode(JSON.stringify(result)));
         controller.close();
@@ -48,7 +52,7 @@ function streamSummary(summarize: () => Promise<unknown>) {
         finish({ error: problem.message, status: problem.status, retryAfter: problem.retryAfter });
       });
     },
-    cancel() { cancelled = true; },
+    cancel() { cancelled = true; clearInterval(beat); },
   });
   return new Response(stream, { headers: { ...headers, "Content-Type": "application/json; charset=utf-8" } });
 }
