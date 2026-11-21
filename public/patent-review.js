@@ -564,7 +564,7 @@ function show(report) {
   if (report.country !== "UPC") {
     const nav = el("nav", "", "report-nav");
     nav.setAttribute("aria-label", "리포트 목차");
-    for (const [id, label] of [["claim-analysis", "절차별 쟁점과 대응"], ["report-timeline", "주요 심사 타임라인"], ["report-documents", "심사 문서"], ["report-history", "전체 이력"]]) {
+    for (const [id, label] of [["claim-analysis", "청구항별 심사 비교"], ["report-timeline", "주요 심사 타임라인"], ["report-documents", "심사 문서"], ["report-history", "전체 이력"]]) {
       const jump = el("a", label);
       jump.href = "#" + id;
       jump.onclick = () => { const target = by(id); if (target?.tagName === "DETAILS") target.open = true; };
