@@ -127,7 +127,7 @@ async function api(data, signal) {
   if (code) headers["X-Patent-Access"] = code;
   const form = data instanceof FormData;
   if (!form) headers["Content-Type"] = "application/json";
-  if (data.action === "ask") headers["X-Patent-Action"] = "ask";
+  if (data.action === "ask" || data.action === "family-compare") headers["X-Patent-Action"] = data.action;
   const response = await fetch("/api/patent-review", {
     method: "POST", headers, body: form ? data : JSON.stringify(data), cache: "no-store", signal,
   });
@@ -220,7 +220,8 @@ function resultDashboard(report) {
     else {
       const findings = report.summaries.flatMap(source => (source.evidence || [])
         .filter(row => row.role === roles[index]).map(entry => ({ source, entry })));
-      if (roles[index] === "outcome") findings.sort((a, b) =>
+      // A decision that disposes of the claims outranks later procedural notices about them.
+      if (roles[index] === "outcome") findings.sort((a, b) => Number(b.entry.finalDisposition === true) - Number(a.entry.finalDisposition === true) ||
         (calendarDay(b.entry.documentDate) || "").localeCompare(calendarDay(a.entry.documentDate) || ""));
       const { source, entry } = findings[0] || {};
       if (!entry) continue;
@@ -287,7 +288,7 @@ function exportButton(report, status) {
 function showSummaries(report) {
   const slot = by("summaries");
   if (current !== report || !slot) return;
-  if (by("claim-analysis")) claimAnalysis(report, by("claim-analysis"));
+  if (by("claim-analysis")) renderAnalysis(report);
   slot.replaceChildren(...report.summaries.map(summaryCard));
   if (!report.summaries.length) {
     const message = report.autoPending ? "공개 기록과 원문을 확인하고 있습니다."
@@ -302,10 +303,7 @@ function addSummary(report, summary) {
   else report.summaries[index] = summary;
   const slot = by("summaries");
   if (current !== report || !slot) return;
-  if (summary.evidence || index >= 0) {
-    const panel = by("claim-analysis");
-    if (panel) claimAnalysis(report, panel);
-  }
+  if (by("claim-analysis")) renderAnalysis(report);
   if (index < 0) {
     if (report.summaries.length === 1) slot.replaceChildren();
     slot.append(summaryCard(summary, report.summaries.length - 1));
@@ -497,7 +495,7 @@ function show(report) {
   if (report.country !== "UPC") {
     const nav = el("nav", "", "report-nav");
     nav.setAttribute("aria-label", "리포트 목차");
-    for (const [id, label] of [["claim-analysis", "청구항별 심사 비교"], ["report-timeline", "주요 심사 타임라인"], ["report-documents", "심사 문서"], ["report-history", "전체 이력"]]) {
+    for (const [id, label] of [["process-analysis", "단계별 심사 흐름"], ["claim-analysis", "청구항별 심사 비교"], ["report-timeline", "주요 심사 타임라인"], ["report-family", "패밀리 분석"], ["report-documents", "심사 문서"], ["report-history", "전체 이력"]]) {
       const jump = el("a", label);
       jump.href = "#" + id;
       jump.onclick = () => { const target = by(id); if (target?.tagName === "DETAILS") target.open = true; };
@@ -505,13 +503,9 @@ function show(report) {
     }
     const analysis = el("section", "", "panel claim-panel");
     analysis.id = "claim-analysis";
-    area.append(nav, analysis, timeline(milestones));
-    const family = el("details", "", "panel record-fold");
-    family.append(el("summary", `패밀리 및 연계 출원 (${report.family.length})`), table(
-      ["관할", "공개·등록번호", "출원번호", "조회 관계", "일자"],
-      report.family.map(row => [row.country, familyCell(row), row.application, row.relation, row.date]),
-      "표시할 패밀리 자료가 없습니다.",
-    ));
+    const process = el("section", "", "panel claim-panel");
+    process.id = "process-analysis";
+    area.append(nav, process, analysis, timeline(milestones), familySection(report));
     const history = el("details", "", "panel record-fold");
     history.id = "report-history";
     history.append(el("summary", `심사·행정 이력 (${report.events.length})`), table(
@@ -527,7 +521,7 @@ function show(report) {
       report.local ? "기관에서 받은 PDF를 아래에서 선택할 수 있습니다." : "자동으로 가져올 수 있는 공개 원문이 없습니다. 위의 공식 열람처를 확인해 주세요.",
     ));
     if (report.country === "US" && !useHandoff) docs.append(usDocumentGuide(report));
-    area.append(docs, history, family);
+    area.append(docs, history);
   }
   const summaries = el("details", "", "panel record-fold");
   const slot = el("div");
