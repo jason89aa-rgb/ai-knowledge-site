@@ -335,6 +335,10 @@ function dossierHandoff(report) {
             const doc = item.doc;
             const dates = [...new Set((summary.evidence || []).map(row => calendarDay(row.documentDate)).filter(Boolean))];
             if (doc.importHash && dates.length === 1) doc.date = dates[0];
+            for (const row of summary.evidence || []) {
+              const index = row.noticeSource - 1;
+              if (row.reference && Number.isInteger(index) && index !== i && fresh[index]) row.noticeId = fresh[index].doc.id;
+            }
             cachedResults.set(item.key, { doc, summary: { ...summary, id: doc.id, source: doc.importHash ? "사용자 제공 PDF" : report.source } });
           });
           if (fresh.length === work.length && response.conclusion?.text && response.documents.every(Boolean)) jointConclusions.set(key, response.conclusion);

@@ -25,6 +25,8 @@ function prosecutionStage(record) {
   if (/examiner.s answer|reply brief|appeal brief|pre[- ]?appeal/i.test(title)) return "Appeal · 불복 심리";
   if (/notice of appeal|심판청구|항고/i.test(title)) return "Appeal · 불복 청구";
   if (/request for continued examination|\bRCE\b|계속심사\s*청구/i.test(title)) return "RCE · 계속심사 청구";
+  if (/examiner.s amendment|심사관.{0,2}보정/i.test(title)) return "심사관 보정";
+  if (/interview summary|면담\s*기록/i.test(title)) return "면담 기록";
   if (/response to|reply to|applicant.{0,16}(argument|remark|response)|amendment|amended claims|election (?:with|without)|보정서?|의견서|답변서|반박|청구항 제출|포기서 제출/i.test(title)) return "출원인 대응·보정";
   if (/restriction\s*[/&]\s*election|restriction (?:and |or )?(?:election |species )?requirement|requirement for restriction|election of species requirement|\bR\s*\/\s*R\b|제한\s*요구|한정\s*요구/i.test(title)) return "R/R · 제한요구";
   if (/withdraw.{0,20}(allowance|issue)|허여 철회/i.test(title)) return "허여 절차 철회";
@@ -42,6 +44,22 @@ function prosecutionStage(record) {
   if (/request for examination|심사청구/i.test(title)) return "심사 청구";
   if (/application filed|filing of (?:the )?application|^출원$|계속출원|출원서 제출/i.test(title)) return "출원";
   return "";
+}
+
+function procedureName(title) {
+  return String(title || "").split(/[\\]/).pop().replace(/^\d{4}[-.]\d{2}[-.]\d{2}[\s_.-]+/, "")
+    .replace(/\.pdf$/i, "").replace(/_/g, " / ").trim();
+}
+
+function claimScope(numbers) {
+  const claims = [...new Set(numbers)].sort((a, b) => a - b);
+  const ranges = [];
+  for (let i = 0; i < claims.length; i++) {
+    const first = claims[i];
+    while (claims[i + 1] === claims[i] + 1) i++;
+    ranges.push(first === claims[i] ? String(first) : first + "–" + claims[i]);
+  }
+  return ranges.length ? "청구항 " + ranges.join(", ") : "";
 }
 
 function reportMilestones(report) {
@@ -114,8 +132,10 @@ function timeline(dates) {
       const time = el("time", date);
       time.dateTime = date;
       const heading = el("div", "", "stage-heading");
-      heading.append(el("h3", stage));
-      if (subtitle) heading.append(el("span", subtitle));
+      const names = [...new Set([...sources.keys()].map(procedureName))];
+      heading.append(el("h3", names.join(" · ")));
+      if (!names.includes(stage)) heading.append(el("span", stage));
+      else if (subtitle) heading.append(el("span", subtitle));
       step.append(time, heading);
       const finding = [...sources.values()].find(Boolean);
       if (finding) {
@@ -136,88 +156,174 @@ function timeline(dates) {
   return section;
 }
 
-function claimAnalysis(report, panel) {
-  const opened = new Map([...panel.querySelectorAll("details")].map(node => [node.dataset.round, node.open]));
-  const selected = new Map([...panel.querySelectorAll("select")].map(node => [node.dataset.round, node.value]));
-  const groups = new Map();
-  for (const record of [...report.events, ...report.documents]) {
-    const date = calendarDay(record.date);
-    const title = record.title || "";
-    const stage = prosecutionStage(record);
-    const isAction = ["비최종 거절", "최종 거절", "R/R · 제한요구"].includes(stage)
-      || /거절\s*이유\s*통지|의견제출통지/.test(title);
-    if (date && isAction && !groups.has(date)) groups.set(date, { date, datedRound: date, title, rows: [] });
+// A dated response belongs to a notice only if the cited notice can be
+// identified. Two notices mailed on the same date remain distinct proceedings.
+function proceedingBriefs(report) {
+  const actions = new Map();
+  const briefs = new Map();
+  const actionStages = new Set(["비최종 거절", "최종 거절", "R/R · 제한요구", "심사관 검토"]);
+  function isNotice(record) {
+    return actionStages.has(prosecutionStage(record)) &&
+      !/search report|검색보고서/i.test(record.title || "");
   }
-  for (const [i, summary] of report.summaries.entries()) {
+  function put(key, record, date) {
+    if (!briefs.has(key)) briefs.set(key, { key, name: procedureName(record.title) || "문서명 미확인",
+      stage: prosecutionStage(record), date, rows: [] });
+    return briefs.get(key);
+  }
+  function notice(record, date, key) {
+    const brief = put(key, record, date);
+    if (!actions.has(date)) actions.set(date, []);
+    actions.get(date).push(brief);
+  }
+  const summariesById = new Map(report.summaries.map(summary => [summary.id, summary]));
+  for (const doc of report.documents) {
+    const evidence = summariesById.get(doc.id)?.evidence || [];
+    const name = evidence.find(row => row.procedureTitle)?.procedureTitle;
+    const record = isNotice(doc) || !name ? doc : { ...doc, title: name };
+    const date = calendarDay(doc.date) || calendarDay(evidence[0]?.documentDate);
+    if (date && isNotice(record)) notice(record, date, "doc:" + doc.id);
+  }
+  for (const event of report.events) {
+    const date = calendarDay(event.date);
+    if (!date || !isNotice(event)) continue;
+    const same = (actions.get(date) || []).some(action => action.name === procedureName(event.title) ||
+      (action.stage === prosecutionStage(event) && ["비최종 거절", "최종 거절", "R/R · 제한요구"].includes(action.stage)));
+    if (!same) notice(event, date, "event:" + date + ":" + event.title);
+  }
+  for (const [index, summary] of report.summaries.entries()) {
     const doc = report.documents.find(item => item.id === summary.id);
+    const ownKey = doc ? "doc:" + doc.id : "summary:" + index;
     for (const entry of summary.evidence || []) {
-      const datedRound = calendarDay(entry.roundDate);
-      const key = datedRound || "doc-" + i;
-      if (!groups.has(key)) groups.set(key, { date: datedRound || calendarDay(entry.documentDate) || calendarDay(doc?.date), datedRound, rows: [] });
-      groups.get(key).rows.push({ ...entry, doc, summaryIndex: i, title: summary.title });
+      const date = calendarDay(entry.documentDate) || calendarDay(doc?.date);
+      const docketTitle = doc?.title || summary.title;
+      const record = { ...doc, title: prosecutionStage({ ...doc, title: docketTitle }) ? docketTitle : entry.procedureTitle || docketTitle };
+      const targetDate = calendarDay(entry.roundDate);
+      const candidates = targetDate && (!date || targetDate <= date) ? actions.get(targetDate) || [] : [];
+      let target;
+      if (candidates.length) {
+        const refName = procedureName(entry.noticeTitle).toLowerCase();
+        const named = candidates.filter(action => action.name.toLowerCase() === refName);
+        const typed = candidates.filter(action => action.stage === prosecutionStage({ title: refName }));
+        const matches = named.length ? named : refName ? typed : candidates;
+        if (matches.length === 1) target = matches[0];
+      }
+      if (entry.noticeId && entry.reference) {
+        const named = briefs.get("doc:" + entry.noticeId);
+        target = named && isNotice({ title: named.name }) && (!targetDate || targetDate === named.date) &&
+          (!date || named.date <= date) ? named : undefined;
+      }
+      // The notice's own findings never migrate into a different notice.
+      const ownNotice = briefs.get(ownKey);
+      const group = (isNotice(record) && ownNotice ? ownNotice : target) || put(ownKey, record, date);
+      if (group.key === ownKey && !group.date && date) group.date = date;
+      group.rows.push({ ...entry, date, procedure: procedureName(record.title), sourceTitle: summary.title,
+        index, linked: group.key !== ownKey, targetDate });
     }
   }
-  panel.replaceChildren(el("h2", "심사 회차별 청구항 분석"));
+  for (const group of briefs.values()) {
+    group.rows.sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999"));
+  }
+  return [...briefs.values()].sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999"));
+}
+
+const briefRoles = [["examiner", "심사관의 판단"], ["applicant", "출원인의 답변·보정"], ["outcome", "후속 판단"]];
+
+function claimAnalysis(report, panel) {
+  const selected = new Map([...panel.querySelectorAll("select")].map(node => [node.dataset.filterKey, node.value]));
+  panel.replaceChildren(el("h2", "절차별 쟁점과 대응"));
   const incomplete = report.summaries.filter(summary => summary.evidenceIncomplete);
-  if (incomplete.length) panel.append(el("p", "청구항 근거 추출이 불완전한 문서 " + incomplete.length + "건 · " + incomplete.map(summary => summary.title).join(", "), "analysis-notice"));
-  if (!groups.size) {
-    if (!incomplete.length) panel.append(el("p", report.autoPending ? "공개 원문에서 청구항별 판단과 대응을 확인하고 있습니다." : "청구항 번호와 판단 근거가 함께 확인된 문서가 없습니다.", "muted"));
+  if (incomplete.length) panel.append(el("p", "청구항 근거 추출이 불완전한 문서 " + incomplete.length + "건 · " + incomplete.map(item => item.title).join(", "), "analysis-notice"));
+  const briefs = proceedingBriefs(report);
+  if (!briefs.length) {
+    panel.append(el("p", report.autoPending ? "선택한 원문을 검토하고 있습니다." : "선택한 자료에서 청구항별로 대조할 통지와 답변 근거를 확인하지 못했습니다.", "muted"));
     return;
   }
-  const rounds = [...groups].sort(([, a], [, b]) => (a.date || "9999").localeCompare(b.date || "9999"));
-  const initialRound = rounds.find(([, round]) => round.rows.length)?.[0] ?? rounds[0][0];
-  let roundCount = 0;
-  for (const [key, { date, datedRound, title, rows }] of rounds) {
-    const claims = [...new Set(rows.flatMap(row => row.claims))].sort((a, b) => a - b);
-    const block = el("details", "", "review-round");
-    block.dataset.round = key;
-    block.open = opened.get(key) ?? (key === initialRound);
-    const heading = el("summary");
-    heading.append(el("span", datedRound ? "심사 " + (++roundCount) + "회" : "회차 연결 미확인"), el("strong", date || rows[0].title), el("small", title || ""), el("small", claims.length ? "청구항 " + claims.length + "개" : "청구항 미확인"));
-    if (!claims.length) {
-      block.append(heading, el("p", "심사 통지 기록이 있습니다. 청구항별 판단과 대응을 확인할 원문 근거는 아직 없습니다.", "muted"));
-      panel.append(block);
+  const supporting = el("details", "", "record-fold supporting-documents");
+  supporting.append(el("summary", "청구항 제출본·공보 등 참고 자료"));
+  for (const group of briefs) {
+    const brief = el("article", "", "procedure-brief");
+    const head = el("header", "", "procedure-head");
+    const identity = el("div");
+    identity.append(el("small", [group.date || "문서일 미확인", group.stage !== group.name && group.stage].filter(Boolean).join(" · ")),
+      el("h3", group.name));
+    const claims = [...new Set(group.rows.flatMap(row => row.claims))].sort((a, b) => a - b);
+    head.append(identity);
+    brief.append(head);
+    const referenceOnly = !group.stage && !group.rows.some(row => row.linked) &&
+      /^(?:claims|specification|drawings?|abstract|bibliographic data sheet|청구항 제출본|명세서|공보 청구항|공보 첫 면)(?:$|\s*[(·])/i.test(group.name);
+    (referenceOnly ? supporting : panel).append(brief);
+    if (!group.rows.length) {
+      brief.append(el("p", "통지 기록은 확인됐습니다. 선택한 원문에서 청구항별 판단을 확인할 수 없습니다.", "muted"));
       continue;
     }
     const picker = el("select");
-    picker.dataset.round = key;
-    const label = el("label", "검토할 청구항", "claim-picker");
+    picker.dataset.filterKey = "claim:" + group.key;
+    const all = el("option", "전체 청구항");
+    all.value = "";
+    picker.append(all);
     for (const claim of claims) {
-      const option = el("option", "제" + claim + "항");
+      const option = el("option", "청구항 " + claim);
       option.value = claim;
       picker.append(option);
     }
-    if (claims.includes(Number(selected.get(key)))) picker.value = selected.get(key);
+    picker.value = selected.get(picker.dataset.filterKey) || "";
+    const label = el("label", "검토 범위", "brief-filter");
     label.append(picker);
+    head.append(label);
+    const issues = [...new Set(group.rows.map(row => row.issue).filter(Boolean))];
+    const issuePicker = el("select");
+    if (issues.length > 1) {
+      issuePicker.dataset.filterKey = "issue:" + group.key;
+      const allIssues = el("option", "전체 쟁점");
+      allIssues.value = "";
+      issuePicker.append(allIssues);
+      for (const issue of issues) issuePicker.append(el("option", issue));
+      issuePicker.value = selected.get(issuePicker.dataset.filterKey) || "";
+      const issueLabel = el("label", "쟁점", "brief-filter");
+      issueLabel.append(issuePicker);
+      head.append(issueLabel);
+    }
     const grid = el("div", "", "claim-grid");
     function render() {
       grid.replaceChildren();
-      for (const [role, title] of [["examiner", "심사관 의견"], ["applicant", "출원인 의견·보정"], ["outcome", "심사 결과"]]) {
+      const visible = group.rows.filter(row => (!picker.value || row.claims.includes(Number(picker.value))) &&
+        (!issuePicker.value || row.issue === issuePicker.value));
+      if (!visible.length) grid.append(el("p", "선택한 청구항과 쟁점에 해당하는 근거가 없습니다.", "muted"));
+      for (const [role, name] of briefRoles) {
+        const rows = visible.filter(row => row.role === role);
+        if (!rows.length) continue;
         const column = el("article", "", "claim-role " + role);
-        column.append(el("h3", title));
-        const entries = rows.filter(row => row.role === role && row.claims.includes(Number(picker.value)));
-        if (!entries.length) column.append(el("p", "이 항에 관한 원문 근거 미확인", "muted"));
-        for (const row of entries) {
+        column.append(el("h4", name));
+        const extra = el("details", "", "extra-findings");
+        extra.append(el("summary", "근거 " + (rows.length - 2) + "건 더 보기"));
+        for (const [index, row] of rows.entries()) {
           const item = el("div", "", "finding");
-          const scope = row.claims.length > 1 ? row.claims.length + "개 항 공통" : "개별 항";
-          item.append(el("small", scope), el("p", row.text));
-          const cite = [row.documentDate, row.title, row.locator].filter(Boolean).join(" · ");
-          if (report.reviewed) {
-            item.append(el("small", cite, "source-ref"), el("br"), link(report.espacenet));
-          } else {
-            const source = el("a", cite, "source-ref");
-            source.href = "#summary-" + row.summaryIndex;
-            source.onclick = () => { by("summaries").parentElement.open = true; };
-            item.append(source);
-          }
-          column.append(item);
+          if (row.procedure !== group.name || row.linked) item.append(el("strong", row.procedure, "finding-procedure"));
+          item.append(el("small", [claimScope(row.claims), row.issue].filter(Boolean).join(" · ")),
+            el("p", row.text));
+          const cite = [row.date, procedureName(row.sourceTitle), row.locator].filter(Boolean).join(" · ");
+          const source = el("a", cite, "source-ref");
+          source.href = "#summary-" + row.index;
+          source.onclick = () => { by("summaries").parentElement.open = true; };
+          item.append(source);
+          if (row.linked && row.reference) item.append(el("small", "대응 근거 · “" + row.reference + "”", "reference-quote"));
+          if (index < 2) column.append(item);
+          else extra.append(item);
         }
+        if (rows.length > 2) column.append(extra);
         grid.append(column);
       }
     }
     picker.onchange = render;
+    issuePicker.onchange = render;
     render();
-    block.append(heading, label, grid);
-    panel.append(block);
+    brief.append(grid);
+    if (!group.rows.some(row => row.linked) && group.rows.some(row => row.role === "applicant")) {
+      brief.append(el("p", "이 제출서가 답한 통지는 선택한 자료에서 특정되지 않았습니다.", "brief-note"));
+    } else if (group.rows.some(row => row.role === "examiner") && !group.rows.some(row => row.role === "applicant")) {
+      brief.append(el("p", "이 판단에 대한 출원인 답변은 선택한 자료에서 확인되지 않았습니다.", "brief-note"));
+    }
   }
+  if (supporting.childElementCount > 1) panel.append(supporting);
 }

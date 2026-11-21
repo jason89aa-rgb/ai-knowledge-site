@@ -195,8 +195,11 @@ function resultDashboard(report) {
     card.append(el("h3", heading));
     if (lines?.length) card.append(reportBody(lines.join("\n")));
     else {
-      const source = report.summaries.find(item => item.evidence?.some(row => row.role === roles[index]));
-      const entry = source?.evidence.find(row => row.role === roles[index]);
+      const findings = report.summaries.flatMap(source => (source.evidence || [])
+        .filter(row => row.role === roles[index]).map(entry => ({ source, entry })));
+      if (roles[index] === "outcome") findings.sort((a, b) =>
+        (calendarDay(b.entry.documentDate) || "").localeCompare(calendarDay(a.entry.documentDate) || ""));
+      const { source, entry } = findings[0] || {};
       if (!entry) continue;
       card.append(el("p", entry.text), el("small", [source.title, entry.locator].filter(Boolean).join(" · ")));
     }
@@ -242,7 +245,12 @@ function exportButton(report, status) {
     try {
       const timelineRows = reportMilestones(report).flatMap(([date, stages]) =>
         [...stages].map(([stage, sources]) => [date, stage, [...sources.keys()].join(" · ")]));
-      await window.exportPatentPptx({ ...report, timelineRows }, report.reviewed ? "원문 검토일 " + report.reviewedAt : dateLabel(report.retrievedAt), facts, download);
+      const procedureRows = proceedingBriefs(report).flatMap(group => group.rows.map(row => [
+        [group.date, group.name].filter(Boolean).join(" · "), claimScope(row.claims),
+        briefRoles.find(([role]) => role === row.role)?.[1], [row.issue, row.text].filter(Boolean).join("\n"),
+        [row.date, row.procedure, row.locator].filter(Boolean).join(" · "),
+      ]));
+      await window.exportPatentPptx({ ...report, timelineRows, procedureRows }, report.reviewed ? "원문 검토일 " + report.reviewedAt : dateLabel(report.retrievedAt), facts, download);
       say(status, "PowerPoint 파일을 만들었습니다.");
     } catch {
       say(status, "PowerPoint를 만들지 못했습니다. 페이지를 새로 열고 다시 시도해 주세요.", true);
@@ -556,7 +564,7 @@ function show(report) {
   if (report.country !== "UPC") {
     const nav = el("nav", "", "report-nav");
     nav.setAttribute("aria-label", "리포트 목차");
-    for (const [id, label] of [["report-timeline", "주요 심사 타임라인"], ["claim-analysis", "청구항 분석"], ["report-documents", "심사 문서"], ["report-history", "전체 이력"]]) {
+    for (const [id, label] of [["claim-analysis", "절차별 쟁점과 대응"], ["report-timeline", "주요 심사 타임라인"], ["report-documents", "심사 문서"], ["report-history", "전체 이력"]]) {
       const jump = el("a", label);
       jump.href = "#" + id;
       jump.onclick = () => { const target = by(id); if (target?.tagName === "DETAILS") target.open = true; };
@@ -564,7 +572,7 @@ function show(report) {
     }
     const analysis = el("section", "", "panel claim-panel");
     analysis.id = "claim-analysis";
-    area.append(nav, timeline(milestones), analysis);
+    area.append(nav, analysis, timeline(milestones));
     const family = el("details", "", "panel record-fold");
     family.append(el("summary", `패밀리 및 연계 출원 (${report.family.length})`), table(
       ["관할", "공개·등록번호", "출원번호", "조회 관계", "일자"],
@@ -656,7 +664,7 @@ async function finishDossierAnalysis(report, signal) {
     "다음 네 제목을 순서대로 정확히 사용하세요. 각 제목은 ## 로 시작하는 별도 줄입니다.",
     resultHeadings.join(", "),
     "심사 결과는 확인된 최신 판단 한 문장, 다른 섹션은 핵심 사항을 각각 최대 두 개의 짧은 글머리표로 쓰세요.",
-    "거절·제한의 이유, 대상 청구항, 무엇을 보정하거나 반박했는지, 그 결과를 명확히 구분하고 각 항목에 문서명과 페이지 또는 이력 날짜를 붙이세요.",
+    "권리범위에 영향을 준 판단과 근거 문서의 실제 절차명으로 사내 보고용 결론을 작성하세요. 거절·제한의 이유, 대상 청구항, 무엇을 보정하거나 반박했는지, 그 결과를 명확히 구분하고 각 항목에 문서명과 페이지 또는 이력 날짜를 붙이세요.",
     "R/R, 비최종·최종 거절, Advisory Action, 불복, 허여 통지는 실제 확인된 전환점만 다루세요. 허여 통지와 등록을 구분하세요.",
     "수수료·접수·서지 변경은 생략하세요. 다만 미납에 따른 권리 상실처럼 결과를 바꾼 결정은 포함하세요. 자료가 부족하면 선택 자료에서 미확인이라고 한 줄로 표시하세요.",
   ].join(" "));
