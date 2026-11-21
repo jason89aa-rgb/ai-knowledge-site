@@ -153,6 +153,19 @@ td:first-child { white-space: nowrap; }
 .time-panel, .claim-panel { padding: clamp(18px, 3.5vw, 34px); }
 .time-panel h2, .claim-panel h2 { font-size: clamp(1.3rem, 3vw, 1.65rem); color: #143d46; }
 .supporting-documents { margin-top: 18px; }
+.claim-comparison { margin-top: 16px; }
+.claim-comparison table { table-layout: fixed; min-width: 690px; }
+.claim-comparison thead th { color: #fff; background: #244952; }
+.claim-comparison thead th:first-child { width: 4.4rem; z-index: 1; }
+.claim-comparison thead th:last-child { width: 24%; }
+.claim-comparison tbody th { color: #214751; background: #f1f6f6; }
+.claim-comparison th:first-child { position: sticky; left: 0; }
+.claim-comparison td { padding: 12px; border-inline-start: 1px solid var(--line); }
+.claim-comparison td:last-child { background: #f4f9f6; }
+.comparison-finding p { margin: 0 0 4px; line-height: 1.55; }
+.comparison-finding + .comparison-finding { margin-top: 10px; padding-top: 8px; border-top: 1px dotted var(--line); }
+.comparison-empty { font-size: .82rem; color: var(--muted); }
+.comparison-context { display: block; color: var(--muted); font-size: .76rem; }
 .procedure-brief { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--line); }
 .procedure-head { display: flex; justify-content: space-between; align-items: end; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
 .procedure-head > div { flex: 1 1 280px; min-width: 0; }
