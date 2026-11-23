@@ -1,0 +1,52 @@
+body { background: #f5f7f8; color: #192f3a; }
+.lab { max-width: 1120px; margin: auto; padding: 38px 22px 64px; }
+.lab [hidden] { display: none !important; }
+.lab a, nav [aria-current] { color: #075e61; text-decoration: underline; text-underline-offset: .18em; }
+.intro { margin: 0 0 28px; color: #526570; }
+.intro h1 { color: #142e39; font-size: clamp(2rem, 4.8vw, 3.45rem); line-height: 1.15; letter-spacing: -.05em; margin: 12px 0; }
+.lab fieldset { border: 0; min-width: 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; clip-path: inset(50%); overflow: hidden; }
+.workbench { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; }
+.panel { background: white; border: 1px solid #cdd9dd; border-radius: 16px; padding: clamp(18px,3vw,30px); min-width: 0; }
+.lab h2 { font-size: 1.35rem; color: #183c49; margin-bottom: 12px; }
+.lab h3 { font-size: 1rem; margin: 14px 0 2px; }
+.lab small, .hint, .action p, .companion { font-size: .88rem; color: #51646d; }
+.source-controls, .columns, .action { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.source-controls, .draft-hint { min-height: 40px; margin-bottom: 12px; }
+.lab input, .lab select, .lab textarea, .lab button { font: inherit; }
+.lab select, .lab input:not([type=file]):not([type=checkbox]), .lab textarea { border: 1px solid #acbec5; border-radius: 7px; padding: 7px 10px; background: #fcfdfd; color: inherit; }
+.lab textarea { width: 100%; min-height: 165px; resize: vertical; font-size: 1rem; line-height: 1.65; }
+.columns label { flex: 1 1 120px; font-size: .88rem; }
+.columns input { width: 100%; display: block; }
+.file-button, .lab button { border-radius: 7px; font-weight: 650; cursor: pointer; }
+.file-button { position: relative; color: #12585a; text-decoration: underline; }
+.file-button input { position: absolute; inset: 0; width: 100%; opacity: 0; cursor: pointer; }
+.file-button:focus-within, .lab :focus-visible { outline: 3px solid #147f92; outline-offset: 2px; }
+.secondary { padding: 7px 13px; background: #fff; border: 1px solid #b6c9cb; color: #12585a; }
+#example, .columns { margin-top: 10px; }
+.action { justify-content: space-between; background: #e7f1f0; padding: 16px 20px; border-radius: 12px; margin-top: 16px; }
+.primary { background: #075e61; color: white; border: none; padding: 11px 24px; }
+.access { flex-basis: 100%; }
+.access label { display: block; font-weight: 650; }
+.access input { width: min(100%, 20rem); margin: 5px 0; }
+.lab fieldset:disabled { opacity: .7; }
+#status:not(:empty), .results, .companion { margin-top: 22px; }
+#status[data-error=true] { color: #923918; }
+#summary { color: #456069; margin-bottom: 12px; }
+.finding { display: grid; grid-template-columns: 1fr 1fr 1.1fr; gap: 18px; padding: 18px 0; border-top: 1px solid #dbe4e6; }
+.finding div { min-width: 0; overflow-wrap: anywhere; }
+.finding strong { display: block; font-size: .83rem; color: #536872; margin-bottom: 5px; }
+.finding em { display: inline-block; font-style: normal; font-weight: 650; color: #704516; background: #fff2d8; border-radius: 4px; padding: 1px 6px; }
+.finding em.ok { color: #175a48; background: #dff3e9; }
+.results summary { cursor: pointer; color: #075e61; font-weight: 600; }
+.results details { margin: 6px 0; }
+.results details p, .results details li { white-space: pre-wrap; overflow-wrap: anywhere; padding: 4px 0; }
+.results label { display: block; margin-top: 12px; }
+.results input { margin-right: 6px; }
+#revision { margin: 8px 0; }
+@media (max-width: 720px) {
+    .workbench, .finding { grid-template-columns: 1fr; }
+    .finding { gap: 10px; }
+    .lab { padding: 22px 14px 40px; }
+    .action .primary { width: 100%; }
+}
