@@ -120,38 +120,19 @@
                 <div class="post-header" style="margin-bottom: 40px; text-align: left;">
                     <span class="badge-pill" style="margin-bottom: 15px; display: inline-block;">Step 03</span>
                     <h1>고급: RAG & 파인튜닝 (사내 맞춤형 AI 시스템 구축)</h1>
-                    <p class="subtitle" style="font-size: 1.2rem; color: #64748b; margin-top: 10px;">"범용 AI의 한계를 깨고, 우리 회사만의 완벽한 지식 DB를 만든다."</p>
+                    <p class="subtitle" style="font-size: 1.2rem; color: #64748b; margin-top: 10px;">문서 검색과 추가 학습을 어떤 작업에 쓸지 직접 비교합니다.</p>
                 </div>
                 
                 <div class="post-content">
-                    <p>챗GPT가 모르는 사내 기밀문서, 방대한 기술 명세서, 과거의 프로젝트 이력 등을 AI에게 쥐여주고 환각 없이 정확한 답변을 도출해 내는 개발의 영역입니다.</p>
-
-                    <div class="step-detail-card" style="background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-bottom: 30px;">
-                        <h3 style="color: #4338ca; margin-bottom: 15px;">1. RAG(Retrieval-Augmented Generation) 아키텍처의 이해</h3>
-                        <p><strong>개념:</strong> AI 모델 자체를 재학습시키는 것이 아니라, 질문이 들어오면 연관된 사내 문서를 먼저 '검색(Retrieval)'한 뒤 그 문서를 바탕으로 '생성(Generation)'하게 만드는 기술.</p>
-                        <p style="margin-top: 10px;"><strong>실전 적용:</strong> 수백 페이지의 PDF 문서를 랭체인(LangChain) 같은 프레임워크를 이용해 문단 단위로 쪼개는 청킹(Chunking) 전략. (텍스트가 중간에 끊기지 않게 Overlap을 설정하는 실무 팁 포함)</p>
-                    </div>
-
-                    <div class="step-detail-card" style="background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-bottom: 30px;">
-                        <h3 style="color: #4338ca; margin-bottom: 15px;">2. 텍스트를 숫자로: 임베딩(Embedding)과 벡터 DB (Vector DB)</h3>
-                        <p><strong>개념:</strong> 쪼개진 문서 조각들을 AI가 이해할 수 있는 다차원 숫자 벡터로 변환하여 저장하는 과정.</p>
-                        <p style="margin-top: 10px;"><strong>실전 적용:</strong> OpenAI의 임베딩 모델을 활용해 문서를 벡터화하고, 이를 Pinecone, ChromaDB 같은 벡터 데이터베이스에 적재하는 방법. 사용자가 "최근 A 프로젝트의 수율 이슈 원인이 뭐야?"라고 질문했을 때 가장 의미가 유사한 문서를 0.1초 만에 끄집어내는 원리.</p>
-                    </div>
-
-                    <div class="step-detail-card" style="background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-bottom: 30px;">
-                        <h3 style="color: #4338ca; margin-bottom: 15px;">3. 한계 돌파: 대규모 컨텍스트 창과 컨텍스트 캐싱(Context Caching)</h3>
-                        <p><strong>개념:</strong> RAG의 복잡한 구축 과정 없이, 한 번에 수백만 토큰을 때려 넣는 최신 트렌드 적용법.</p>
-                        <p style="margin-top: 10px;"><strong>실전 적용:</strong> 구글 AI 스튜디오의 Gemini 1.5 Pro를 활용하여 수만 페이지의 명세서 데이터를 통째로 넣고 분석하는 방법. 이때 발생하는 엄청난 API 비용을 막기 위해, 한 번 업로드한 문서를 시스템 기억 장치에 싸게 얼려두는 '컨텍스트 캐싱' 최적화 기술.</p>
-                    </div>
-
-                    <div class="step-detail-card" style="background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-bottom: 30px;">
-                        <h3 style="color: #4338ca; margin-bottom: 15px;">4. 파인튜닝(Fine-tuning): 말투와 양식을 DNA에 각인시키기</h3>
-                        <p><strong>개념:</strong> RAG가 '지식'을 주입하는 것이라면, 파인튜닝은 우리 회사 특유의 '문서 작성 스타일'이나 '보고서 양식' 자체를 모델의 가중치에 덮어씌우는 작업.</p>
-                        <p style="margin-top: 10px;"><strong>실전 적용:</strong> 과거에 작성된 수백 개의 분할출원 청구항 정답 세트(Prompt-Completion)를 준비하여, AI가 어설픈 문장이 아닌 완벽한 법률적/기술적 톤앤매너로 문서를 기안하도록 미세 조정하는 실전 프로세스.</p>
-                    </div>
+                    <h2>문서가 바뀌면 답도 바뀌어야 할 때</h2>
+                    <p>가상의 출장 규정 두 판을 준비합니다. 작년판의 숙박비 한도는 8만원이고 올해판은 10만원입니다. 각 문단에 시행일과 문서명을 붙여 두세요. RAG(검색 증강 생성)는 질문에 맞는 자료를 찾아 모델에 전달하고, 모델이 그 문맥으로 답을 쓰게 하는 방식입니다. <a href="https://arxiv.org/abs/2005.11401">RAG 연구 원문</a></p>
+                    <h2>실습 · 틀린 답이 나온 지점 찾기</h2>
+                    <p>‘올해 6월 출장의 숙박비 한도는?’이라고 물어본 뒤 모델이 받은 문단부터 읽습니다. 작년판만 검색됐다면 문서 날짜와 검색 조건을 점검하세요. 올해판을 받았는데도 8만원이라고 썼다면 답변 생성 단계를 살펴볼 차례입니다. ‘식비 한도는?’에는 두 문서 모두 답이 없으므로 ‘자료에서 확인되지 않음’이 기대 결과입니다.</p>
+                    <h2>긴 문서 입력과 파인튜닝은 언제 쓸까?</h2>
+                    <p>자료가 두 문단뿐이라면 둘 다 질문에 붙여 같은 시험을 먼저 해보세요. 문서가 늘어날 때 검색을 추가한 결과와 비교할 기준이 됩니다. 답은 맞는데 형식이 자주 달라진다면 입력에 원하는 양식과 예시를 넣어 보세요. 같은 형식을 수많은 입력에 반복해야 한다면 예시로 모델을 추가 학습하는 파인튜닝을 비교할 수 있습니다.</p>
+                    <p>마지막으로 학습 예시에 없던 질문을 남겨 두고 <strong>금액, 적용 시점, 인용 문단, 양식</strong>을 따로 채점하세요. 표의 모습이 같아도 오래된 규정을 인용한 답은 찾을 수 있어야 합니다.</p>
                 </div>
-
-                <div class="navigation-buttons" style="display: flex; justify-content: space-between; margin-top: 50px;">
+<div class="navigation-buttons" style="display: flex; justify-content: space-between; margin-top: 50px;">
                     <a href="study-step2.html" class="btn-secondary">&larr; 이전 단계: 노코드 자동화</a>
                     <a href="roadmap.html" class="btn-primary">로드맵 전체 보기</a>
                 </div>
