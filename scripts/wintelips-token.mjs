@@ -76,7 +76,8 @@ async function refresh() {
 }
 
 function openBrowser(url) {
-  const [command, params] = process.platform === "win32" ? ["cmd", ["/c", "start", "", url]]
+  // cmd's "start" would cut the address at its first "&", so Windows opens it without a shell.
+  const [command, params] = process.platform === "win32" ? ["rundll32", ["url.dll,FileProtocolHandler", url]]
     : process.platform === "darwin" ? ["open", [url]] : ["xdg-open", [url]];
   spawn(command, params, { stdio: "ignore", detached: true }).on("error", () => {}).unref();
 }
