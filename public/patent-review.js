@@ -952,18 +952,6 @@ function finishReport(report) {
   else by("scanLanguage").value = "eng";
 }
 
-function openReviewed() {
-  if (!leaveOpenCase()) return;
-  activeSearch?.abort();
-  searchVersion++;
-  by("search").disabled = false;
-  say("status", "");
-  const report = reviewedUsCase();
-  show(report);
-  finishReport(report);
-}
-
-by("reviewed-case").addEventListener("click", openReviewed);
 by("back-search").addEventListener("click", () => {
   activeSearch?.abort();
   searchVersion++;
