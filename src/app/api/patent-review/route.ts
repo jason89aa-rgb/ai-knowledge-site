@@ -1,5 +1,5 @@
 import {
-  addEpoPublicationPages, askReport, compareFamilyClaims, jointReport, isPdf, lookup, maxUpload, normalizePatent, officialCandidates, officialPdf, PatentError, summarizeEvents, summarizePdf, summarizeText,
+  addEpoPublicationPages, askReport, compareFamilyClaims, jointReport, isPdf, lookup, maxUpload, normalizePatent, officialCandidates, officialPdf, PatentError, selectDocuments, summarizeEvents, summarizePdf, summarizeText,
 } from "../../../lib/patent-review";
 import {
   wintelipsCandidates, wintelipsCaseRecord, wintelipsConfigured, wintelipsDocument, wintelipsFamily, wintelipsFamilyCitations, wintelipsFamilyMember,
@@ -22,11 +22,12 @@ async function search(body: { number?: unknown; country?: unknown; numberType?: 
     const result = await officialCandidates(body.number, body.country, body.numberType);
     return { source: "official", candidates: result.candidates, notes: [...notes, ...result.notes] };
   };
-  const input = typeof body.number === "string" ? body.number.normalize("NFKC").trim() : "";
-  const usSearch = body.country === "US" || /^(?:USA?(?=[\s\d-]|D\d|RE\d|PP\d)|\d{2}\/\d{3},?\d{3}$)/i.test(input);
-  if (body.source === "official" || (body.source !== "wintelips" && (usSearch || !wintelipsConfigured()))) return official();
+  if (body.source === "official" || (body.source !== "wintelips" && !wintelipsConfigured())) return official();
   try {
-    return { source: "wintelips", ...await withWintelips(token => wintelipsCandidates(token, body.number, body.country)) };
+    const found = await withWintelips(token => wintelipsCandidates(token, body.number, body.country));
+    // Automatic mode asks the offices when WINTELIPS does not hold the number.
+    if (!found.candidates.length && body.source !== "wintelips") return official(found.notes);
+    return { source: "wintelips", ...found };
   } catch (error) {
     // Automatic mode keeps working when WINTELIPS is down or its token has expired.
     if (body.source === "wintelips" || (error instanceof PatentError && error.status === 400)) throw error;
@@ -109,10 +110,11 @@ export async function POST(request: Request) {
     }
     // An AI request carries the report or claims the browser already holds, so it gets a larger body limit.
     const large = request.headers.get("X-Patent-Action");
-    const limit = large === "ask" ? 600000 : large === "family-compare" ? 160000 : 8192;
+    const limit = large === "ask" ? 600000 : large === "select-documents" ? 200000 : large === "family-compare" ? 160000 : 8192;
     if (!content.startsWith("application/json") || length > limit) throw new PatentError("요청 형식을 확인해 주세요.", 400);
     const body = await request.json().catch(() => null);
     if (large === "ask" && body?.action === "ask") return streamSummary(() => askReport(body.report, body.prompt));
+    if (large === "select-documents" && body?.action === "select-documents") return streamSummary(() => selectDocuments(body.documents, body.case));
     if (large === "family-compare" && body?.action === "family-compare") return streamSummary(() => compareFamilyClaims(body));
     if (body?.action === "family") return json(await withWintelips(token => wintelipsFamily(token, body)));
     if (body?.action === "family-member") return json(await withWintelips(token => wintelipsFamilyMember(token, body)));

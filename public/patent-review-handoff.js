@@ -102,6 +102,8 @@ function dossierHandoff(report) {
   const jointConclusions = new Map();
   let preparing = true;
   let staging = 0;
+  let recommending = false;
+  const offered = new Set();
   const stagedFiles = new Set();
   const officialDocs = [...report.documents];
   const list = el("div", "", "analysis-list");
@@ -143,7 +145,7 @@ function dossierHandoff(report) {
     count.textContent = "문서 " + rows.size + "건 · 선택 " + selected + "건";
     const waitingForZip = panel.dataset.zipPending === "true";
     stopWaiting.hidden = !waitingForZip;
-    start.disabled = waitingForZip || !report.canSummarize || !active() || preparing || staging > 0 || report.autoPending || !(selected || metadataOnly.checked);
+    start.disabled = waitingForZip || !report.canSummarize || !active() || preparing || staging > 0 || recommending || report.autoPending || !(selected || metadataOnly.checked);
   }
   function addRow(key, name, source, reason = "") {
     const input = el("input");
@@ -160,6 +162,49 @@ function dossierHandoff(report) {
     if ((doc.downloadable || doc.text) && !rows.has(doc.id)) {
       addRow(doc.id, [doc.date, doc.title || doc.id].filter(Boolean).join(" · "), { doc });
     }
+  }
+  // Ticks the documents a prosecution report needs as soon as they are listed.
+  // Each document is offered once, so a later change by the user is kept.
+  async function recommend() {
+    if (recommending || preparing || staging > 0 || report.autoPending || !active()) return;
+    const fresh = [...rows].filter(([key, row]) => !row.input.disabled && !offered.has(key));
+    if (!fresh.length) return;
+    for (const [key] of fresh) offered.add(key);
+    recommending = true;
+    refresh();
+    let chosen;
+    let byModel = false;
+    try {
+      if (!report.canSummarize) throw new Error("AI 요약 키 없음");
+      status.textContent = "AI가 보고서에 필요한 문서를 고르는 중 · " + fresh.length + "건";
+      const answer = await summarizeWithRetry({ action: "select-documents", documents: fresh.map(([, row]) => row.name),
+        case: { country: report.country, query: report.query, title: report.title, status: report.status } }, signal, status.textContent);
+      chosen = new Set(answer.selected.map(number => fresh[number - 1]?.[0]));
+      byModel = true;
+    } catch {
+      if (!active()) return;
+      const base = row => row.name.split(/[\\/]/).pop();
+      const day = row => calendarDay(row.doc?.date || base(row).slice(0, 10));
+      const title = row => procedureName(row.doc?.title || base(row));
+      const staged = fresh.map(([key, row]) => [key, row, prosecutionStage({ title: title(row) })]);
+      const replies = new Set(staged.filter(([, , stage]) => stage === "출원인 대응·보정").map(([, row]) => day(row)));
+      // Claims filed on the day of a reply are the amended set; the claims as filed are left out.
+      chosen = new Set(staged.filter(([, row, stage]) => stage ? !["출원", "심사 청구", "특허 등록"].includes(stage)
+        : /^(?:claims?|청구항|청구범위)$/i.test(title(row)) && day(row) && replies.has(day(row))).map(([key]) => key));
+    }
+    if (!active()) return;
+    let picked = 0;
+    for (const [key, row] of fresh) {
+      if (!chosen.has(key) || row.input.disabled) continue;
+      row.input.checked = true;
+      row.info.textContent = [row.info.textContent, byModel ? "AI 추천" : "자동 선택"].filter(Boolean).join(" · ");
+      picked++;
+    }
+    recommending = false;
+    status.textContent = (byModel ? "AI가 필요한 문서 " : "AI 선택을 사용할 수 없어 문서 이름으로 ") + picked +
+      "건을 골랐습니다. 선택을 확인한 뒤 보고서를 생성하세요.";
+    refresh();
+    void recommend();
   }
   metadataOnly.onchange = refresh;
   selectAll.onchange = () => {
@@ -212,7 +257,10 @@ function dossierHandoff(report) {
       }
     }).finally(() => {
       staging--;
-      if (active()) refresh();
+      if (active()) {
+        refresh();
+        void recommend();
+      }
     });
     return queue;
   }
@@ -235,6 +283,7 @@ function dossierHandoff(report) {
     if (active()) {
       status.textContent = report.canSummarize ? "사용할 문서를 선택해 주세요." : "서버에 AI 요약 키를 설정하면 보고서를 생성할 수 있습니다.";
       refresh();
+      void recommend();
     }
   }
 
