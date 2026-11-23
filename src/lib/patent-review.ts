@@ -1037,42 +1037,64 @@ type ClaudeEvent = {
   delta?: { type?: string; text?: string; stop_reason?: string }; usage?: ClaudeUsage;
 };
 
+// The escaped text of one text event, as Claude's API writes it.
+const textDelta = /^data: ?\{"type":"content_block_delta","index":\d+,"delta":\{"type":"text_delta","text":"((?:[^"\\]|\\.)*)"\}\s*\}\s*$/;
+
 // Collects the text of a streamed Messages response. Whatever arrived before the deadline or a dropped connection is returned as a cut answer.
+// While the answer arrives its bytes are only gathered; they are decoded and parsed once at the end. Parsing each event as it came
+// took more CPU time for a long answer than the hosting platform grants one request, and the platform then cut the response.
 async function readClaudeStream(res: Response, deadline: number) {
   if (!res.body) throw fail("Claude", 502);
-  const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const expired = new Promise<"expired">(resolve => { timer = setTimeout(() => resolve("expired"), Math.max(0, deadline - Date.now())); });
-  let buffer = "", text = "", cut = false;
-  let model: string | undefined, stop: string | undefined, usage: ClaudeUsage | undefined;
+  const reader = res.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let cut = false;
+  const timer = setTimeout(() => {
+    cut = true;
+    void reader.cancel().catch(() => undefined);
+  }, Math.max(0, deadline - Date.now()));
   try {
     for (;;) {
-      const next = await Promise.race([reader.read(), expired]);
-      if (next === "expired") { cut = true; break; }
+      const next = await reader.read();
       if (next.done) break;
-      const lines = (buffer + next.value).split("\n");
-      buffer = lines.pop() ?? "";
-      for (const line of lines) {
-        if (!line.startsWith("data:")) continue;
-        let event: ClaudeEvent;
-        try { event = JSON.parse(line.slice(5)); } catch { continue; }
-        if (event.type === "message_start") {
-          model = event.message?.model;
-          usage = { ...event.message?.usage };
-        } else if (event.type === "content_block_start" && event.content_block?.type === "text" && text) text += "\n";
-        else if (event.type === "content_block_delta" && event.delta?.type === "text_delta") text += event.delta.text ?? "";
-        else if (event.type === "message_delta") {
-          stop = event.delta?.stop_reason ?? stop;
-          usage = { ...usage, ...event.usage };
-        } else if (event.type === "error") cut = true;
-      }
+      chunks.push(next.value);
     }
   } catch {
     cut = true;
   } finally {
     clearTimeout(timer);
-    void reader.cancel().catch(() => undefined);
   }
+  const bytes = new Uint8Array(chunks.reduce((size, chunk) => size + chunk.length, 0));
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.length;
+  }
+  // Text arrives in thousands of small events. Their text is taken out still escaped and unescaped once at the end;
+  // only the few other events are parsed. An event cut off in the middle of the last line matches nothing and is left out.
+  const parts: string[] = [];
+  let model: string | undefined, stop: string | undefined, usage: ClaudeUsage | undefined;
+  for (const line of new TextDecoder().decode(bytes).split("\n")) {
+    if (!line.startsWith("data:")) continue;
+    const delta = line.includes('"text_delta"') ? textDelta.exec(line) : null;
+    if (delta) {
+      parts.push(delta[1]);
+      continue;
+    }
+    if (line.includes('"content_block_stop"') || line.includes('"ping"')) continue;
+    let event: ClaudeEvent;
+    try { event = JSON.parse(line.slice(5)); } catch { continue; }
+    if (event.type === "message_start") {
+      model = event.message?.model;
+      usage = { ...event.message?.usage };
+    } else if (event.type === "content_block_start" && event.content_block?.type === "text" && parts.length) parts.push("\\n");
+    else if (event.type === "content_block_delta" && event.delta?.type === "text_delta") parts.push(JSON.stringify(event.delta.text ?? "").slice(1, -1));
+    else if (event.type === "message_delta") {
+      stop = event.delta?.stop_reason ?? stop;
+      usage = { ...usage, ...event.usage };
+    } else if (event.type === "error") cut = true;
+  }
+  let text = "";
+  try { text = JSON.parse('"' + parts.join("") + '"'); } catch { cut = true; }
   // A stream that ends without a stop reason was interrupted.
   return { text, model, stop, usage, cut: cut || !stop };
 }
