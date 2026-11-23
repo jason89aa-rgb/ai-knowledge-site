@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-PDQ055YSZT"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+
+  // 전 세계(한국 등): 기본 동의 허용 (0% 측정 문제 해결)
+  gtag('consent', 'default', {
+    'ad_storage': 'granted',
+    'ad_user_data': 'granted',
+    'ad_personalization': 'granted',
+    'analytics_storage': 'granted'
+  });
+
+  // EEA(유럽) + 영국 + 스위스: 기본 동의 거부 (개인정보 보호 규정 준수)
+  gtag('consent', 'default', {
+    'ad_storage': 'denied',
+    'ad_user_data': 'denied',
+    'ad_personalization': 'denied',
+    'analytics_storage': 'denied',
+    'region': ['AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'IS', 'LI', 'NO', 'GB', 'CH']
+  });
+  gtag('js', new Date());
+
+  gtag('config', 'G-PDQ055YSZT');
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teachable Machine은 컵을 배웠을까, 책상을 배웠을까? | AI-ALL</title>
+    <meta name="description" content="이미지 분류기를 만든 뒤 물건과 배경의 조합을 뒤집어 시험합니다.">
+
+    <!-- Open Graph Tags -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Teachable Machine은 컵을 배웠을까, 책상을 배웠을까?">
+    <meta property="og:description" content="이미지 분류기를 만든 뒤 물건과 배경의 조합을 뒤집어 시험합니다.">
+    <meta property="og:image" content="https://ai-all.co.kr/assets/ai-all-share.png">
+    <meta property="og:url" content="https://ai-all.co.kr/tool-teachable-background.html">
+
+    <!-- Twitter Card Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Teachable Machine은 컵을 배웠을까, 책상을 배웠을까?">
+    <meta name="twitter:description" content="이미지 분류기를 만든 뒤 물건과 배경의 조합을 뒤집어 시험합니다.">
+    <meta name="twitter:image" content="https://ai-all.co.kr/assets/ai-all-share.png">
+    <meta name="twitter:domain" content="ai-all.co.kr">
+    <link rel="stylesheet" href="style.css?v=1773850667033">
+    <link rel="canonical" href="https://ai-all.co.kr/tool-teachable-background.html">
+</head>
+<body>
+    <nav class="article-trail" aria-label="사이트 탐색">
+        <a href="index.html">AI-ALL 홈</a>
+        <a href="tools.html">추천 툴</a>
+        <a href="sitemap.html">전체 글 찾기</a>
+    </nav>
+    <main>
+        <article class="post-content">
+            <header class="post-header">
+                <span class="category">추천 툴</span>
+                <h1>Teachable Machine은 컵을 배웠을까, 책상을 배웠을까?</h1>
+                <p class="post-meta">게시일 <time datetime="2026-11-24">2026년 11월 24일</time></p>
+            </header>
+            <div class="post-body">
+                <p>Teachable Machine의 이미지 프로젝트에서는 클래스별 예시를 모아 브라우저에서 간단한 분류를 실험할 수 있습니다. 성공 여부를 즉시 화면에서 볼 수 있어 학습 자료를 어떻게 모았는지가 결과를 바꾸는 모습을 관찰하기 좋습니다. <a href="https://teachablemachine.withgoogle.com/">Google Teachable Machine</a></p>
+                <h2>먼저 잘 맞는 조건 만들기</h2>
+                <p>‘컵’ 클래스는 밝은 탁자에서, ‘수첩’ 클래스는 어두운 매트 위에서 촬영합니다. 같은 장소에서 미리보기를 하면 잘 맞을 수 있습니다. 이때까지는 모델이 컵의 손잡이를 보고 있는지 밝은 바탕을 보고 있는지 알 수 없습니다.</p>
+                <h2>네 칸으로 나누어 다시 찍기</h2>
+                <p>밝은 배경의 컵과 수첩, 어두운 배경의 컵과 수첩을 각각 새로 촬영하세요. 배경을 바꾼 두 칸에서만 틀린다면 두 물건 모두 여러 배경에서 찍어 다시 학습할 이유가 있습니다. 시험 사진까지 학습에 넣으면 개선 여부를 판단하기 어려우므로 마지막 시험용 촬영분은 따로 보관합니다.</p>
+            </div>
+        </article>
+        <nav class="article-trail" aria-label="이어서 읽기">
+            <a href="tools.html">추천 툴 목록</a>
+            <a href="tool-orange-concordance.html">함께 읽기 · Orange에서 ‘가볍다’ 앞뒤 문장만 모아 읽기</a>
+        </nav>
+    </main>
+</body>
+</html>

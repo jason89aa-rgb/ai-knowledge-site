@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-PDQ055YSZT"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+
+  // 전 세계(한국 등): 기본 동의 허용 (0% 측정 문제 해결)
+  gtag('consent', 'default', {
+    'ad_storage': 'granted',
+    'ad_user_data': 'granted',
+    'ad_personalization': 'granted',
+    'analytics_storage': 'granted'
+  });
+
+  // EEA(유럽) + 영국 + 스위스: 기본 동의 거부 (개인정보 보호 규정 준수)
+  gtag('consent', 'default', {
+    'ad_storage': 'denied',
+    'ad_user_data': 'denied',
+    'ad_personalization': 'denied',
+    'analytics_storage': 'denied',
+    'region': ['AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'IS', 'LI', 'NO', 'GB', 'CH']
+  });
+  gtag('js', new Date());
+
+  gtag('config', 'G-PDQ055YSZT');
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>olmOCR 2가 문서 인식을 시험하는 방법 | AI-ALL</title>
+    <meta name="description" content="2025년 10월 22일 Ai2가 공개한 OCR 연구에서 문자 정확도와 문서 구조의 차이를 살펴봅니다.">
+
+    <!-- Open Graph Tags -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="olmOCR 2가 문서 인식을 시험하는 방법">
+    <meta property="og:description" content="2025년 10월 22일 Ai2가 공개한 OCR 연구에서 문자 정확도와 문서 구조의 차이를 살펴봅니다.">
+    <meta property="og:image" content="https://ai-all.co.kr/assets/ai-all-share.png">
+    <meta property="og:url" content="https://ai-all.co.kr/news-ocr-reading-order.html">
+
+    <!-- Twitter Card Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="olmOCR 2가 문서 인식을 시험하는 방법">
+    <meta name="twitter:description" content="2025년 10월 22일 Ai2가 공개한 OCR 연구에서 문자 정확도와 문서 구조의 차이를 살펴봅니다.">
+    <meta name="twitter:image" content="https://ai-all.co.kr/assets/ai-all-share.png">
+    <meta name="twitter:domain" content="ai-all.co.kr">
+    <link rel="stylesheet" href="style.css?v=1773850667033">
+    <link rel="canonical" href="https://ai-all.co.kr/news-ocr-reading-order.html">
+</head>
+<body>
+    <nav class="article-trail" aria-label="사이트 탐색">
+        <a href="index.html">AI-ALL 홈</a>
+        <a href="ai-news.html">AI 뉴스</a>
+        <a href="sitemap.html">전체 글 찾기</a>
+    </nav>
+    <main>
+        <article class="post-content">
+            <header class="post-header">
+                <span class="category">AI 뉴스</span>
+                <h1>olmOCR 2가 문서 인식을 시험하는 방법</h1>
+                <p class="post-meta">게시일 <time datetime="2026-11-24">2026년 11월 24일</time></p>
+            </header>
+            <div class="post-body">
+                <p>두 단으로 편집된 글에서 왼쪽 첫 줄 다음에 오른쪽 첫 줄을 읽으면, 글자를 전부 맞혀도 두 문단이 뒤섞입니다. Ai2는 olmOCR 2 발표에서 논문, 표, 스캔 인쇄물의 구조를 얼마나 잘 살리는지 시험하는 방법을 소개했습니다.</p>
+                <h2>점수가 가리키는 대상</h2>
+                <p>Ai2는 자체 시험인 olmOCR-Bench에서 82.4점을 보고했습니다. 이는 정해진 문서와 검사항목에서 얻은 점수입니다. 발표에서 다룬 영어 인쇄 문서의 점수로 한국어 영수증 금액이나 손글씨 주소의 인식률을 바로 예측할 수는 없습니다. <a href="https://allenai.org/blog/olmocr-2">Ai2의 olmOCR 2 연구 발표</a></p>
+                <h2>한 페이지로 읽기 순서 시험하기</h2>
+                <p>왼쪽 단 마지막에 ‘신청 대상’, 오른쪽 단 첫머리에 ‘제출 서류’가 있는 안내문을 골라 보세요. 먼저 두 제목 사이의 문장이 원래 단락에 남았는지 살피고, 이어 표의 합계가 어느 열에 붙었는지 봅니다. 원문과 추출문을 나란히 두면 글자 오류와 배열 오류를 서로 다른 수정 대상으로 기록할 수 있습니다.</p>
+            </div>
+        </article>
+        <nav class="article-trail" aria-label="이어서 읽기">
+            <a href="ai-news.html">AI 뉴스 목록</a>
+            <a href="news-small-video.html">함께 읽기 · SmolVLM2 발표로 보는 영상 이해와 프레임 선택</a>
+        </nav>
+    </main>
+</body>
+</html>

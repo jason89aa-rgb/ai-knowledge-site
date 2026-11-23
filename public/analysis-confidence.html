@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-PDQ055YSZT"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+
+  // 전 세계(한국 등): 기본 동의 허용 (0% 측정 문제 해결)
+  gtag('consent', 'default', {
+    'ad_storage': 'granted',
+    'ad_user_data': 'granted',
+    'ad_personalization': 'granted',
+    'analytics_storage': 'granted'
+  });
+
+  // EEA(유럽) + 영국 + 스위스: 기본 동의 거부 (개인정보 보호 규정 준수)
+  gtag('consent', 'default', {
+    'ad_storage': 'denied',
+    'ad_user_data': 'denied',
+    'ad_personalization': 'denied',
+    'analytics_storage': 'denied',
+    'region': ['AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'IS', 'LI', 'NO', 'GB', 'CH']
+  });
+  gtag('js', new Date());
+
+  gtag('config', 'G-PDQ055YSZT');
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>확률 80%라는 답을 스무 번 모으면 | AI-ALL</title>
+    <meta name="description" content="예측 확률과 실제 정답 비율을 비교해 신뢰도 보정의 의미를 이해합니다.">
+
+    <!-- Open Graph Tags -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="확률 80%라는 답을 스무 번 모으면">
+    <meta property="og:description" content="예측 확률과 실제 정답 비율을 비교해 신뢰도 보정의 의미를 이해합니다.">
+    <meta property="og:image" content="https://ai-all.co.kr/assets/ai-all-share.png">
+    <meta property="og:url" content="https://ai-all.co.kr/analysis-confidence.html">
+
+    <!-- Twitter Card Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="확률 80%라는 답을 스무 번 모으면">
+    <meta name="twitter:description" content="예측 확률과 실제 정답 비율을 비교해 신뢰도 보정의 의미를 이해합니다.">
+    <meta name="twitter:image" content="https://ai-all.co.kr/assets/ai-all-share.png">
+    <meta name="twitter:domain" content="ai-all.co.kr">
+    <link rel="stylesheet" href="style.css?v=1773850667033">
+    <link rel="canonical" href="https://ai-all.co.kr/analysis-confidence.html">
+</head>
+<body>
+    <nav class="article-trail" aria-label="사이트 탐색">
+        <a href="index.html">AI-ALL 홈</a>
+        <a href="in-depth-analysis.html">심층 분석</a>
+        <a href="sitemap.html">전체 글 찾기</a>
+    </nav>
+    <main>
+        <article class="post-content">
+            <header class="post-header">
+                <span class="category">심층 분석</span>
+                <h1>확률 80%라는 답을 스무 번 모으면</h1>
+                <p class="post-meta">게시일 <time datetime="2026-11-24">2026년 11월 24일</time></p>
+            </header>
+            <div class="post-body">
+                <p>분류기가 문의마다 ‘환불일 확률 0.8’을 내놓습니다. 개별 문의 한 건에는 결국 환불 또는 다른 유형이라는 답만 생깁니다. 0.8이라는 숫자의 품질은 비슷한 확률을 받은 여러 건에서 확인할 수 있습니다.</p>
+                <h2>같은 점수 구간에서 세기</h2>
+                <p>가상의 검증 자료에서 0.8 근처로 예측한 문의 20건 중 실제 환불이 12건이라면 관찰 비율은 60%입니다. 같은 경향이 충분한 표본에서 반복되면 해당 구간의 점수가 과도하게 높다는 단서가 됩니다. 처음 20건만으로 앞으로도 늘 60%라고 정할 수는 없습니다. <a href="https://scikit-learn.org/stable/modules/calibration.html">scikit-learn의 확률 보정 안내</a></p>
+                <h2>현장에서 필요한 판단</h2>
+                <p>0.8 이상이면 자동 회신하는 팀이라면 구간별 오답 수와 그 뒤에 사람이 고친 시간을 함께 기록해야 합니다. 점수가 높은 순서대로 정렬하는 능력이 뛰어나도 그 점수가 실제 비율과 맞는지는 따로 확인합니다. 특히 대화 모델이 문장으로 ‘80% 확신한다’고 쓴 값은 측정된 분류 확률과 구별해 다루세요.</p>
+            </div>
+        </article>
+        <nav class="article-trail" aria-label="이어서 읽기">
+            <a href="in-depth-analysis.html">심층 분석 목록</a>
+            <a href="analysis-wait-tail.html">함께 읽기 · 평균 응답은 빠른데 누구는 왜 11초나 기다릴까?</a>
+        </nav>
+    </main>
+</body>
+</html>

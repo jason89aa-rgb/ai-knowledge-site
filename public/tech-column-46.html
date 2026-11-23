@@ -33,7 +33,6 @@
     <meta property="og:description" content="단일 AI 모델의 한계를 극복하고 여러 전문화된 AI 에이전트들을 협업시키는 멀티 에이전트 시스템(MAS)과 이를 안정적으로 운영하기 위한 LLMOps 설계 가이드를 제공합니다.">
     <meta property="og:title" content="[제46회] '단일 프롬프트의 시대는 끝났다' – 자율형 멀티 에이전트 아키텍처 - AI ALL">
     <meta name="description" content="단일 AI 모델의 한계를 극복하고 여러 전문화된 AI 에이전트들을 협업시키는 멀티 에이전트 시스템(MAS)과 이를 안정적으로 운영하기 위한 LLMOps 설계 가이드를 제공합니다.">
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1012734614251637" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="style.css?v=1773850667033">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <meta name="google-adsense-account" content="ca-pub-1012734614251637">
@@ -49,8 +48,8 @@
                     <li><a href="tips.html">AI 꿀팁</a></li>
                     <li><a href="in-depth-analysis.html">심층 분석</a></li>
                     <li><a href="tools.html">추천 툴</a></li>
+                    <li><a href="ai-lab.html">AI 실습실</a></li>
                     <li><a href="roadmap.html">학습 로드맵</a></li>
-                    <li><a href="learning-journey.html">나의 학습 여정</a></li>
                     <li><a href="about.html">소개</a></li>
                     <li><a href="sitemap.html">사이트맵</a></li>
                 </ul>
@@ -97,20 +96,6 @@
 
     <main class="inner">
 
-    <!-- Google AdSense: ai-all-main-top -->
-    <div class="ads-wrapper-top">
-        
-        <!-- ai-all-main-top -->
-        <ins class="adsbygoogle"
-             style="display:block"
-             data-ad-client="ca-pub-1012734614251637"
-             data-ad-slot="6867902771"
-             data-ad-format="auto"
-             data-full-width-responsive="true"></ins>
-        <script>
-             (adsbygoogle = window.adsbygoogle || []).push({});
-        </script>
-    </div>
 
         <article class="post-content">
             <header class="post-header">
@@ -159,6 +144,9 @@
 
 <p><strong>동적 모델 라우팅 (Dynamic Routing):</strong> 단순한 문서 요약 에이전트에는 저렴한 사내 오픈소스 모델(SLM)을 배정하고, 복잡한 논리 추론이 필요한 매니저 에이전트에게만 GPT-4나 Claude 3.5 Sonnet 같은 고비용 클라우드 모델을 배정하는 지능형 라우터가 구축되어야 합니다.</p>
 
+<h2>실습 · 뉴스 브리핑 한 건을 두 방식으로 만들기</h2>
+<p>공개 발표문 한 편을 주고 ‘발표일, 공개된 기능, 사용 조건’ 세 항목을 적게 합니다. 첫 실행에서는 한 모델이 자료를 읽고 씁니다. 다음 실행에서는 초안 작성과 검토를 분리하고, 검토자에게 원문과 초안을 함께 줍니다. 검토자는 각 항목의 근거 문장을 찾고, 근거가 빠진 항목만 한 번 돌려보내게 하세요.</p>
+<p>두 결과를 원문과 대조하고 틀린 항목 수, 총 호출 수, 전체 시간을 적습니다. 검토자가 새로운 사실을 덧붙였다면 그 사실에도 근거가 있어야 합니다. 2025년 3월 공개된 도구와 역할 분담의 배경은 <a href="https://openai.com/index/new-tools-for-building-agents/">OpenAI 발표문</a>에서 확인할 수 있습니다.</p>
 <h3>마치며: '도구'에서 '디지털 노동력'으로의 진화</h3>
 <p>결론적으로, 다가오는 2027년의 기업 경쟁력은 "임직원들이 AI를 얼마나 잘 다루는가"가 아니라, <strong>"수십 개의 디지털 노동자(Agent)들을 어떻게 조직화하고, 평가하며, 이들의 인프라 비용을 어떻게 최적화할 것인가"</strong>에 달려 있습니다.</p>
 <p>CTO와 IT 인프라 책임자들은 이제 단순한 시스템 관리자를 넘어, 인간과 AI 에이전트가 혼합된 '하이브리드 조직'을 지휘하는 거대한 오케스트라의 지휘자로 거듭나야 할 시점입니다. 프롬프트 창에 질문을 입력하던 시대는 끝났습니다. 이제는 시스템이 스스로 고민하고 일하게 만드는 '아키텍처'를 설계하십시오.</p>
@@ -174,20 +162,6 @@
 </p>
 </div>
             
-            <!-- Google AdSense: ai-all-article-footer -->
-            <div class="ads-wrapper-bottom">
-                
-                <!-- ai-all-article-footer -->
-                <ins class="adsbygoogle"
-                     style="display:block"
-                     data-ad-client="ca-pub-1012734614251637"
-                     data-ad-slot="3002002897"
-                     data-ad-format="auto"
-                     data-full-width-responsive="true"></ins>
-                <script>
-                     (adsbygoogle = window.adsbygoogle || []).push({});
-                </script>
-            </div>
 
             <!-- Giscus 댓글창 -->
             <div class="giscus"></div>

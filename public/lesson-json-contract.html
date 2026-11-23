@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-PDQ055YSZT"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+
+  // 전 세계(한국 등): 기본 동의 허용 (0% 측정 문제 해결)
+  gtag('consent', 'default', {
+    'ad_storage': 'granted',
+    'ad_user_data': 'granted',
+    'ad_personalization': 'granted',
+    'analytics_storage': 'granted'
+  });
+
+  // EEA(유럽) + 영국 + 스위스: 기본 동의 거부 (개인정보 보호 규정 준수)
+  gtag('consent', 'default', {
+    'ad_storage': 'denied',
+    'ad_user_data': 'denied',
+    'ad_personalization': 'denied',
+    'analytics_storage': 'denied',
+    'region': ['AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'IS', 'LI', 'NO', 'GB', 'CH']
+  });
+  gtag('js', new Date());
+
+  gtag('config', 'G-PDQ055YSZT');
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>표를 넘기기 전에 JSON 한 건 검수하기 | AI-ALL</title>
+    <meta name="description" content="문법이 맞는 응답과 다음 프로그램이 사용할 수 있는 응답을 구별하는 연습입니다.">
+
+    <!-- Open Graph Tags -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="표를 넘기기 전에 JSON 한 건 검수하기">
+    <meta property="og:description" content="문법이 맞는 응답과 다음 프로그램이 사용할 수 있는 응답을 구별하는 연습입니다.">
+    <meta property="og:image" content="https://ai-all.co.kr/assets/ai-all-share.png">
+    <meta property="og:url" content="https://ai-all.co.kr/lesson-json-contract.html">
+
+    <!-- Twitter Card Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="표를 넘기기 전에 JSON 한 건 검수하기">
+    <meta name="twitter:description" content="문법이 맞는 응답과 다음 프로그램이 사용할 수 있는 응답을 구별하는 연습입니다.">
+    <meta name="twitter:image" content="https://ai-all.co.kr/assets/ai-all-share.png">
+    <meta name="twitter:domain" content="ai-all.co.kr">
+    <link rel="stylesheet" href="style.css?v=1773850667033">
+    <link rel="canonical" href="https://ai-all.co.kr/lesson-json-contract.html">
+</head>
+<body>
+    <nav class="article-trail" aria-label="사이트 탐색">
+        <a href="index.html">AI-ALL 홈</a>
+        <a href="roadmap.html">학습 로드맵</a>
+        <a href="sitemap.html">전체 글 찾기</a>
+    </nav>
+    <main>
+        <article class="post-content">
+            <header class="post-header">
+                <span class="category">학습 로드맵</span>
+                <h1>표를 넘기기 전에 JSON 한 건 검수하기</h1>
+                <p class="post-meta">게시일 <time datetime="2026-11-24">2026년 11월 24일</time></p>
+            </header>
+            <div class="post-body">
+                <p>‘주문 번호, 수량, 메모’를 AI에 정리시킨 뒤 자동화 도구로 보내려고 합니다. 화면에서는 숫자 2와 문자열 &quot;2&quot;가 비슷하지만 덧셈을 수행하는 다음 단계에는 차이가 생깁니다.</p>
+                <h2>입력 계약을 종이에 써 보기</h2>
+                <p>연습용 주문 번호는 007, 수량은 2, 메모는 없습니다. 주문 번호는 앞의 0을 보존하는 문자열, 수량은 양의 정수, 메모는 문자열 또는 null로 정합니다. 이 규칙을 지키는 예시는 아래 한 건입니다.</p>
+                <pre><code>{
+  "order_id": "007",
+  "quantity": 2,
+  "note": null
+}</code></pre>
+                <h2>세 종류의 실패 분리하기</h2>
+                <p>닫는 중괄호가 빠지면 JSON 자체를 읽을 수 없습니다. quantity가 &quot;2&quot;이면 읽기는 가능하지만 형식 검사에 실패합니다. quantity가 0이면 정수여도 업무 규칙에 걸립니다. 세 경우 모두 원본 주문 번호를 남기고 보류하면 잘못된 수량이 뒤 단계까지 넘어가는 일을 막을 수 있습니다. 수업의 완료 기준은 이 세 실패를 서로 다른 이유로 설명하는 것입니다.</p>
+            </div>
+        </article>
+        <nav class="article-trail" aria-label="이어서 읽기">
+            <a href="roadmap.html">학습 로드맵 목록</a>
+            <a href="lesson-split-by-time.html">함께 읽기 · 어제까지의 자료로 내일 주문을 예측하는 시험</a>
+        </nav>
+    </main>
+</body>
+</html>

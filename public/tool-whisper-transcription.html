@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-PDQ055YSZT"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+
+  // 전 세계(한국 등): 기본 동의 허용 (0% 측정 문제 해결)
+  gtag('consent', 'default', {
+    'ad_storage': 'granted',
+    'ad_user_data': 'granted',
+    'ad_personalization': 'granted',
+    'analytics_storage': 'granted'
+  });
+
+  // EEA(유럽) + 영국 + 스위스: 기본 동의 거부 (개인정보 보호 규정 준수)
+  gtag('consent', 'default', {
+    'ad_storage': 'denied',
+    'ad_user_data': 'denied',
+    'ad_personalization': 'denied',
+    'analytics_storage': 'denied',
+    'region': ['AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'IS', 'LI', 'NO', 'GB', 'CH']
+  });
+  gtag('js', new Date());
+
+  gtag('config', 'G-PDQ055YSZT');
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whisper로 만든 자막에서 숫자와 고유명사 검수하기 | AI-ALL</title>
+    <meta name="description" content="녹음 20초와 대조문을 사용해 전사 초안의 오류를 찾아냅니다.">
+
+    <!-- Open Graph Tags -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Whisper로 만든 자막에서 숫자와 고유명사 검수하기">
+    <meta property="og:description" content="녹음 20초와 대조문을 사용해 전사 초안의 오류를 찾아냅니다.">
+    <meta property="og:image" content="https://ai-all.co.kr/assets/ai-all-share.png">
+    <meta property="og:url" content="https://ai-all.co.kr/tool-whisper-transcription.html">
+
+    <!-- Twitter Card Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Whisper로 만든 자막에서 숫자와 고유명사 검수하기">
+    <meta name="twitter:description" content="녹음 20초와 대조문을 사용해 전사 초안의 오류를 찾아냅니다.">
+    <meta name="twitter:image" content="https://ai-all.co.kr/assets/ai-all-share.png">
+    <meta name="twitter:domain" content="ai-all.co.kr">
+    <link rel="stylesheet" href="style.css?v=1773850667033">
+    <link rel="canonical" href="https://ai-all.co.kr/tool-whisper-transcription.html">
+</head>
+<body>
+    <nav class="article-trail" aria-label="사이트 탐색">
+        <a href="index.html">AI-ALL 홈</a>
+        <a href="tools.html">추천 툴</a>
+        <a href="sitemap.html">전체 글 찾기</a>
+    </nav>
+    <main>
+        <article class="post-content">
+            <header class="post-header">
+                <span class="category">추천 툴</span>
+                <h1>Whisper로 만든 자막에서 숫자와 고유명사 검수하기</h1>
+                <p class="post-meta">게시일 <time datetime="2026-11-24">2026년 11월 24일</time></p>
+            </header>
+            <div class="post-body">
+                <p>제품 설명회를 자막으로 만들 때 ‘십오’가 ‘오십’으로 바뀌면 문장이 자연스러워도 내용은 달라집니다. Whisper는 음성을 텍스트로 옮기는 공개 모델입니다. 자막을 게시하기 전에는 글자 수보다 놓치면 곤란한 단어부터 정하는 편이 좋습니다. <a href="https://github.com/openai/whisper">OpenAI Whisper 공식 저장소</a></p>
+                <h2>전사와 번역 중 원하는 결과 정하기</h2>
+                <p>직접 녹음한 한국어 음성에 ‘모델명 다온 B, 배송은 15일, 수량은 두 개’라는 문장을 넣습니다. 한국어 자막이 목적이면 다국어 모델의 전사 작업을 사용합니다. 같은 녹음의 처음과 끝에 짧은 정적을 넣어 말이 없는 구간에 문장이 붙는지도 살펴보세요.</p>
+                <h2>재생 시각을 남겨 수정하기</h2>
+                <p>대조표에는 모델명, 배송일, 수량을 각각 한 행으로 적고 옆에 실제 들리는 시각을 남깁니다. ‘다온비’처럼 소리는 비슷하지만 표기가 다른 경우와, ‘15일’을 ‘50일’로 읽은 의미 오류는 따로 표시하세요. 다음 녹음에서 같은 실수가 반복될 때 무엇부터 사람이 확인할지 정할 수 있습니다.</p>
+            </div>
+        </article>
+        <nav class="article-trail" aria-label="이어서 읽기">
+            <a href="tools.html">추천 툴 목록</a>
+            <a href="tool-teachable-background.html">함께 읽기 · Teachable Machine은 컵을 배웠을까, 책상을 배웠을까?</a>
+        </nav>
+    </main>
+</body>
+</html>

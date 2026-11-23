@@ -36,7 +36,6 @@
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <link rel="stylesheet" href="style.css?v=1773850667033">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1012734614251637" crossorigin="anonymous"></script>
 <meta name="google-adsense-account" content="ca-pub-1012734614251637">
     <link rel="canonical" href="https://ai-all.co.kr/tools.html">
 </head>
@@ -51,8 +50,8 @@
                     <li><a href="tips.html">AI 꿀팁</a></li>
                     <li><a href="in-depth-analysis.html">심층 분석</a></li>
                     <li><a href="tools.html">추천 툴</a></li>
+                    <li><a href="ai-lab.html">AI 실습실</a></li>
                     <li><a href="roadmap.html">학습 로드맵</a></li>
-                    <li><a href="learning-journey.html">나의 학습 여정</a></li>
                     <li><a href="about.html">소개</a></li>
                     <li><a href="sitemap.html">사이트맵</a></li>
                 </ul>
@@ -99,20 +98,6 @@
 
     <main class="inner">
 
-    <!-- Google AdSense: ai-all-main-top -->
-    <div class="ads-wrapper-top">
-        
-        <!-- ai-all-main-top -->
-        <ins class="adsbygoogle"
-             style="display:block"
-             data-ad-client="ca-pub-1012734614251637"
-             data-ad-slot="6867902771"
-             data-ad-format="auto"
-             data-full-width-responsive="true"></ins>
-        <script>
-             (adsbygoogle = window.adsbygoogle || []).push({});
-        </script>
-    </div>
 
         <section id="tool-guides" class="section">
             <div class="section-header" style="text-align: center; margin-bottom: 50px;">
@@ -121,6 +106,26 @@
             </div>
             
             <div class="grid-container">
+                <article class="card">
+                    <h3><a href="tool-whisper-transcription.html">Whisper로 만든 자막에서 숫자와 고유명사 검수하기</a></h3>
+                    <p>녹음 20초와 대조문을 사용해 전사 초안의 오류를 찾아냅니다.</p>
+                </article>
+                <article class="card">
+                    <h3><a href="tool-teachable-background.html">Teachable Machine은 컵을 배웠을까, 책상을 배웠을까?</a></h3>
+                    <p>이미지 분류기를 만든 뒤 물건과 배경의 조합을 뒤집어 시험합니다.</p>
+                </article>
+                <article class="card">
+                    <h3><a href="tool-orange-concordance.html">Orange에서 ‘가볍다’ 앞뒤 문장만 모아 읽기</a></h3>
+                    <p>리뷰 단어 빈도를 감정 점수로 바꾸기 전에 Concordance로 문맥을 확인합니다.</p>
+                </article>
+                <article class="card">
+                    <h3><a href="tool-sentence-transformers.html">Sentence Transformers로 표현이 다른 FAQ 찾기</a></h3>
+                    <p>‘돈이 두 번 나갔어요’ 같은 질문을 FAQ 후보와 연결하고 검색 순위를 점검합니다.</p>
+                </article>
+                <article class="card">
+                    <h3><a href="tool-hf-data-studio.html">Hugging Face Data Studio에서 내려받기 전 데이터 살펴보기</a></h3>
+                    <p>열 이름과 실제 행을 대조해 공개 데이터가 내 실험 질문에 맞는지 판단합니다.</p>
+                </article>
                 <article class="card">
                     <div class="icon-box" style="background:#f3e8ff; color:#9333ea;">
                         <i class="fa-solid fa-people-group"></i>
@@ -133,8 +138,8 @@
                     <div class="icon-box" style="background:#fefce8; color:#ca8a04;">
                         <i class="fa-solid fa-microscope"></i>
                     </div>
-                    <h3>Elicit & SciSpace 심층 분석: 의미론적 리서치 엔진</h3>
-                    <p>단순한 키워드 매칭을 넘어, 논문과 특허 문헌 속에 담긴 과학적 맥락을 통째로 이해하는 AI 리서치 엔진의 양대 산맥을 소개합니다.</p>
+                    <h3>Elicit와 SciSpace로 논문을 찾고 결과 표 읽기</h3>
+                    <p>연구 질문을 정하고 논문별 실험 조건과 결과의 출처를 확인하는 문헌 조사 실습입니다.</p>
                     <a href="tool-elicit-scispace.html" class="link-text">리뷰 보기 <i class="fa-solid fa-arrow-right"></i></a>    
                 </article>
                 <article class="card">
@@ -194,8 +199,8 @@
                     <div class="icon-box" style="background:#ecfeff; color:#0891b2;">
                         <i class="fa-solid fa-magnifying-glass"></i>
                     </div>
-                    <h3>Perplexity: 거짓말(할루시네이션) 없는 AI 검색 엔진</h3>
-                    <p>모든 답변에 출처 논문과 기사를 달아줍니다.</p>
+                    <h3>Perplexity로 검색 답변의 출처 확인하기</h3>
+                    <p>답변에 연결된 기사와 논문을 열어 인용한 내용이 원문과 맞는지 확인하는 방법입니다.</p>
                     <a href="tool-perplexity.html" class="link-text">리뷰 보기 <i class="fa-solid fa-arrow-right"></i></a>
                 </article>
 
@@ -215,6 +220,14 @@
                 </article>
                 </div>
                 </section>
+        <aside class="directory-ad" aria-label="광고">
+            <ins class="adsbygoogle" style="display:block"
+                 data-ad-client="ca-pub-1012734614251637"
+                 data-ad-slot="6867902771"
+                 data-ad-format="horizontal"
+                 data-full-width-responsive="false"></ins>
+        </aside>
+        <script src="/directory-ad.js" defer></script>
                 </main>
 
                 <footer>

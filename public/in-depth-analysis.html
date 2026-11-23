@@ -35,7 +35,6 @@
     <meta name="description" content="AI-ALL의 심층 분석 칼럼 목록입니다. AI 기술의 최신 동향과 심도 있는 분석을 만나보세요.">
     <link rel="stylesheet" href="style.css?v=1773850667033">
     <link rel="canonical" href="https://ai-all.co.kr/in-depth-analysis.html">
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1012734614251637" crossorigin="anonymous"></script>
 </head>
 <body>
     <header>
@@ -47,8 +46,8 @@
                     <li><a href="tips.html">AI 꿀팁</a></li>
                     <li><a href="in-depth-analysis.html">심층 분석</a></li>
                     <li><a href="tools.html">추천 툴</a></li>
+                    <li><a href="ai-lab.html">AI 실습실</a></li>
                     <li><a href="roadmap.html">학습 로드맵</a></li>
-                    <li><a href="learning-journey.html">나의 학습 여정</a></li>
                     <li><a href="about.html">소개</a></li>
                     <li><a href="sitemap.html">사이트맵</a></li>
                 </ul>
@@ -95,20 +94,6 @@
 
     <main class="inner">
 
-    <!-- Google AdSense: ai-all-main-top -->
-    <div class="ads-wrapper-top">
-        
-        <!-- ai-all-main-top -->
-        <ins class="adsbygoogle"
-             style="display:block"
-             data-ad-client="ca-pub-1012734614251637"
-             data-ad-slot="6867902771"
-             data-ad-format="auto"
-             data-full-width-responsive="true"></ins>
-        <script>
-             (adsbygoogle = window.adsbygoogle || []).push({});
-        </script>
-    </div>
 
         <section class="section">
             <div class="section-header" style="text-align: center; margin-bottom: 40px;">
@@ -152,59 +137,60 @@
                     border-color: #2563eb;
                     color: #ffffff;
                 }
-                /* 필터링 애니메이션 */
-                .card {
-                    transition: opacity 0.4s ease, transform 0.4s ease;
-                }
-                .card.hidden {
-                    display: none;
-                    opacity: 0;
-                    transform: translateY(20px);
-                }
+                .card[hidden] { display: none; }
             </style>
-
+            <p id="filter-count" role="status" class="filter-count"></p>
             <script>
                 document.addEventListener('DOMContentLoaded', () => {
-                    const filterBtns = document.querySelectorAll('.filter-btn');
-                    const cards = document.querySelectorAll('.card');
-
-                    filterBtns.forEach(btn => {
-                        btn.addEventListener('click', () => {
-                            const filter = btn.getAttribute('data-filter');
-
-                            // 버튼 활성화 상태 변경
-                            filterBtns.forEach(b => b.classList.remove('active'));
-                            btn.classList.add('active');
-
-                            // 카드 필터링
-                            cards.forEach(card => {
-                                const category = card.getAttribute('data-category');
-                                
-                                if (filter === 'all' || category === filter) {
-                                    card.style.display = 'flex';
-                                    setTimeout(() => {
-                                        card.style.opacity = '1';
-                                        card.style.transform = 'translateY(0)';
-                                    }, 10);
-                                } else {
-                                    card.style.opacity = '0';
-                                    card.style.transform = 'translateY(20px)';
-                                    setTimeout(() => {
-                                        card.style.display = 'none';
-                                    }, 400);
-                                }
-                            });
-                        });
-                    });
+                    const buttons = document.querySelectorAll('.filter-btn');
+                    const cards = document.querySelectorAll('article.card[data-category]');
+                    function selectCategory(selected) {
+                        for (const button of buttons) {
+                            button.classList.toggle('active', button === selected);
+                            button.setAttribute('aria-pressed', String(button === selected));
+                        }
+                        let count = 0;
+                        for (const card of cards) {
+                            card.hidden = selected.dataset.filter !== 'all' && card.dataset.category !== selected.dataset.filter;
+                            if (!card.hidden) count++;
+                        }
+                        document.getElementById('filter-count').textContent = selected.textContent + ' · 글 ' + count + '개';
+                    }
+                    for (const button of buttons) button.addEventListener('click', () => selectCategory(button));
+                    selectCategory(buttons[0]);
                 });
             </script>
 
-            <div class="grid-container" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+            <div class="grid-container" style="grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));">
+                <article class="card" data-category="tech">
+                    <h3><a href="case-report-evidence.html">구매자가 그대로인데 성과가 늘었다고 쓴 이유</a></h3>
+                    <p>AI 실패 사례와 수정 과정 · 주간 실적 보고서에서 비율과 인과관계가 뒤섞인 세 문장을 같은 원자료로 고칩니다.</p>
+                </article>
+                <article class="card" data-category="tech">
+                    <h3><a href="analysis-data-leakage.html">사진 100장을 무작위로 나눴는데 시험이 쉬워진 이유</a></h3>
+                    <p>같은 물체를 연속 촬영한 사진으로 학습·평가 자료의 경계를 살펴봅니다.</p>
+                </article>
+                <article class="card" data-category="ethics">
+                    <h3><a href="analysis-judge-order.html">AI 심사위원에게 답안 순서를 바꿔 보여 주면</a></h3>
+                    <p>같은 답 두 개를 앞뒤로 바꿔 채점해 순서에 민감한 비교를 찾아냅니다.</p>
+                </article>
+                <article class="card" data-category="tech">
+                    <h3><a href="analysis-confidence.html">확률 80%라는 답을 스무 번 모으면</a></h3>
+                    <p>예측 확률과 실제 정답 비율을 비교해 신뢰도 보정의 의미를 이해합니다.</p>
+                </article>
+                <article class="card" data-category="tech">
+                    <h3><a href="analysis-wait-tail.html">평균 응답은 빠른데 누구는 왜 11초나 기다릴까?</a></h3>
+                    <p>열 번의 응답을 정렬해 평균, 중앙값, 긴 지연이 설명하는 대상을 나눕니다.</p>
+                </article>
+                <article class="card" data-category="trend">
+                    <h3><a href="analysis-human-queue.html">사람에게 넘긴 답변은 정확도 표에서 어디로 갈까?</a></h3>
+                    <p>자동 처리율이 다른 두 모델을 오류 건수와 검토 대기열까지 포함해 비교합니다.</p>
+                </article>
                 
                 <article class="card" data-category="trend">
                     <div class="card-content">
-                        <h3>[제47회] AI의 숨겨진 청구서: 전력망 붕괴(Grid Crisis)의 공포와 차세대 '액침 냉각(Immersion Cooling)' 데이터센터 아키텍처</h3>
-                        <p>AI-ALL 전문 에디터 | 2026. 03. 22</p>
+                        <h3>[제47회] AI 서버의 열은 어디로 갈까? 랙 전력과 액체 냉각 읽기</h3>
+                        <p>GB200 NVL72 사양으로 냉각 방식을 살펴보고, 가상의 랙을 예로 전력과 에너지 사용량을 구분합니다.</p>
                         <a href="tech-column-47.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
@@ -224,8 +210,8 @@
                 </article>
                 <article class="card" data-category="trend">
                     <div class="card-content">
-                        <h3>[제44회] 데이터 절벽(Data Wall)과 우로보로스의 저주: AI가 AI를 학습하는 '합성 데이터'의 역설과 '인간 프리미엄'의 폭등</h3>
-                        <p>AI-ALL 전문 에디터 | 2026. 03. 18</p>
+                        <h3>[제44회] 합성 데이터로 다시 학습하면 어떤 사례가 사라질까?</h3>
+                        <p>모델 붕괴 연구의 실험 조건을 살펴보고, 희귀한 범주의 성능을 따로 측정하는 방법을 설명합니다.</p>
                         <a href="tech-column-45.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
@@ -257,13 +243,7 @@
                         <a href="tech-column-40.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                
-                
-                
-                
-                
-                
-                
+
                 <article class="card" data-category="tech">
                     <div class="card-content">
                         <h3>[제39회] 자율주행의 뇌를 깨우다: '엣지 AI'와 '디지털 트윈' 기술의 완벽한 융합</h3>
@@ -399,13 +379,6 @@
                 </article>
                 <article class="card" data-category="tech">
                     <div class="card-content">
-                        <h3>[제20회] 지능의 압축: 온디바이스 AI를 위한 양자화와 지식 증류</h3>
-                        <p>AI-ALL 기술 분석팀 | 2026. 02. 19</p>
-                        <a href="tech-column-21.html" class="link-text">자세히 보기 &rarr;</a>
-                    </div>
-                </article>
-                <article class="card" data-category="tech">
-                    <div class="card-content">
                         <h3>[제19회] 엣지에서의 추론: TinyML과 경량화 기술이 만드는 '사물 지능(AIoT)'의 세계</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 19</p>
                         <a href="tech-column-20.html" class="link-text">자세히 보기 &rarr;</a>
@@ -439,31 +412,7 @@
                         <a href="tech-column-16.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                
-                
-                
-                
-                <article class="card" data-category="tech">
-                    <div class="card-content">
-                        <h3>[제10회] 보는 눈에서 생각하는 눈으로: VLM의 시각적 문해력과 인과관계 추론의 실체</h3>
-                        <p>전문 에디터 J | 2026. 02. 17</p>
-                        <a href="tech-column-18.html" class="link-text">자세히 보기 &rarr;</a>
-                    </div>
-                </article>
-                <article class="card" data-category="tech">
-                    <div class="card-content">
-                        <h3>[제9회] 지능의 새로운 차원: 양자 컴퓨팅이 딥러닝의 전역 최적화 문제를 해결하는 법</h3>
-                        <p>AI-ALL 기술 분석팀 | 2026. 02. 16</p>
-                        <a href="tech-column-20.html" class="link-text">자세히 보기 &rarr;</a>
-                    </div>
-                </article>
-                <article class="card" data-category="tech">
-                    <div class="card-content">
-                        <h3>[제8회] 클라우드로부터의 독립: NPU 아키텍처 진화가 이끄는 온디바이스 AI 초격차 전략</h3>
-                        <p>AI-ALL 기술 분석팀 | 2026. 02. 16</p>
-                        <a href="tech-column-19.html" class="link-text">자세히 보기 &rarr;</a>
-                    </div>
-                </article>
+
                 <article class="card" data-category="trend">
                     <div class="card-content">
                         <h3>[제7회] 물리적 지능의 완성: 휴머노이드 로봇이 중력과 마찰력을 이기고 '인간답게' 걷는 방법</h3>
@@ -516,6 +465,14 @@
                 
             </div>
         </section>
+        <aside class="directory-ad" aria-label="광고">
+            <ins class="adsbygoogle" style="display:block"
+                 data-ad-client="ca-pub-1012734614251637"
+                 data-ad-slot="6867902771"
+                 data-ad-format="horizontal"
+                 data-full-width-responsive="false"></ins>
+        </aside>
+        <script src="/directory-ad.js" defer></script>
     </main>
 
     <footer>

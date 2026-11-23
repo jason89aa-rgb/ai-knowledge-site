@@ -48,10 +48,10 @@ htmlFiles.forEach(file => {
 
     // 이미 Giscus 코드가 없는 경우에만 추가
     if (!content.includes('class="giscus"')) {
-        // ads-wrapper-bottom 닫는 태그(</div>) 뒤에 Giscus 스니펫을 삽입
-        const regex = /(<div\s+class="ads-wrapper-bottom">[\s\S]*?<\/div>)/i;
+        // 글 끝에 댓글을 배치한다. 광고 유무와 관계없이 동작한다.
+        const regex = /(<article\s+class="post-content"[^>]*>[\s\S]*?)(<\/article>)/i;
         if (regex.test(content)) {
-            content = content.replace(regex, '$1\n' + giscusSnippet);
+            content = content.replace(regex, (_, body, end) => body + '\n' + giscusSnippet + end);
         }
     }
 

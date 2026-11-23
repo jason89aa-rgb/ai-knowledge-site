@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AI 실습실 · 보고서 근거 검토 | AI-ALL</title>
+    <meta name="description" content="원본 자료와 보고서 초안을 비교해 문장별 근거, 수치와 수정 제안을 확인하세요.">
+    <link rel="canonical" href="https://ai-all.co.kr/ai-lab.html">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="ai-lab.css">
+    <script src="ai-lab.js" defer></script>
+</head>
+<body>
+    <header><div class="inner">
+        <div class="logo"><a href="index.html">AI-ALL<span class="dot">.</span></a></div>
+        <nav aria-label="주요 메뉴"><ul>
+            <li><a href="ai-news.html">AI 뉴스</a></li><li><a href="tips.html">AI 꿀팁</a></li>
+            <li><a href="in-depth-analysis.html">심층 분석</a></li><li><a href="tools.html">추천 툴</a></li>
+            <li><a href="ai-lab.html" aria-current="page">AI 실습실</a></li>
+            <li><a href="roadmap.html">학습 로드맵</a></li><li><a href="about.html">소개</a></li><li><a href="sitemap.html">사이트맵</a></li>
+        </ul></nav>
+    </div></header>
+    <main class="lab">
+        <div class="intro">
+            <a href="index.html">AI-ALL</a> / AI 실습실
+            <h1>보고서 근거 검토</h1>
+            <p>원본 자료와 초안을 나란히 놓고, 수치가 다른 문장과 근거가 부족한 주장을 찾아보세요.</p>
+        </div>
+        <form id="review-form">
+            <fieldset id="inputs">
+                <legend class="sr-only">검토할 자료 입력</legend>
+                <div class="workbench">
+                    <section class="panel">
+                        <h2><label for="source">원본 자료</label></h2>
+                        <div class="source-controls">
+                            <label>형식 <select id="format"><option value="text">텍스트</option><option value="csv">CSV</option></select></label>
+                            <label class="file-button">CSV 파일 열기<input type="file" id="file" accept=".csv,text/csv"></label>
+                        </div>
+                        <textarea id="source" required maxlength="12000" placeholder="검토의 근거가 될 원문을 붙여넣으세요." aria-describedby="source-note"></textarea>
+                        <p class="hint" id="source-note">텍스트 최대 12,000자 · CSV 최대 100행, 첫 행은 열 제목</p>
+                        <div id="math-fields" hidden>
+                            <h3>수치 검산 <small>선택</small></h3>
+                            <p class="hint">열 이름을 입력하면 합계를, 분모까지 입력하면 행별 비율과 첫 행 대비 마지막 행의 변화를 계산합니다.</p>
+                            <div class="columns">
+                                <label>합계·분자 열<input id="value-column" maxlength="120" placeholder="예: 구매자"></label>
+                                <label>분모 열<input id="base-column" maxlength="120" placeholder="예: 방문자"></label>
+                            </div>
+                        </div>
+                    </section>
+                    <section class="panel">
+                        <h2><label for="draft">보고서 초안</label></h2>
+                        <p class="hint draft-hint">검토할 문장을 입력하세요. 문장마다 원본에서 근거를 찾습니다.</p>
+                        <textarea id="draft" required maxlength="3000" placeholder="예: 이번 주 구매자가 늘었다." aria-describedby="draft-note"></textarea>
+                        <p class="hint" id="draft-note">최대 3,000자 · 한 번에 12문장</p>
+                        <button id="example" class="secondary" type="button">주간 실적 예제 불러오기</button>
+                    </section>
+                </div>
+                <div class="action">
+                    <div class="access">
+                        <label for="access-code">팀 접속 코드</label>
+                        <input id="access-code" type="password" required maxlength="200" autocomplete="off" aria-describedby="access-note">
+                        <p id="access-note">특허 리포트와 같은 코드입니다. 코드가 필요하면 팀 관리자에게 요청하세요.</p>
+                    </div>
+                    <p>검토를 누르면 입력 자료와 초안이 Claude Haiku 5.5로 전송됩니다. <a href="privacy.html">자료 처리 안내</a></p>
+                    <button class="primary" type="submit">근거 검토하기</button>
+                </div>
+            </fieldset>
+        </form>
+        <p id="status" role="status" aria-live="polite"></p>
+        <section id="results" class="panel results" hidden>
+            <h2 id="result-heading" tabindex="-1">문장별 검토 결과</h2>
+            <p id="summary"></p>
+            <div id="findings"></div>
+            <details id="calculations" hidden><summary>CSV 계산 내역</summary><ul></ul></details>
+            <label for="revision"><strong>선택한 수정을 반영한 초안</strong></label>
+            <textarea id="revision" readonly></textarea>
+            <button class="secondary" id="copy" type="button">수정본 복사</button>
+            <span id="copy-status" role="status"></span>
+        </section>
+        <p class="companion"><a href="case-report-evidence.html">실패 사례 읽기 · 구매자가 그대로인데 성과가 늘었다고 쓴 이유</a></p>
+    </main>
+</body>
+</html>
