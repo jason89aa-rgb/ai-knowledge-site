@@ -136,6 +136,9 @@ td:first-child { white-space: nowrap; }
 #result > section { scroll-margin-top: 16px; }
 .dossier-cover { background: linear-gradient(120deg, #102b3c 10%, #144454 76%, #165563); border: 0; padding: clamp(22px, 4vw, 44px); color: #fff; }
 .dossier-cover .report-title { font-family: Georgia, "Malgun Gothic", serif; line-height: 1.12; letter-spacing: -.035em; font-weight: 550; font-size: clamp(1.9rem, 4.3vw, 3.45rem); margin: 12px 0; }
+.dossier-cover .facts { margin-top: 18px; }
+.dossier-cover .facts div { border-top-color: #8badb74d; }
+.dossier-cover .facts dd { margin: 2px 0 0; font-weight: 600; overflow-wrap: anywhere; }
 .dossier-cover .identity { color: #a5dfd6; letter-spacing: .035em; }
 .dossier-cover .hint, .dossier-cover dt, .dossier-cover .notes { color: #c4d6dc; }
 .dossier-cover a, .dossier-cover .manual-record summary { color: #b3eddf; }
