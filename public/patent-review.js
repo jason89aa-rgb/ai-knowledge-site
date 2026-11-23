@@ -297,6 +297,30 @@ function download(blob, name) {
   setTimeout(() => URL.revokeObjectURL(url), 30000);
 }
 
+// The drawing on the first page of the publication, for the PowerPoint export. Without one the deck is made without it.
+const drawings = new WeakMap();
+function drawingFor(report) {
+  if (report.demo || report.local || !isAutomaticMode()) return Promise.resolve(null);
+  if (!drawings.has(report)) drawings.set(report, (async () => {
+    try {
+      const blob = await (await api({ action: "drawing", number: report.grant || report.publication })).blob();
+      const data = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(blob);
+      });
+      const image = new Image();
+      image.src = data;
+      await image.decode();
+      return { data, width: image.naturalWidth, height: image.naturalHeight };
+    } catch {
+      return null;
+    }
+  })());
+  return drawings.get(report);
+}
+
 function exportButton(report, status) {
   return button("PowerPoint 내려받기", async event => {
     const control = event.currentTarget;
@@ -309,7 +333,8 @@ function exportButton(report, status) {
         briefRoles.find(([role]) => role === row.role)?.[1], [row.issue, ...findingDetailText(row), row.text].filter(Boolean).join("\n"),
         [row.date, row.procedure, row.locator].filter(Boolean).join(" · "),
       ]));
-      await window.exportPatentPptx({ ...report, timelineRows, procedureRows, issueRows: issueRows(report), recordSheets: recordSheets(report) }, report.reviewed ? "원문 검토일 " + report.reviewedAt : dateLabel(report.retrievedAt), facts, download);
+      await window.exportPatentPptx({ ...report, timelineRows, procedureRows, issueRows: issueRows(report), recordSheets: recordSheets(report),
+        deck: deckData(report), drawing: await drawingFor(report) }, report.reviewed ? "원문 검토일 " + report.reviewedAt : dateLabel(report.retrievedAt), facts, download);
       say(status, "PowerPoint 파일을 만들었습니다.");
     } catch {
       say(status, "PowerPoint를 만들지 못했습니다. 페이지를 새로 열고 다시 시도해 주세요.", true);
