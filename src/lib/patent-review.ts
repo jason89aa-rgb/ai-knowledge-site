@@ -737,14 +737,34 @@ export async function officialPdf(country: unknown, application: unknown, id: un
   throw new PatentError("이 문서는 공식 열람처에서 확인해 주세요.", 400);
 }
 
-function pdfContent(bytes: Uint8Array): ClaudeContent {
+// The browser encodes an uploaded PDF as base64 before sending it, because encoding megabytes here
+// costs more CPU time than the hosting platform grants one request.
+export const encodedPdfType = "application/x-pdf-base64";
+// Base64 padding can stand for up to two bytes that are not there.
+export const uploadBytes = (file: File) => file.type === encodedPdfType ? Math.max(0, Math.floor(file.size * 3 / 4) - 2) : file.size;
+
+// The base64 text of an uploaded PDF, whether it arrived encoded or raw.
+export async function uploadedPdf(file: File, invalid: string) {
+  if (file.type === encodedPdfType) {
+    const data = await file.text();
+    // "JVBERi0" is how "%PDF-" starts in base64.
+    if (!data.startsWith("JVBERi0")) throw new PatentError(invalid, 400);
+    return data;
+  }
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  if (!isPdf(bytes)) throw new PatentError(invalid, 400);
+  return bytes;
+}
+
+function pdfContent(bytes: Uint8Array | string): ClaudeContent {
+  if (typeof bytes === "string") return { type: "document", source: { type: "base64", media_type: "application/pdf", data: bytes } };
   let data = "";
   // Encode in chunks divisible by three so that only the final chunk has padding.
   for (let offset = 0; offset < bytes.length; offset += 24576) data += btoa(String.fromCharCode(...bytes.subarray(offset, offset + 24576)));
   return { type: "document", source: { type: "base64", media_type: "application/pdf", data } };
 }
 
-export async function summarizePdf(bytes: Uint8Array, title: string, source: string) {
+export async function summarizePdf(bytes: Uint8Array | string, title: string, source: string) {
   const scope = source === "EPO OPS · 공보 원문" ? ` 공보 발췌 위치는 ${title}입니다. 이 쪽에 적힌 내용만 정리하고, 청구항이나 서지에서 심사관의 판단 또는 출원인의 주장을 추론하지 마세요.`
     : source === "EPO Publication Server" ? " PDF에 공개공보가 함께 있으면 검색보고서에 해당하는 부분만 요약하세요." : "";
   return summarize(title, source, [
@@ -906,9 +926,7 @@ export async function jointReport(files: File[], context: string, focus: string)
     if (file.type === "text/plain") {
       content.push({ type: "text", text: (await file.text()).slice(0, 60000) });
     } else {
-      const bytes = new Uint8Array(await file.arrayBuffer());
-      if (!isPdf(bytes)) throw new PatentError("유효한 PDF 원문을 선택해 주세요.", 400);
-      content.push(pdfContent(bytes));
+      content.push(pdfContent(await uploadedPdf(file, "유효한 PDF 원문을 선택해 주세요.")));
     }
   }
   content.push({ type: "text", text: [

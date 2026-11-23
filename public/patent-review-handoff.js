@@ -365,10 +365,9 @@ function dossierHandoff(report) {
           }));
           form.append("context", JSON.stringify({ case: context, sources }));
           form.append("focus", report.analysisRequest || "");
-          fresh.forEach(item => {
-            const type = item.row.doc?.text ? "text/plain" : "application/pdf";
-            form.append("document", item.file.slice(0, item.file.size, type), item.file.name);
-          });
+          for (const item of fresh) {
+            form.append("document", item.row.doc?.text ? item.file.slice(0, item.file.size, "text/plain") : await encodedPdf(item.file), item.file.name);
+          }
           status.textContent = "선택 원문 " + fresh.length + "건 함께 분석 중";
           let response;
           // A cut answer to several documents is not asked for again: the batch is halved. A single document gets one more try.
