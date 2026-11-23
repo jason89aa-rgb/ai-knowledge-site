@@ -47,7 +47,7 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 | 데이터 출처 | 동작 |
 | --- | --- |
-| 자동 · 미국은 EPO (기본) | 미국 번호는 EPO로 검색합니다. 다른 관할은 `WINTELIPS_ACCESS_TOKEN`이 있으면 WINTELIPS로 검색하고, 없거나 WINTELIPS 검색이 실패하면 공식 기관 API로 검색 |
+| 자동 · WINTELIPS 우선 (기본) | 미국을 포함한 모든 관할을 `WINTELIPS_ACCESS_TOKEN`이 있으면 WINTELIPS로 먼저 검색하고, 토큰이 없거나 검색이 실패하거나 결과가 없으면 공식 기관 API로 검색 |
 | WINTELIPS | WINTELIPS MCP의 번호 검색(출원·등록·문헌·공개번호, 전체 국가), 서지, 상태, 이력, 패밀리, 발명자를 사용. 한국 건은 의견제출통지서·거절결정서 본문을 Claude로 요약 |
 | 공식 기관 API | 번호를 가능한 관할·번호 유형으로 나눠(예: US 등록번호와 US 출원번호) 아래 기관 API로 각각 조회 |
 

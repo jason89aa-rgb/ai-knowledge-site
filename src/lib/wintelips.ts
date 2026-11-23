@@ -398,6 +398,16 @@ export async function wintelipsCaseRecord(token: string, input: Subject) {
       language: String(items[0]?.lang_cd || data?.lang_cd || language), claims,
     };
   };
+  // Every claim, dependent ones included, so that the numbers before and after grant can be matched.
+  const everyClaim = async (row: Row | undefined, label: string) => {
+    if (!row?.SKEY) return undefined;
+    const data = await optional(label, () => call("get_patent_spec_text", { section: "all_claim", skey: row.SKEY, lang_cd: language }));
+    const seen = new Set<string>();
+    const claims = related(data, "cl_list").map(item => ({
+      number: item.cl_num || "", text: clean((item.cl ?? "").replace(/<\/?ul>/gi, " ")).replace(/\s+/g, " ").replace(/^\s*\d+\s*[.．]\s*/, "").trim().slice(0, 4000),
+    })).filter(item => /^\d+$/.test(item.number) && item.text && !seen.has(item.number) && seen.add(item.number)).slice(0, 200);
+    return claims.length ? { language: String(data?.lang_cd || language), claims } : undefined;
+  };
   const backward = async () => {
     const first = await call("get_patent_citn", { section: "backward", skey: target });
     if (!first) return undefined;
@@ -414,7 +424,8 @@ export async function wintelipsCaseRecord(token: string, input: Subject) {
     ? optional(label, () => call("get_patent_rights", { section, skey: target })) : undefined;
   // Korean and Japanese trial details come in one call. US trial parties and EP board appeals are fetched only when such a proceeding exists.
   const trialTool = ({ US: ["get_patent_us_trial", "trial_exist"], KR: ["get_patent_kr_trial", "info"], JP: ["get_patent_jp_trial", "info"] } as Record<string, string[]>)[country];
-  const [grantedClaims, originalClaims, citations, expiry, fees, owner, pta, trials, appeals, litigation, opposition] = await Promise.all([
+  const [grantedAll, originalAll, grantedClaims, originalClaims, citations, expiry, fees, owner, pta, trials, appeals, litigation, opposition] = await Promise.all([
+    granted && published ? everyClaim(granted, "등록 청구항 전체") : undefined, granted && published ? everyClaim(published, "공개 청구항 전체") : undefined,
     claimsOf(granted, "등록 청구항"), claimsOf(published, "공개 청구항"), optional("인용문헌", backward),
     rights("grt_expiry_date", ["KR", "US", "JP", "CN", "CA", "AU"], "예상 만료일"), rights("fee_grt", ["KR", "US", "EP", "AU"], "연차료"),
     rights("crrt_assn", ["KR", "US", "JP", "CA", "AU"], "현재 권리자"),
@@ -445,7 +456,8 @@ export async function wintelipsCaseRecord(token: string, input: Subject) {
   return {
     retrieved: new Date().toISOString().slice(0, 10),
     subject: { country, application: own.AN_D, filed: day(own.AD), status: own.CSTK || undefined, granted: docket(granted), published: docket(published) },
-    claims: { scope: independent ? "independent" : "representative", granted: grantedClaims, original: originalClaims },
+    claims: { scope: independent ? "independent" : "representative", granted: grantedClaims, original: originalClaims,
+      all: grantedAll && originalAll && grantedAll.language === originalAll.language ? { granted: grantedAll.claims, original: originalAll.claims } : undefined },
     citations,
     term: {
       expiry: typeof expiry?.expire_dt === "string" ? date(expiry.expire_dt) : undefined,

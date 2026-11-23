@@ -6,6 +6,7 @@
 
 const recordLoads = new WeakMap();
 const claimDiffs = new WeakMap();
+const claimMaps = new WeakMap();
 const recordLive = report => !report.reviewed && !report.demo && !report.local && !report.linksOnly && report.country !== "UPC";
 
 // The WINTELIPS record of the case is fetched once per report and kept on it.
@@ -213,6 +214,89 @@ function fillFrame(report) {
   if (data) panel.append(el("p", `WINTELIPS · ${data.retrieved} 조회`, "hint muted"));
 }
 
+// Every published claim against the granted claim it became, dependent claims included. A dependent claim is matched without
+// its reference number, which renumbering changes; claims with the same wording are told apart by the claim they refer to.
+function claimNumbering(all) {
+  if (claimMaps.has(all)) return claimMaps.get(all);
+  const bag = text => {
+    const counts = new Map();
+    let size = 0;
+    for (const word of claimWords(String(text).replace(/\b(claims?)\s+\d+/gi, "$1 #").replace(/(청구항|제)\s*\d+\s*항?/g, "$1 #"))) {
+      if (!/[\p{L}\p{N}#]/u.test(word.key)) continue;
+      counts.set(word.key, (counts.get(word.key) || 0) + 1);
+      size++;
+    }
+    return { counts, size };
+  };
+  const shared = (x, y) => {
+    let total = 0;
+    for (const [word, count] of x.counts) total += Math.min(count, y.counts.get(word) || 0);
+    return total;
+  };
+  const published = all.original.map(claim => ({ ...claim, number: Number(claim.number), bag: bag(claim.text) }));
+  const granted = all.granted.map(claim => ({ ...claim, number: Number(claim.number), bag: bag(claim.text) }));
+  const score = new Map();
+  const ranked = [];
+  for (const p of published) {
+    for (const g of granted) {
+      const value = 2 * shared(p.bag, g.bag) / (p.bag.size + g.bag.size || 1);
+      if (value < .55) continue;
+      score.set(p.number + ":" + g.number, value);
+      ranked.push({ p, g, value });
+    }
+  }
+  const source = new Map();
+  const target = new Map();
+  for (const { p, g } of ranked.sort((x, y) => y.value - x.value || Math.abs(x.p.number - x.g.number) - Math.abs(y.p.number - y.g.number))) {
+    if (source.has(g.number) || target.has(p.number)) continue;
+    source.set(g.number, p);
+    target.set(p.number, g);
+  }
+  const parent = claim => Number(/(?:\bclaims?\s+|청구항\s*|제\s*)(\d+)/i.exec(claim.text.slice(0, 200))?.[1]) || 0;
+  const fits = (p, g) => parent(p) && parent(g) && target.get(parent(p))?.number === parent(g) ? 1 : 0;
+  for (let round = 0; round < 3; round++) {
+    for (const p1 of [...source.values()]) {
+      for (const p2 of [...source.values()]) {
+        const g1 = target.get(p1.number);
+        const g2 = target.get(p2.number);
+        const crossed = score.get(p1.number + ":" + g2.number) + score.get(p2.number + ":" + g1.number);
+        if (p1.number >= p2.number || !(Math.abs(crossed - score.get(p1.number + ":" + g1.number) - score.get(p2.number + ":" + g2.number)) < .02) ||
+            fits(p1, g2) + fits(p2, g1) <= fits(p1, g1) + fits(p2, g2)) continue;
+        source.set(g2.number, p1);
+        source.set(g1.number, p2);
+        target.set(p1.number, g2);
+        target.set(p2.number, g1);
+      }
+    }
+  }
+  const pairs = granted.map(g => {
+    const p = source.get(g.number);
+    const changes = p ? (diffWords(p.text, g.text) || []).filter(run => run.type !== "same") : [];
+    const worded = changes.filter(run => !/^[\d\s,.;]*$/.test(runText(run)));
+    return { g, p, absorbed: [], added: bag(changes.filter(run => run.type === "added").map(runText).join(" ")),
+      change: !p ? "대응하는 공개 청구항 없음" : worded.length ? "문언 변경" : changes.length ? "인용 항 번호만 변경" : "변경 없음" };
+  });
+  const lines = pairs.map(pair => ({ original: pair.p?.number, granted: pair.g.number, pair }));
+  for (const p of published) {
+    if (target.has(p.number)) continue;
+    // A claim that is gone but whose wording reappears in what a granted claim gained was most likely merged into it.
+    const body = bag(p.text.replace(/^.{0,160}?(?:\bclaims?\s+\d+|청구항\s*\d+|제\s*\d+\s*항)[^,;:]*[,;:]\s*(?:wherein\s+)?/i, ""));
+    let best;
+    for (const pair of pairs) {
+      const cover = shared(body, pair.added) / (body.size || 1);
+      if (cover >= .6 && (!best || cover > best.cover)) best = { pair, cover };
+    }
+    best?.pair.absorbed.push(p.number);
+    lines.push({ original: p.number, note: "등록 청구항에 없음" + (best ? ` · 등록 제${best.pair.g.number}항에 합쳐짐(추정)` : "") });
+  }
+  const result = lines.sort((a, b) => (a.original ?? 1e9) - (b.original ?? 1e9) || (a.granted ?? 0) - (b.granted ?? 0)).map(line => [
+    line.original ? `제${line.original}항` : "—", line.granted ? `제${line.granted}항` : "—",
+    line.note || line.pair.change + (line.pair.absorbed.length ? ` · 공개 제${line.pair.absorbed.join(", ")}항의 문언 포함(추정)` : ""),
+  ]);
+  claimMaps.set(all, result);
+  return result;
+}
+
 function fillClaims(report, rows) {
   const slot = by("claim-evolution");
   if (!slot) return;
@@ -282,7 +366,16 @@ function fillClaims(report, rows) {
     for (const claim of compared.dropped) dropped.append(el("h4", `공개 제${claim.number}항`), claimText(claim.text));
     panel.append(dropped);
   }
-  panel.append(el("p", "공개공보는 보통 출원 당시 청구항을 싣지만, 공개 전에 보정했다면 보정된 문언일 수 있습니다. 종속항은 대조하지 않았습니다.", "hint muted"));
+  if (data.claims.all) {
+    const numbering = claimNumbering(data.claims.all);
+    const map = el("details", "", "claim-dropped claim-numbering");
+    map.open = true;
+    map.append(el("summary", `전체 청구항 번호 대응 · 공개 ${data.claims.all.original.length}개 → 등록 ${data.claims.all.granted.length}개 (종속항 포함)`),
+      table(["공개 번호", "등록 번호", "변화"], numbering, "대응할 청구항이 없습니다."),
+      el("p", "항의 대응과 합쳐진 항은 문언 유사도로 추정했습니다. 경위는 4단계의 보정 기록에서 확인하세요.", "hint muted"));
+    panel.append(map);
+  }
+  panel.append(el("p", "공개공보는 보통 출원 당시 청구항을 싣지만, 공개 전에 보정했다면 보정된 문언일 수 있습니다. 종속항은 문언을 대조하지 않고 번호 대응표에만 넣었습니다.", "hint muted"));
 }
 
 const allowanceStages = new Set(["NoA · 허여 통지", "허여 가능 통지", "등록 결정·예고", "Appeal · 불복 결정", "심사관 보정", "면담 기록"]);
@@ -714,6 +807,9 @@ function recordSheets(report) {
       rows: list.map(row => [row.claim.number ? `제${row.claim.number}항` : "대표청구항", row.claim.text,
         !data.claims.granted ? "공개 청구항" : [row.source ? claimChange(row) : data.claims.original ? claimChange(row) : "공개 문헌 없음",
           row.added?.length && "추가: " + row.added.join(" / "), row.removed?.length && "삭제: " + row.removed.join(" / ")].filter(Boolean).join("\n")]) });
+  }
+  if (data?.claims.all) {
+    sheets.push({ title: "전체 청구항 번호 대응", headers: ["공개 번호", "등록 번호", "변화"], widths: [2, 2, 8.04], rows: claimNumbering(data.claims.all) });
   }
   const limits = limitEntries(rows);
   if (limits.length) {

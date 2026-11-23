@@ -130,7 +130,7 @@ async function api(data, signal) {
   if (code) headers["X-Patent-Access"] = code;
   const form = data instanceof FormData;
   if (!form) headers["Content-Type"] = "application/json";
-  if (data.action === "ask" || data.action === "family-compare") headers["X-Patent-Action"] = data.action;
+  if (data.action === "ask" || data.action === "family-compare" || data.action === "select-documents") headers["X-Patent-Action"] = data.action;
   let response;
   try {
     response = await fetch("/api/patent-review", {
