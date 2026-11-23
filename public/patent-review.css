@@ -362,6 +362,16 @@ td:first-child { white-space: nowrap; }
 .frame-facts dt { color: var(--muted); font-size: .8rem; }
 .frame-facts dd { margin: 2px 0 0; font-weight: 700; overflow-wrap: anywhere; white-space: pre-line; }
 .frame-facts small { display: block; margin-top: 2px; color: var(--muted); font-size: .76rem; }
+.stage-claims { margin: 12px 0; font-size: .9rem; }
+.stage-claims > summary { cursor: pointer; color: #274b59; font-weight: 700; }
+.stage-claims mark { padding: 1px 2px; border-radius: 3px; color: inherit; }
+.stage-claims mark.pointed { background: #fbe3d2; box-shadow: inset 0 -2px #b5632a; }
+.stage-claims mark.amended { background: #d9f0e4; box-shadow: inset 0 -2px #1b7463; }
+.stage-claim-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 10px; }
+.stage-claim-columns > div { padding: 12px 14px; border-radius: 8px; background: #f6f8fa; }
+.stage-claim-columns h5 { margin: 0 0 6px; font-size: .8rem; color: var(--muted); }
+.stage-claim-columns .claim-text { margin: 0; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 680px) { .stage-claim-columns { grid-template-columns: 1fr; } }
 .claim-card { margin-top: 16px; padding: 16px 18px; border: 1px solid var(--line); border-top: 3px solid #244952; border-radius: 4px 4px 10px 10px; background: #fbfcfd; }
 .claim-card header { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-bottom: 8px; }
 .claim-card header h3 { margin: 0; }

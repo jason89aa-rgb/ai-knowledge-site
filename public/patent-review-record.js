@@ -293,6 +293,8 @@ function claimNumbering(all) {
     line.original ? `제${line.original}항` : "—", line.granted ? `제${line.granted}항` : "—",
     line.note || line.pair.change + (line.pair.absorbed.length ? ` · 공개 제${line.pair.absorbed.join(", ")}항의 문언 포함(추정)` : ""),
   ]);
+  // The stage cards look up the granted claim a published claim became.
+  result.byOriginal = new Map(pairs.filter(pair => pair.p).map(pair => [pair.p.number, pair.g.number]));
   claimMaps.set(all, result);
   return result;
 }
