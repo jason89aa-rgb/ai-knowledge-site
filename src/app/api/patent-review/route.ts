@@ -1,5 +1,5 @@
 import {
-  addEpoPublicationPages, askReport, compareFamilyClaims, jointReport, isPdf, lookup, maxUpload, normalizePatent, officialCandidates, officialPdf, PatentError, selectDocuments, summarizeEvents, summarizePdf, summarizeText,
+  addEpoPublicationPages, askReport, compareFamilyClaims, jointReport, lookup, maxUpload, normalizePatent, officialCandidates, officialPdf, PatentError, selectDocuments, summarizeEvents, summarizePdf, summarizeText, uploadBytes, uploadedPdf,
 } from "../../../lib/patent-review";
 import {
   wintelipsCandidates, wintelipsCaseRecord, wintelipsConfigured, wintelipsDocument, wintelipsFamily, wintelipsFamilyCitations, wintelipsFamilyMember,
@@ -90,7 +90,8 @@ export async function POST(request: Request) {
     const content = request.headers.get("Content-Type") ?? "";
     const length = Number(request.headers.get("Content-Length"));
     if (content.startsWith("multipart/form-data;")) {
-      if (length > maxUpload + 32768) throw new PatentError("3.5 MiB 이하의 PDF를 올려 주세요.", 413);
+      // PDFs arrive as base64 text, a third larger than the files themselves.
+      if (length > maxUpload * 4 / 3 + 65536) throw new PatentError("3.5 MiB 이하의 PDF를 올려 주세요.", 413);
       const form = await request.formData().catch(() => { throw new PatentError("PDF를 다시 선택해 주세요.", 400); });
       if (form.get("action") === "joint-report") {
         const files = form.getAll("document");
@@ -98,15 +99,14 @@ export async function POST(request: Request) {
         const focus = form.get("focus") || "";
         if (typeof context !== "string" || context.length > 30000 || typeof focus !== "string" || focus.length > 2000 ||
             !files.length || files.length > 8 || !files.every((file): file is File => typeof file !== "string" && file.size > 0) ||
-            files.reduce((size, file) => size + file.size, 0) > maxUpload) throw new PatentError("선택한 원문 묶음의 크기 또는 형식을 확인해 주세요.", 400);
+            files.reduce((size, file) => size + uploadBytes(file), 0) > maxUpload) throw new PatentError("선택한 원문 묶음의 크기 또는 형식을 확인해 주세요.", 400);
         return streamSummary(() => jointReport(files, context, focus));
       }
       const file = form.get("pdf");
       if (!file || typeof file === "string") throw new PatentError("요약할 PDF 파일을 선택해 주세요.", 400);
-      if (file.size > maxUpload) throw new PatentError("3.5 MiB 이하의 PDF를 올려 주세요.", 413);
-      const bytes = new Uint8Array(await file.arrayBuffer());
-      if (!isPdf(bytes)) throw new PatentError("유효한 PDF 파일을 올려 주세요.", 400);
-      return streamSummary(() => summarizePdf(bytes, file.name.slice(0, 180), "사용자 업로드"));
+      if (uploadBytes(file) > maxUpload) throw new PatentError("3.5 MiB 이하의 PDF를 올려 주세요.", 413);
+      const data = await uploadedPdf(file, "유효한 PDF 파일을 올려 주세요.");
+      return streamSummary(() => summarizePdf(data, file.name.slice(0, 180), "사용자 업로드"));
     }
     // An AI request carries the report or claims the browser already holds, so it gets a larger body limit.
     const large = request.headers.get("X-Patent-Action");

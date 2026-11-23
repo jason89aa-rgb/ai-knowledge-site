@@ -123,6 +123,16 @@ function reportBody(text) {
 // A long answer is streamed. One that never arrives, or ends before its JSON, was cut on the way by a platform limit, a proxy or the network.
 const cutError = status => Object.assign(new Error("서버 응답을 끝까지 받지 못했습니다. 잠시 후 다시 시도해 주세요."), { cut: true, status });
 
+// A PDF is sent as base64 text: the server passes it on to Claude as it is, without spending its short CPU allowance on encoding.
+function encodedPdf(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("PDF를 읽지 못했습니다. 파일을 다시 선택해 주세요."));
+    reader.onload = () => resolve(new File([reader.result.slice(reader.result.indexOf(",") + 1)], file.name, { type: "application/x-pdf-base64" }));
+    reader.readAsDataURL(file);
+  });
+}
+
 async function api(data, signal) {
   if (!isAutomaticMode()) throw new Error("검색 설정에서 자동 조회 및 요약을 선택해 주세요.");
   const code = by("access").value;
@@ -428,7 +438,7 @@ function registerZipBox(report) {
         say("status", progress);
         try {
           const form = new FormData();
-          form.append("pdf", new File([await entry.read()], entry.name, { type: "application/pdf" }));
+          form.append("pdf", await encodedPdf(new File([await entry.read()], entry.name, { type: "application/pdf" })));
           const summary = await summarizeWithRetry(form, new AbortController().signal, progress);
           addSummary(report, { ...summary, source: "European Patent Register · 사용자 업로드", id: entry.name });
           done++;
@@ -1077,7 +1087,7 @@ by("upload").addEventListener("submit", async event => {
     if (apiMode) {
       say("uploadStatus", "선택한 PDF를 Claude로 요약하고 있습니다.");
       const form = new FormData();
-      form.append("pdf", files[0]);
+      form.append("pdf", await encodedPdf(files[0]));
       summaries.push(await readSummary(await api(form)));
     } else {
       const { summarizeLocal } = await localTools();
