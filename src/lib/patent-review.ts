@@ -703,6 +703,31 @@ async function readPdf(res: Response, limit: number) {
   return bytes;
 }
 
+// The drawing OPS clips from the first page of a publication, for the slide deck. Null when OPS holds none for that publication.
+export async function firstPageDrawing(input: unknown) {
+  const match = typeof input === "string" ? /^([A-Z]{2})((?:RE|PP|D)?\d{5,13})([A-Z]\d?)$/.exec(input.replace(/[\s,./-]/g, "").toUpperCase()) : null;
+  if (!match) throw new PatentError("도면을 찾을 공보 번호를 확인해 주세요.", 400);
+  const [, country, number, kind] = match;
+  const token = await opsToken();
+  let xml;
+  try {
+    xml = await opsXml(token, `/published-data/publication/docdb/${country}.${number}.${kind}/images`);
+  } catch (error) {
+    if (error instanceof PatentError && error.status === 404) return null;
+    throw error;
+  }
+  const instance = all(xml, "document-instance").find(node => node.attrs.desc === "FirstPageClipping" &&
+    all(node, "document-format").some(format => nodeText(format).trim() === "image/png"));
+  const link = instance?.attrs.link?.replace(/^published-data\/images\//, "");
+  if (!link || !/^[A-Z]{2}\/[A-Z0-9]+\/[A-Z0-9]+\/[a-z]+$/.test(link)) return null;
+  const response = await request(`${epoRoot}/rest-services/published-data/images/${link}?Range=1`, "EPO OPS",
+    { headers: { Authorization: "Bearer " + token, Accept: "image/png" } });
+  if (response.status === 404) return null;
+  if (!response.ok) throw fail("EPO OPS", response.status);
+  const bytes = await readBytes(response, 3 * 1024 * 1024, "도면 이미지가 지원 용량을 초과했습니다.");
+  return bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47 ? bytes : null;
+}
+
 export async function officialPdf(country: unknown, application: unknown, id: unknown, code: unknown, maxBytes: number) {
   if (country === "US" && typeof id === "string" && typeof code === "string" && Object.hasOwn(opsPageNames, code)) {
     const page = /^US((?:RE|PP|D)?\d{5,11})([A-Z]\d?)-p([1-9]\d{0,3})$/.exec(id);

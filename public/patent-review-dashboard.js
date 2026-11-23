@@ -1038,6 +1038,51 @@ function issueRows(report) {
   ]));
 }
 
+// What the PowerPoint export draws: each stage with its rejections, answers and outcomes, and the granted claims with what changed in them.
+function deckData(report) {
+  const briefs = proceedingBriefs(report);
+  const flow = prosecutionRounds(report, briefs);
+  const rows = briefs.flatMap(group => group.rows);
+  const stages = flow.rounds.map((round, index) => ({
+    date: round.notice.date, name: round.notice.name, tone: round.kind === "exam" ? "exam" : "appeal",
+    path: stagePath(round).map(step => step.date + " " + step.name),
+    issues: stageIssues(flow, index).issues.map(issue => ({
+      title: issue.title || "쟁점", claims: claimScope([...issue.claims]), art: [...issue.references.values()].map(item => item.doc),
+      examiner: issue.rows.map(row => ({ text: row.text, quote: row.element })),
+      answers: issue.answers.map(row => ({ label: responseLabels[row.responseType] || "", text: row.text, quote: row.element })),
+      fate: issue.fate.map(line => ({ tone: line.tone, text: line.text, reason: line.reason })),
+    })),
+  }));
+  const claims = report.caseRecord?.status === "done" ? report.caseRecord.data.claims : undefined;
+  const compared = claims?.granted && claims.original ? comparedClaims(claims) : undefined;
+  const independent = row => !/(?:\bclaims?\s+\d+|청구항\s*\d+|제\s*\d+\s*항)/i.test(row.claim.text.slice(0, 200));
+  // Independent claims come first; a deck has room for the claims whose wording changed, not for those that only cite a renumbered claim.
+  const changed = (compared?.comparable ? compared.rows : []).filter(row => row.runs && [...row.added, ...row.removed].some(text => !/^[\d\s,.;]*$/.test(text)))
+    .sort((a, b) => Number(independent(b)) - Number(independent(a))).slice(0, 8);
+  const first = calendarDay(report.filed);
+  const last = calendarDay(report.granted);
+  const days = first && last && last >= first ? (Date.parse(last) - Date.parse(first)) / 86400000 : 0;
+  const raised = stages.reduce((sum, stage) => sum + stage.issues.length, 0);
+  const grantedCount = claims?.all?.granted.length;
+  return {
+    stages,
+    claims: changed.map(row => ({
+      granted: row.claim.number, original: row.source.number, added: row.added.length, removed: row.removed.length,
+      runs: row.runs.map((run, index) => ({ type: run.type, text: (index ? run.words[0].gap : "") + runText(run) })),
+      notes: [...new Map(row.added.flatMap(phrase => amendmentsFor(phrase, rows)).map(item => [item.date + "|" + item.element,
+        { from: [item.date, item.procedure].filter(Boolean).join(" · "), phrase: item.element, support: item.support }])).values()].slice(0, 4),
+    })),
+    numbering: claims?.all ? [...claimNumbering(claims.all)] : [],
+    metrics: [
+      days && ["출원부터 등록까지", days.toLocaleString("ko-KR") + "일"],
+      stages.length && ["심사 단계", stages.length + "단계"],
+      raised && ["거절·쟁점", raised + "건"],
+      grantedCount && ["등록 청구항", grantedCount + "항"],
+      ["수록 문서", report.documents.length + "건"],
+    ].filter(Boolean).slice(0, 4),
+  };
+}
+
 function decisionCard(report, group) {
   const card = el("article", "", "procedure-brief stage-decision");
   const head = el("header", "", "procedure-head");

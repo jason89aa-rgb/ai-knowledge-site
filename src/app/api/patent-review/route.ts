@@ -1,5 +1,5 @@
 import {
-  addEpoPublicationPages, askReport, compareFamilyClaims, jointReport, lookup, maxUpload, normalizePatent, officialCandidates, officialPdf, PatentError, selectDocuments, summarizeEvents, summarizePdf, summarizeText, uploadBytes, uploadedPdf,
+  addEpoPublicationPages, askReport, compareFamilyClaims, firstPageDrawing, jointReport, lookup, maxUpload, normalizePatent, officialCandidates, officialPdf, PatentError, selectDocuments, summarizeEvents, summarizePdf, summarizeText, uploadBytes, uploadedPdf,
 } from "../../../lib/patent-review";
 import {
   wintelipsCandidates, wintelipsCaseRecord, wintelipsConfigured, wintelipsDocument, wintelipsFamily, wintelipsFamilyCitations, wintelipsFamilyMember,
@@ -172,6 +172,11 @@ export async function POST(request: Request) {
         const document = await officialPdf(body.country, body.application, body.id, body.code, 12 * 1024 * 1024);
         return summarizePdf(document.bytes, document.title, document.source);
       });
+    }
+    if (body?.action === "drawing") {
+      const bytes = await firstPageDrawing(body.number);
+      if (!bytes) throw new PatentError("이 공보의 대표도면을 찾지 못했습니다.", 404);
+      return new Response(bytes.buffer, { headers: { ...headers, "Content-Type": "image/png" } });
     }
     if (body?.action === "download") {
       const document = await officialPdf(body.country, body.application, body.id, body.code, 4 * 1024 * 1024);
