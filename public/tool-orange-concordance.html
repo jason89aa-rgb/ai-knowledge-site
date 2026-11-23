@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-PDQ055YSZT"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+
+  // 전 세계(한국 등): 기본 동의 허용 (0% 측정 문제 해결)
+  gtag('consent', 'default', {
+    'ad_storage': 'granted',
+    'ad_user_data': 'granted',
+    'ad_personalization': 'granted',
+    'analytics_storage': 'granted'
+  });
+
+  // EEA(유럽) + 영국 + 스위스: 기본 동의 거부 (개인정보 보호 규정 준수)
+  gtag('consent', 'default', {
+    'ad_storage': 'denied',
+    'ad_user_data': 'denied',
+    'ad_personalization': 'denied',
+    'analytics_storage': 'denied',
+    'region': ['AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'IS', 'LI', 'NO', 'GB', 'CH']
+  });
+  gtag('js', new Date());
+
+  gtag('config', 'G-PDQ055YSZT');
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orange에서 ‘가볍다’ 앞뒤 문장만 모아 읽기 | AI-ALL</title>
+    <meta name="description" content="리뷰 단어 빈도를 감정 점수로 바꾸기 전에 Concordance로 문맥을 확인합니다.">
+
+    <!-- Open Graph Tags -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Orange에서 ‘가볍다’ 앞뒤 문장만 모아 읽기">
+    <meta property="og:description" content="리뷰 단어 빈도를 감정 점수로 바꾸기 전에 Concordance로 문맥을 확인합니다.">
+    <meta property="og:image" content="https://ai-all.co.kr/assets/ai-all-share.png">
+    <meta property="og:url" content="https://ai-all.co.kr/tool-orange-concordance.html">
+
+    <!-- Twitter Card Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Orange에서 ‘가볍다’ 앞뒤 문장만 모아 읽기">
+    <meta name="twitter:description" content="리뷰 단어 빈도를 감정 점수로 바꾸기 전에 Concordance로 문맥을 확인합니다.">
+    <meta name="twitter:image" content="https://ai-all.co.kr/assets/ai-all-share.png">
+    <meta name="twitter:domain" content="ai-all.co.kr">
+    <link rel="stylesheet" href="style.css?v=1773850667033">
+    <link rel="canonical" href="https://ai-all.co.kr/tool-orange-concordance.html">
+</head>
+<body>
+    <nav class="article-trail" aria-label="사이트 탐색">
+        <a href="index.html">AI-ALL 홈</a>
+        <a href="tools.html">추천 툴</a>
+        <a href="sitemap.html">전체 글 찾기</a>
+    </nav>
+    <main>
+        <article class="post-content">
+            <header class="post-header">
+                <span class="category">추천 툴</span>
+                <h1>Orange에서 ‘가볍다’ 앞뒤 문장만 모아 읽기</h1>
+                <p class="post-meta">게시일 <time datetime="2026-11-24">2026년 11월 24일</time></p>
+            </header>
+            <div class="post-body">
+                <p>‘가볍다’라는 단어가 제품 리뷰에 다섯 번 나왔다고 해서 다섯 고객이 만족한 것은 아닙니다. 무게를 칭찬하는 문장과 덮개가 헐거운 점을 지적하는 문장에 같은 단어가 들어갈 수 있습니다.</p>
+                <h2>검색어가 가운데 오는 보기</h2>
+                <p>Orange의 Text 애드온에서 문서 모음을 Concordance 위젯에 연결하면 단어가 등장한 위치 주변을 모아 볼 수 있습니다. 연습 자료로 ‘들고 다니기 가볍다’, ‘덮개가 너무 가볍다’, ‘가볍다 해서 샀지만 손잡이가 아프다’를 각각 별도 문서로 넣습니다. <a href="https://orangedatamining.com/widget-catalog/text-mining/concordance/">Orange Concordance 위젯 문서</a></p>
+                <h2>세 행에서 서로 다른 판단 꺼내기</h2>
+                <p>첫 문장의 대상은 제품 전체 무게, 둘째는 덮개, 셋째는 구매 전 기대와 손잡이 사용감입니다. 검색어 양쪽만으로 불만을 판단하기 어려우면 원문 전체를 엽니다. ‘가벼워요’ 같은 활용형이 빠질 수도 있으므로 검색어별로 포착한 문서 번호를 기록하세요. 빈도표에 근거 문장 한 줄을 붙이면 다음 담당자도 분류 이유를 검토할 수 있습니다.</p>
+            </div>
+        </article>
+        <nav class="article-trail" aria-label="이어서 읽기">
+            <a href="tools.html">추천 툴 목록</a>
+            <a href="tool-sentence-transformers.html">함께 읽기 · Sentence Transformers로 표현이 다른 FAQ 찾기</a>
+        </nav>
+    </main>
+</body>
+</html>

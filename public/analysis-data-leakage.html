@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-PDQ055YSZT"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+
+  // 전 세계(한국 등): 기본 동의 허용 (0% 측정 문제 해결)
+  gtag('consent', 'default', {
+    'ad_storage': 'granted',
+    'ad_user_data': 'granted',
+    'ad_personalization': 'granted',
+    'analytics_storage': 'granted'
+  });
+
+  // EEA(유럽) + 영국 + 스위스: 기본 동의 거부 (개인정보 보호 규정 준수)
+  gtag('consent', 'default', {
+    'ad_storage': 'denied',
+    'ad_user_data': 'denied',
+    'ad_personalization': 'denied',
+    'analytics_storage': 'denied',
+    'region': ['AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'IS', 'LI', 'NO', 'GB', 'CH']
+  });
+  gtag('js', new Date());
+
+  gtag('config', 'G-PDQ055YSZT');
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>사진 100장을 무작위로 나눴는데 시험이 쉬워진 이유 | AI-ALL</title>
+    <meta name="description" content="같은 물체를 연속 촬영한 사진으로 학습·평가 자료의 경계를 살펴봅니다.">
+
+    <!-- Open Graph Tags -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="사진 100장을 무작위로 나눴는데 시험이 쉬워진 이유">
+    <meta property="og:description" content="같은 물체를 연속 촬영한 사진으로 학습·평가 자료의 경계를 살펴봅니다.">
+    <meta property="og:image" content="https://ai-all.co.kr/assets/ai-all-share.png">
+    <meta property="og:url" content="https://ai-all.co.kr/analysis-data-leakage.html">
+
+    <!-- Twitter Card Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="사진 100장을 무작위로 나눴는데 시험이 쉬워진 이유">
+    <meta name="twitter:description" content="같은 물체를 연속 촬영한 사진으로 학습·평가 자료의 경계를 살펴봅니다.">
+    <meta name="twitter:image" content="https://ai-all.co.kr/assets/ai-all-share.png">
+    <meta name="twitter:domain" content="ai-all.co.kr">
+    <link rel="stylesheet" href="style.css?v=1773850667033">
+    <link rel="canonical" href="https://ai-all.co.kr/analysis-data-leakage.html">
+</head>
+<body>
+    <nav class="article-trail" aria-label="사이트 탐색">
+        <a href="index.html">AI-ALL 홈</a>
+        <a href="in-depth-analysis.html">심층 분석</a>
+        <a href="sitemap.html">전체 글 찾기</a>
+    </nav>
+    <main>
+        <article class="post-content">
+            <header class="post-header">
+                <span class="category">심층 분석</span>
+                <h1>사진 100장을 무작위로 나눴는데 시험이 쉬워진 이유</h1>
+                <p class="post-meta">게시일 <time datetime="2026-11-24">2026년 11월 24일</time></p>
+            </header>
+            <div class="post-body">
+                <p>머그잔 열 개를 각도만 조금씩 바꿔 열 장씩 촬영했다고 합시다. 사진 100장 중 80장을 무작위로 학습에 쓰면, 평가용 사진에 나온 흠집이나 탁자 무늬를 학습 단계에서 이미 봤을 가능성이 큽니다.</p>
+                <h2>무엇이 처음 보는 사례인지 정한다</h2>
+                <p>새로운 사진을 분류하는 일과 한 번도 본 적 없는 머그잔을 분류하는 일은 다른 시험입니다. 후자가 목표라면 먼저 머그잔 번호로 나눠 여덟 개를 학습에, 두 개를 시험에 배정한 다음 각각의 사진을 모읍니다. 밝기를 평균값으로 정규화할 때 평균도 학습 자료에서 구합니다. <a href="https://scikit-learn.org/stable/common_pitfalls.html">scikit-learn의 데이터 누출 설명</a></p>
+                <h2>결과표에 남겨야 하는 두 개의 개수</h2>
+                <p>‘시험 사진 20장 중 18장 정답’과 함께 ‘시험한 새 머그잔 2개’도 씁니다. 한 머그잔에서 찍은 사진은 서로 닮아 있어, 독립적인 물체 20개를 시험한 결과와 같은 확신을 주지 않습니다. 다음 촬영 비용을 쓸 수 있다면 같은 컵의 열한 번째 사진과 다른 컵의 첫 사진 중 어느 쪽이 목표에 가까운지 판단해 보세요.</p>
+            </div>
+        </article>
+        <nav class="article-trail" aria-label="이어서 읽기">
+            <a href="in-depth-analysis.html">심층 분석 목록</a>
+            <a href="analysis-judge-order.html">함께 읽기 · AI 심사위원에게 답안 순서를 바꿔 보여 주면</a>
+        </nav>
+    </main>
+</body>
+</html>

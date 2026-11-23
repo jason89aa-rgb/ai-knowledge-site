@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-PDQ055YSZT"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+
+  // 전 세계(한국 등): 기본 동의 허용 (0% 측정 문제 해결)
+  gtag('consent', 'default', {
+    'ad_storage': 'granted',
+    'ad_user_data': 'granted',
+    'ad_personalization': 'granted',
+    'analytics_storage': 'granted'
+  });
+
+  // EEA(유럽) + 영국 + 스위스: 기본 동의 거부 (개인정보 보호 규정 준수)
+  gtag('consent', 'default', {
+    'ad_storage': 'denied',
+    'ad_user_data': 'denied',
+    'ad_personalization': 'denied',
+    'analytics_storage': 'denied',
+    'region': ['AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'IS', 'LI', 'NO', 'GB', 'CH']
+  });
+  gtag('js', new Date());
+
+  gtag('config', 'G-PDQ055YSZT');
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>어제까지의 자료로 내일 주문을 예측하는 시험 | AI-ALL</title>
+    <meta name="description" content="시간순으로 데이터를 나누고 미래에만 알 수 있는 열을 찾아냅니다.">
+
+    <!-- Open Graph Tags -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="어제까지의 자료로 내일 주문을 예측하는 시험">
+    <meta property="og:description" content="시간순으로 데이터를 나누고 미래에만 알 수 있는 열을 찾아냅니다.">
+    <meta property="og:image" content="https://ai-all.co.kr/assets/ai-all-share.png">
+    <meta property="og:url" content="https://ai-all.co.kr/lesson-split-by-time.html">
+
+    <!-- Twitter Card Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="어제까지의 자료로 내일 주문을 예측하는 시험">
+    <meta name="twitter:description" content="시간순으로 데이터를 나누고 미래에만 알 수 있는 열을 찾아냅니다.">
+    <meta name="twitter:image" content="https://ai-all.co.kr/assets/ai-all-share.png">
+    <meta name="twitter:domain" content="ai-all.co.kr">
+    <link rel="stylesheet" href="style.css?v=1773850667033">
+    <link rel="canonical" href="https://ai-all.co.kr/lesson-split-by-time.html">
+</head>
+<body>
+    <nav class="article-trail" aria-label="사이트 탐색">
+        <a href="index.html">AI-ALL 홈</a>
+        <a href="roadmap.html">학습 로드맵</a>
+        <a href="sitemap.html">전체 글 찾기</a>
+    </nav>
+    <main>
+        <article class="post-content">
+            <header class="post-header">
+                <span class="category">학습 로드맵</span>
+                <h1>어제까지의 자료로 내일 주문을 예측하는 시험</h1>
+                <p class="post-meta">게시일 <time datetime="2026-11-24">2026년 11월 24일</time></p>
+            </header>
+            <div class="post-body">
+                <p>배송 지연을 주문 접수 순간에 예측하는 문제를 만들어 봅시다. 배송 완료 뒤에 생기는 열까지 입력하면 과거 파일에서는 정확해 보이지만 접수 시점에는 같은 답을 낼 수 없습니다.</p>
+                <h2>날짜와 열에 각각 선 긋기</h2>
+                <p>연습 자료를 1월 1일부터 10일까지의 주문으로 정하고 1~7일은 연습, 8~10일은 시험에 씁니다. 후보 열은 접수 시각, 요청 지역, 실제 도착 시각입니다. 앞의 두 값은 접수 때 알 수 있고 실제 도착 시각은 나중에 옵니다. 도착 시각은 정답을 만드는 데만 쓰세요.</p>
+                <h2>같은 조건으로 기준선 만들기</h2>
+                <p>시험 주문이 세 건이고 실제 지연은 한 건이라고 가정합니다. 모두 정시라고 답하면 세 건 중 두 건은 맞지만 지연을 하나도 찾지 못합니다. 새 모델과 비교할 때는 전체 정답 수와 놓친 지연 수를 함께 적으세요. 운영에서 사용할 수 있는 입력과 평가 때 사용한 입력이 일치하는지도 마지막에 확인합니다.</p>
+            </div>
+        </article>
+        <nav class="article-trail" aria-label="이어서 읽기">
+            <a href="roadmap.html">학습 로드맵 목록</a>
+            <a href="lesson-search-topk.html">함께 읽기 · 문서 검색 실습 — 필요한 근거가 몇 번째에 왔을까?</a>
+        </nav>
+    </main>
+</body>
+</html>

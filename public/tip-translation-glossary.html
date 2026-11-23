@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-PDQ055YSZT"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+
+  // 전 세계(한국 등): 기본 동의 허용 (0% 측정 문제 해결)
+  gtag('consent', 'default', {
+    'ad_storage': 'granted',
+    'ad_user_data': 'granted',
+    'ad_personalization': 'granted',
+    'analytics_storage': 'granted'
+  });
+
+  // EEA(유럽) + 영국 + 스위스: 기본 동의 거부 (개인정보 보호 규정 준수)
+  gtag('consent', 'default', {
+    'ad_storage': 'denied',
+    'ad_user_data': 'denied',
+    'ad_personalization': 'denied',
+    'analytics_storage': 'denied',
+    'region': ['AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'IS', 'LI', 'NO', 'GB', 'CH']
+  });
+  gtag('js', new Date());
+
+  gtag('config', 'G-PDQ055YSZT');
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>번역문이 흔들릴 때 용어집 세 칸 만들기 | AI-ALL</title>
+    <meta name="description" content="부품 설명에 반복되는 단어를 번역할 때 문맥과 예외를 함께 보존하는 방법입니다.">
+
+    <!-- Open Graph Tags -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="번역문이 흔들릴 때 용어집 세 칸 만들기">
+    <meta property="og:description" content="부품 설명에 반복되는 단어를 번역할 때 문맥과 예외를 함께 보존하는 방법입니다.">
+    <meta property="og:image" content="https://ai-all.co.kr/assets/ai-all-share.png">
+    <meta property="og:url" content="https://ai-all.co.kr/tip-translation-glossary.html">
+
+    <!-- Twitter Card Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="번역문이 흔들릴 때 용어집 세 칸 만들기">
+    <meta name="twitter:description" content="부품 설명에 반복되는 단어를 번역할 때 문맥과 예외를 함께 보존하는 방법입니다.">
+    <meta name="twitter:image" content="https://ai-all.co.kr/assets/ai-all-share.png">
+    <meta name="twitter:domain" content="ai-all.co.kr">
+    <link rel="stylesheet" href="style.css?v=1773850667033">
+    <link rel="canonical" href="https://ai-all.co.kr/tip-translation-glossary.html">
+</head>
+<body>
+    <nav class="article-trail" aria-label="사이트 탐색">
+        <a href="index.html">AI-ALL 홈</a>
+        <a href="tips.html">AI 꿀팁</a>
+        <a href="sitemap.html">전체 글 찾기</a>
+    </nav>
+    <main>
+        <article class="post-content">
+            <header class="post-header">
+                <span class="category">AI 꿀팁</span>
+                <h1>번역문이 흔들릴 때 용어집 세 칸 만들기</h1>
+                <p class="post-meta">게시일 <time datetime="2026-11-24">2026년 11월 24일</time></p>
+            </header>
+            <div class="post-body">
+                <p>기술 자료에서 cell은 배터리 단위일 수도 있고 스프레드시트의 칸일 수도 있습니다. 문서 전체에서 한꺼번에 찾아 바꾸면 일관성은 생겨도 뜻이 뒤집힐 수 있습니다.</p>
+                <h2>용어·뜻·예문을 묶기</h2>
+                <p>용어집의 첫 행에 ‘cell / 배터리 셀 / cell voltage’, 둘째 행에는 ‘cell / 표의 셀 / select a cell’을 적습니다. AI에는 ‘용어집의 예문과 문맥이 맞는 항목을 골라 번역하고, 양쪽이 가능한 문장은 검토 목록으로 보내 달라’고 요청하세요. 새 번역어를 승인하면 해당 문장도 예문에 추가합니다.</p>
+                <h2>정답을 고정할 수 없는 한 줄</h2>
+                <p>‘Check the cell before continuing’만 주어졌다면 배터리인지 표인지 알기 어렵습니다. 앞 문장에 ‘Open the workbook’이 있으면 표 쪽으로, ‘Disconnect the charger’가 있으면 배터리 쪽으로 해석할 근거가 생깁니다. 이런 문장 하나를 시험용으로 남겨 두면 번역기가 언제 문맥을 요청하는지 확인할 수 있습니다.</p>
+            </div>
+        </article>
+        <nav class="article-trail" aria-label="이어서 읽기">
+            <a href="tips.html">AI 꿀팁 목록</a>
+            <a href="tip-chart-units.html">함께 읽기 · 차트 설명에서 퍼센트와 퍼센트포인트 바로잡기</a>
+        </nav>
+    </main>
+</body>
+</html>

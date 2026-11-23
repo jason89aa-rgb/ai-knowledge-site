@@ -453,3 +453,4 @@ blockquote {
 
 .article-trail { display: flex; flex-wrap: wrap; gap: 1.25rem; max-width: 740px; margin: auto; padding: 1rem 20px; border-bottom: 1px solid var(--border); }
 .article-trail a { color: var(--primary-dark); }
+.card h3 a { color: var(--primary-dark); text-decoration: underline; text-underline-offset: .18em; }

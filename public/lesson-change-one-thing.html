@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-PDQ055YSZT"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+
+  // 전 세계(한국 등): 기본 동의 허용 (0% 측정 문제 해결)
+  gtag('consent', 'default', {
+    'ad_storage': 'granted',
+    'ad_user_data': 'granted',
+    'ad_personalization': 'granted',
+    'analytics_storage': 'granted'
+  });
+
+  // EEA(유럽) + 영국 + 스위스: 기본 동의 거부 (개인정보 보호 규정 준수)
+  gtag('consent', 'default', {
+    'ad_storage': 'denied',
+    'ad_user_data': 'denied',
+    'ad_personalization': 'denied',
+    'analytics_storage': 'denied',
+    'region': ['AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'IS', 'LI', 'NO', 'GB', 'CH']
+  });
+  gtag('js', new Date());
+
+  gtag('config', 'G-PDQ055YSZT');
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>프롬프트 두 버전 비교하기 — 무엇을 바꿨는지 남기는 법 | AI-ALL</title>
+    <meta name="description" content="동일한 질문 묶음으로 수정 전후의 답을 짝지어 채점합니다.">
+
+    <!-- Open Graph Tags -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="프롬프트 두 버전 비교하기 — 무엇을 바꿨는지 남기는 법">
+    <meta property="og:description" content="동일한 질문 묶음으로 수정 전후의 답을 짝지어 채점합니다.">
+    <meta property="og:image" content="https://ai-all.co.kr/assets/ai-all-share.png">
+    <meta property="og:url" content="https://ai-all.co.kr/lesson-change-one-thing.html">
+
+    <!-- Twitter Card Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="프롬프트 두 버전 비교하기 — 무엇을 바꿨는지 남기는 법">
+    <meta name="twitter:description" content="동일한 질문 묶음으로 수정 전후의 답을 짝지어 채점합니다.">
+    <meta name="twitter:image" content="https://ai-all.co.kr/assets/ai-all-share.png">
+    <meta name="twitter:domain" content="ai-all.co.kr">
+    <link rel="stylesheet" href="style.css?v=1773850667033">
+    <link rel="canonical" href="https://ai-all.co.kr/lesson-change-one-thing.html">
+</head>
+<body>
+    <nav class="article-trail" aria-label="사이트 탐색">
+        <a href="index.html">AI-ALL 홈</a>
+        <a href="roadmap.html">학습 로드맵</a>
+        <a href="sitemap.html">전체 글 찾기</a>
+    </nav>
+    <main>
+        <article class="post-content">
+            <header class="post-header">
+                <span class="category">학습 로드맵</span>
+                <h1>프롬프트 두 버전 비교하기 — 무엇을 바꿨는지 남기는 법</h1>
+                <p class="post-meta">게시일 <time datetime="2026-11-24">2026년 11월 24일</time></p>
+            </header>
+            <div class="post-body">
+                <p>답변이 좋아진 것 같아 프롬프트를 교체했는데, 다음 날 다른 질문에서는 오히려 틀릴 수 있습니다. 개선을 주장하려면 바꾼 한 줄과 그 줄이 영향을 준 문항을 연결할 기록이 필요합니다.</p>
+                <h2>실험 노트의 첫 행</h2>
+                <p>요약할 공지 세 건을 고릅니다. 한 건에는 날짜가 있고, 하나에는 변경 전후 날짜가 함께 있으며, 마지막에는 날짜가 없습니다. 기존 지시에 ‘확정된 날짜만 쓰고 없으면 미정이라고 적어 줘’를 더합니다. 입력 공지와 모델, 가능한 경우 생성 설정은 두 번 모두 같게 둡니다.</p>
+                <h2>합계 뒤의 교환관계 읽기</h2>
+                <p>가상의 결과에서 기존 지시가 1·2번을, 새 지시가 1·3번을 맞혔다면 점수는 둘 다 2점입니다. 새 버전은 미정인 날짜를 지어내는 문제를 줄였지만 변경된 날짜를 놓쳤습니다. 두 실패를 노트에 따로 적고 연습에 쓰지 않은 공지로 다시 확인하세요. 원본 지시와 결과를 보존해야 다음 실험에서 같은 기준으로 되돌아볼 수 있습니다.</p>
+            </div>
+        </article>
+        <nav class="article-trail" aria-label="이어서 읽기">
+            <a href="roadmap.html">학습 로드맵 목록</a>
+            <a href="lesson-test-fixture.html">함께 읽기 · 첫 실습 자료 만들기 — 답을 손으로 셀 수 있는 다섯 줄</a>
+        </nav>
+    </main>
+</body>
+</html>

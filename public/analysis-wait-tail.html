@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-PDQ055YSZT"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+
+  // 전 세계(한국 등): 기본 동의 허용 (0% 측정 문제 해결)
+  gtag('consent', 'default', {
+    'ad_storage': 'granted',
+    'ad_user_data': 'granted',
+    'ad_personalization': 'granted',
+    'analytics_storage': 'granted'
+  });
+
+  // EEA(유럽) + 영국 + 스위스: 기본 동의 거부 (개인정보 보호 규정 준수)
+  gtag('consent', 'default', {
+    'ad_storage': 'denied',
+    'ad_user_data': 'denied',
+    'ad_personalization': 'denied',
+    'analytics_storage': 'denied',
+    'region': ['AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'IS', 'LI', 'NO', 'GB', 'CH']
+  });
+  gtag('js', new Date());
+
+  gtag('config', 'G-PDQ055YSZT');
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>평균 응답은 빠른데 누구는 왜 11초나 기다릴까? | AI-ALL</title>
+    <meta name="description" content="열 번의 응답을 정렬해 평균, 중앙값, 긴 지연이 설명하는 대상을 나눕니다.">
+
+    <!-- Open Graph Tags -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="평균 응답은 빠른데 누구는 왜 11초나 기다릴까?">
+    <meta property="og:description" content="열 번의 응답을 정렬해 평균, 중앙값, 긴 지연이 설명하는 대상을 나눕니다.">
+    <meta property="og:image" content="https://ai-all.co.kr/assets/ai-all-share.png">
+    <meta property="og:url" content="https://ai-all.co.kr/analysis-wait-tail.html">
+
+    <!-- Twitter Card Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="평균 응답은 빠른데 누구는 왜 11초나 기다릴까?">
+    <meta name="twitter:description" content="열 번의 응답을 정렬해 평균, 중앙값, 긴 지연이 설명하는 대상을 나눕니다.">
+    <meta name="twitter:image" content="https://ai-all.co.kr/assets/ai-all-share.png">
+    <meta name="twitter:domain" content="ai-all.co.kr">
+    <link rel="stylesheet" href="style.css?v=1773850667033">
+    <link rel="canonical" href="https://ai-all.co.kr/analysis-wait-tail.html">
+</head>
+<body>
+    <nav class="article-trail" aria-label="사이트 탐색">
+        <a href="index.html">AI-ALL 홈</a>
+        <a href="in-depth-analysis.html">심층 분석</a>
+        <a href="sitemap.html">전체 글 찾기</a>
+    </nav>
+    <main>
+        <article class="post-content">
+            <header class="post-header">
+                <span class="category">심층 분석</span>
+                <h1>평균 응답은 빠른데 누구는 왜 11초나 기다릴까?</h1>
+                <p class="post-meta">게시일 <time datetime="2026-11-24">2026년 11월 24일</time></p>
+            </header>
+            <div class="post-body">
+                <p>가상의 요약 서비스가 열 번 중 아홉 번은 1초, 한 번은 11초에 응답했습니다. 평균은 2초이고 중앙값은 1초입니다. 두 숫자만 대시보드에 놓으면 마지막 사용자의 기다림은 보이지 않습니다.</p>
+                <h2>여러 호출을 동시에 기다리는 화면</h2>
+                <p>하나의 화면이 검색, 요약, 추천 세 결과가 도착한 뒤 한꺼번에 열린다면 가장 느린 호출이 완료 시점을 정합니다. 일부 요청의 지연이 여러 구성 요소를 거치며 서비스 전체 경험에 영향을 주는 현상은 대규모 시스템 연구에서도 다뤄집니다. <a href="https://research.google/pubs/the-tail-at-scale/">Dean과 Barroso의 지연 연구</a></p>
+                <h2>기록 하나를 더 남기는 방법</h2>
+                <p>요청별로 첫 글자가 보인 시각과 마지막 글자가 도착한 시각을 따로 기록해 보세요. 긴 문서를 유독 늦게 끝내는지, 짧은 질문도 첫 응답부터 늦는지 구분할 수 있습니다. 열 건처럼 표본이 작은 실험이라면 ‘10건 중 1건이 11초’처럼 원래 건수를 싣는 편이 드문 지연을 해석하기 쉽습니다.</p>
+            </div>
+        </article>
+        <nav class="article-trail" aria-label="이어서 읽기">
+            <a href="in-depth-analysis.html">심층 분석 목록</a>
+            <a href="analysis-human-queue.html">함께 읽기 · 사람에게 넘긴 답변은 정확도 표에서 어디로 갈까?</a>
+        </nav>
+    </main>
+</body>
+</html>

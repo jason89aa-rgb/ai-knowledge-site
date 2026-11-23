@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-PDQ055YSZT"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+
+  // 전 세계(한국 등): 기본 동의 허용 (0% 측정 문제 해결)
+  gtag('consent', 'default', {
+    'ad_storage': 'granted',
+    'ad_user_data': 'granted',
+    'ad_personalization': 'granted',
+    'analytics_storage': 'granted'
+  });
+
+  // EEA(유럽) + 영국 + 스위스: 기본 동의 거부 (개인정보 보호 규정 준수)
+  gtag('consent', 'default', {
+    'ad_storage': 'denied',
+    'ad_user_data': 'denied',
+    'ad_personalization': 'denied',
+    'analytics_storage': 'denied',
+    'region': ['AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'IS', 'LI', 'NO', 'GB', 'CH']
+  });
+  gtag('js', new Date());
+
+  gtag('config', 'G-PDQ055YSZT');
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>문서 검색 실습 — 필요한 근거가 몇 번째에 왔을까? | AI-ALL</title>
+    <meta name="description" content="세 질문에 정답 문서를 붙이고 상위 하나와 상위 세 개 검색의 차이를 계산합니다.">
+
+    <!-- Open Graph Tags -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="문서 검색 실습 — 필요한 근거가 몇 번째에 왔을까?">
+    <meta property="og:description" content="세 질문에 정답 문서를 붙이고 상위 하나와 상위 세 개 검색의 차이를 계산합니다.">
+    <meta property="og:image" content="https://ai-all.co.kr/assets/ai-all-share.png">
+    <meta property="og:url" content="https://ai-all.co.kr/lesson-search-topk.html">
+
+    <!-- Twitter Card Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="문서 검색 실습 — 필요한 근거가 몇 번째에 왔을까?">
+    <meta name="twitter:description" content="세 질문에 정답 문서를 붙이고 상위 하나와 상위 세 개 검색의 차이를 계산합니다.">
+    <meta name="twitter:image" content="https://ai-all.co.kr/assets/ai-all-share.png">
+    <meta name="twitter:domain" content="ai-all.co.kr">
+    <link rel="stylesheet" href="style.css?v=1773850667033">
+    <link rel="canonical" href="https://ai-all.co.kr/lesson-search-topk.html">
+</head>
+<body>
+    <nav class="article-trail" aria-label="사이트 탐색">
+        <a href="index.html">AI-ALL 홈</a>
+        <a href="roadmap.html">학습 로드맵</a>
+        <a href="sitemap.html">전체 글 찾기</a>
+    </nav>
+    <main>
+        <article class="post-content">
+            <header class="post-header">
+                <span class="category">학습 로드맵</span>
+                <h1>문서 검색 실습 — 필요한 근거가 몇 번째에 왔을까?</h1>
+                <p class="post-meta">게시일 <time datetime="2026-11-24">2026년 11월 24일</time></p>
+            </header>
+            <div class="post-body">
+                <p>답변이 틀렸을 때는 답을 쓰는 모델을 바꾸기 전에 검색기가 근거를 가져왔는지 살펴보세요. 이번 실습에서는 답변을 생성하지 않고 정답 문서의 순위만 기록합니다.</p>
+                <h2>질문, 정답 문서, 검색 결과</h2>
+                <p>가상의 문서 A는 교환, B는 배송, C는 영수증, D는 포장입니다. 교환 질문의 결과가 B·A·D, 배송 질문은 B·D·A, 영수증 질문은 D·A·B라고 적습니다. 질문마다 정답 문서는 각각 A, B, C입니다.</p>
+                <h2>합격선이 달라지면 보이는 것</h2>
+                <p>첫 번째 결과만 쓸 때 정답 근거가 있는 경우는 배송 한 건입니다. 세 개까지 읽으면 교환도 포함되어 세 건 중 두 건이 됩니다. 영수증 문서 C는 후보 어디에도 없어 요약을 더 길게 시켜도 근거가 생기지 않습니다. 누락된 문서의 제목에 사용자가 실제로 쓰는 ‘결제 내역서’ 같은 표현을 더하고 같은 시험을 반복해 보세요.</p>
+            </div>
+        </article>
+        <nav class="article-trail" aria-label="이어서 읽기">
+            <a href="roadmap.html">학습 로드맵 목록</a>
+            <a href="lesson-change-one-thing.html">함께 읽기 · 프롬프트 두 버전 비교하기 — 무엇을 바꿨는지 남기는 법</a>
+        </nav>
+    </main>
+</body>
+</html>
