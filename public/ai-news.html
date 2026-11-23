@@ -29,9 +29,9 @@
 </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="글로벌 AI 트렌드와 최신 기술 소식을 가장 빠르게 전해드립니다. 오픈소스 모델부터 인프라 혁신까지 인공지능 산업의 핵심 뉴스를 요약합니다.">
+    <meta name="description" content="AI 에이전트, 데이터센터, 온디바이스 모델, 합성 데이터에 관한 발표와 연구를 원문 및 관련 해설과 함께 읽어 보세요.">
     <title>AI 뉴스 - 글로벌 테크 동향 | AI ALL</title>
-    <meta property="og:description" content="글로벌 AI 트렌드와 최신 기술 소식을 가장 빠르게 전해드립니다. 오픈소스 모델부터 인프라 혁신까지 인공지능 산업의 핵심 뉴스를 요약합니다.">
+    <meta property="og:description" content="AI 에이전트, 데이터센터, 온디바이스 모델, 합성 데이터에 관한 발표와 연구를 원문 및 관련 해설과 함께 읽어 보세요.">
     <meta property="og:title" content="AI 뉴스 - 글로벌 테크 동향 | AI ALL">
     
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
@@ -117,8 +117,8 @@
         <section id="news" class="section">
             <div class="inner">
                 <div class="section-header" style="text-align: center; margin-bottom: 50px;">
-                    <h2><i class="fa-solid fa-newspaper"></i> 글로벌 AI 뉴스</h2>
-                    <p>전 세계에서 가장 중요한 인공지능(AI) 산업 동향을 간결하게 요약합니다.</p>
+                    <h1><i class="fa-solid fa-newspaper"></i> 글로벌 AI 뉴스</h1>
+                    <p>기업 발표와 연구 원문을 관련 칼럼과 함께 읽는 뉴스 아카이브입니다.</p>
                 </div>
                 
                 <div class="grid-container">
@@ -126,34 +126,38 @@
                         <div class="icon-box" style="background:#e0f2fe; color:#0284c7;">
                             <i class="fa-solid fa-computer-mouse"></i>
                         </div>
-                        <h3>[AI 트렌드 긴급 점검] '마우스'를 빼앗은 AI: 챗봇(Chatbot) 시대의 종말과 '컴퓨터 제어 에이전트(Computer-Use Agent)' 혁명</h3>
-                        <p>앤스로픽의 Computer Use와 오픈AI의 Operator 격돌! API 연동을 대체할 UI 자동화 시대의 개막과 IAM 보안 리스크를 심층 분석합니다.</p>
-                        <a href="ai-news-04-computer-use-agent.html" class="link-text">상세 분석 보기 <i class="fa-solid fa-arrow-right"></i></a>
+                        <h3>Claude가 화면을 보고 마우스와 키보드를 조작한 실험</h3>
+                        <p>2024년 10월 22일, Anthropic은 화면을 읽고 클릭하거나 입력하는 기능을 공개 베타로 소개했습니다. 발표 당시에는 작업에 실패하거나 사람이 개입해야 하는 경우도 있었습니다.</p>
+                        <a class="news-source" href="https://www.anthropic.com/news/3-5-models-and-computer-use">Anthropic 발표 원문</a>
+                        <a href="ai-news-04-computer-use-agent.html" class="link-text">관련 해설 읽기 <i class="fa-solid fa-arrow-right"></i></a>
                     </article>
                     <article class="card">
                         <div class="icon-box" style="background:#f0fdf4; color:#16a34a;">
                             <i class="fa-solid fa-server"></i>
                         </div>
-                        <h3>엔비디아(NVIDIA), 차세대 루빈 아키텍처 기반 '액침 냉각(Immersion Cooling)' 표준 발표</h3>
-                        <p>엔비디아는 전력망(Power Grid)의 물리적 한계를 극복하기 위해 새로운 냉각 표준을 제시했습니다. 기존 공랭식(Air Cooling) 시스템은 완전히 폐기됩니다. 대신 데이터센터 전체 서버를 비전도성 특수 냉각유(Dielectric Fluid)에 담그는 방식을 채택합니다. 이 아키텍처는 냉각 전력을 90% 이상 절감합니다.</p>
-                        <a href="tech-column-47.html" class="link-text">상세 분석 보기 <i class="fa-solid fa-arrow-right"></i></a>
+                        <h3>고밀도 GPU 랙은 어떻게 열을 식힐까?</h3>
+                        <p>NVIDIA의 GB200 NVL72는 GPU 72개와 CPU 36개를 한 랙에 연결하고 액체 냉각을 사용합니다. 제품 사양과 데이터센터 냉각 방식에 관한 해설을 함께 읽을 수 있습니다.</p>
+                        <a class="news-source" href="https://www.nvidia.com/en-us/data-center/gb200-nvl72/">NVIDIA 제품 사양 원문</a>
+                        <a href="tech-column-47.html" class="link-text">관련 해설 읽기 <i class="fa-solid fa-arrow-right"></i></a>
                     </article>
                     
                     <article class="card">
                         <div class="icon-box" style="background:#fff7ed; color:#ea580c;">
                             <i class="fa-solid fa-robot"></i>
                         </div>
-                        <h3>오픈AI(OpenAI), 범용 인공지능(AGI)을 향한 멀티 에이전트 시스템(Multi-Agent System) 도입 가속화</h3>
-                        <p>오픈AI의 최신 업데이트는 단일 대규모 언어 모델(LLM)에 의존하는 기존 방식을 탈피했습니다. 이제 여러 전문화된 에이전트(Agents)가 상호 검증(Cross-Validation)을 수행합니다. 기획자, 코더, 리뷰어 에이전트가 자율적으로 협업하는 이 기술은 엔터프라이즈 환경에서 환각(Hallucination) 오류를 획기적으로 줄여줍니다.</p>
-                        <a href="tech-column-46.html" class="link-text">상세 분석 보기 <i class="fa-solid fa-arrow-right"></i></a>
+                        <h3>OpenAI가 공개한 에이전트 개발 도구</h3>
+                        <p>2025년 3월 11일, OpenAI는 Responses API와 Agents SDK를 발표했습니다. 검색과 파일 조회 같은 도구 호출, 여러 에이전트 사이의 작업 전달을 개발자가 구성할 수 있게 한 발표입니다.</p>
+                        <a class="news-source" href="https://openai.com/index/new-tools-for-building-agents/">OpenAI 발표 원문</a>
+                        <a href="tech-column-46.html" class="link-text">관련 해설 읽기 <i class="fa-solid fa-arrow-right"></i></a>
                     </article>
 
                     <article class="card">
                         <div class="icon-box" style="background:#f0f9ff; color:#0ea5e9;">
                             <i class="fa-solid fa-code"></i>
                         </div>
-                        <h3>오픈소스 모델의 반격: 라마 4(Llama 4) 출시로 촉발된 온디바이스 AI(On-Device AI) 혁명</h3>
-                        <p>메타(Meta)가 경량화(Quantization) 기술을 적용한 새로운 오픈소스 모델을 배포했습니다. 이 모델은 스마트폰의 신경망 처리 장치(NPU) 위에서 오프라인으로 작동합니다. 클라우드 서버에 접속할 필요가 없으므로 API 호출 비용(API Cost)이 발생하지 않으며, 데이터 프라이버시(Data Privacy) 문제도 완벽하게 해결합니다.</p>
+                        <h3>Meta의 Llama 3.2, 모바일용 경량 모델 공개</h3>
+                        <p>2024년 9월 25일 공개된 1B·3B 텍스트 모델은 기기에서 요약과 문장 재작성을 수행하도록 설계됐습니다. 소형 모델을 다룬 칼럼에서 기기 메모리와 처리 속도의 관계를 살펴보세요.</p>
+                        <a class="news-source" href="https://ai.meta.com/blog/llama-3-2-connect-2024-vision-edge-mobile-devices/">Meta 발표 원문</a>
                         <a href="tech-column-02.html" class="link-text">관련 칼럼 보기 <i class="fa-solid fa-arrow-right"></i></a>
                     </article>
 
@@ -161,8 +165,9 @@
                         <div class="icon-box" style="background:#fdf4ff; color:#d946ef;">
                             <i class="fa-solid fa-shield-halved"></i>
                         </div>
-                        <h3>글로벌 빅테크, AI 훈련용 '합성 데이터(Synthetic Data)' 의존도 70% 돌파</h3>
-                        <p>인터넷상의 인간 생성 데이터가 고갈되는 이른바 '데이터 절벽(Data Wall)' 현상이 심화되고 있습니다. 이에 구글(Google)과 마이크로소프트(Microsoft)는 인공지능이 스스로 생성한 합성 데이터를 모델 훈련에 적극적으로 사용하고 있습니다. 이는 저작권(Copyright) 분쟁을 회피하기 위한 강력한 대안으로 평가받습니다.</p>
+                        <h3>생성 데이터를 반복 학습하면 어떤 사례가 사라질까?</h3>
+                        <p>Shumailov 연구진은 생성한 데이터를 다음 모델 학습에 반복 사용했을 때 원래 데이터에서 드물었던 사례가 사라지는 현상을 관찰했습니다. 실험 조건과 합성 데이터 활용을 다룬 칼럼을 함께 볼 수 있습니다.</p>
+                        <a class="news-source" href="https://arxiv.org/abs/2305.17493">연구 논문 · 2024년 4월 개정 원문</a>
                         <a href="tech-column-45.html" class="link-text">관련 칼럼 보기 <i class="fa-solid fa-arrow-right"></i></a>
                     </article>
                 </div>
@@ -176,11 +181,6 @@
                 <div class="footer-col">
                     <h3>AI-ALL<span class="dot">.</span></h3>
                     <p>복잡한 AI 기술을 누구나 쉽게 이해하고 활용할 수 있도록 돕는 지식 허브입니다.</p>
-                    <div class="social-icons">
-                        <a href="#"><i class="fa-brands fa-youtube"></i></a>
-                        <a href="#"><i class="fa-brands fa-twitter"></i></a>
-                        <a href="#"><i class="fa-brands fa-instagram"></i></a>
-                    </div>
                 </div>
                 
                 <div class="footer-col">

@@ -152,54 +152,31 @@
                     border-color: #2563eb;
                     color: #ffffff;
                 }
-                /* 필터링 애니메이션 */
-                .card {
-                    transition: opacity 0.4s ease, transform 0.4s ease;
-                }
-                .card.hidden {
-                    display: none;
-                    opacity: 0;
-                    transform: translateY(20px);
-                }
+                .card[hidden] { display: none; }
             </style>
-
+            <p id="filter-count" role="status" class="filter-count"></p>
             <script>
                 document.addEventListener('DOMContentLoaded', () => {
-                    const filterBtns = document.querySelectorAll('.filter-btn');
-                    const cards = document.querySelectorAll('.card');
-
-                    filterBtns.forEach(btn => {
-                        btn.addEventListener('click', () => {
-                            const filter = btn.getAttribute('data-filter');
-
-                            // 버튼 활성화 상태 변경
-                            filterBtns.forEach(b => b.classList.remove('active'));
-                            btn.classList.add('active');
-
-                            // 카드 필터링
-                            cards.forEach(card => {
-                                const category = card.getAttribute('data-category');
-                                
-                                if (filter === 'all' || category === filter) {
-                                    card.style.display = 'flex';
-                                    setTimeout(() => {
-                                        card.style.opacity = '1';
-                                        card.style.transform = 'translateY(0)';
-                                    }, 10);
-                                } else {
-                                    card.style.opacity = '0';
-                                    card.style.transform = 'translateY(20px)';
-                                    setTimeout(() => {
-                                        card.style.display = 'none';
-                                    }, 400);
-                                }
-                            });
-                        });
-                    });
+                    const buttons = document.querySelectorAll('.filter-btn');
+                    const cards = document.querySelectorAll('article.card[data-category]');
+                    function selectCategory(selected) {
+                        for (const button of buttons) {
+                            button.classList.toggle('active', button === selected);
+                            button.setAttribute('aria-pressed', String(button === selected));
+                        }
+                        let count = 0;
+                        for (const card of cards) {
+                            card.hidden = selected.dataset.filter !== 'all' && card.dataset.category !== selected.dataset.filter;
+                            if (!card.hidden) count++;
+                        }
+                        document.getElementById('filter-count').textContent = selected.textContent + ' · 글 ' + count + '개';
+                    }
+                    for (const button of buttons) button.addEventListener('click', () => selectCategory(button));
+                    selectCategory(buttons[0]);
                 });
             </script>
 
-            <div class="grid-container" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+            <div class="grid-container" style="grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));">
                 
                 <article class="card" data-category="trend">
                     <div class="card-content">
@@ -257,13 +234,7 @@
                         <a href="tech-column-40.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                
-                
-                
-                
-                
-                
-                
+
                 <article class="card" data-category="tech">
                     <div class="card-content">
                         <h3>[제39회] 자율주행의 뇌를 깨우다: '엣지 AI'와 '디지털 트윈' 기술의 완벽한 융합</h3>
@@ -399,13 +370,6 @@
                 </article>
                 <article class="card" data-category="tech">
                     <div class="card-content">
-                        <h3>[제20회] 지능의 압축: 온디바이스 AI를 위한 양자화와 지식 증류</h3>
-                        <p>AI-ALL 기술 분석팀 | 2026. 02. 19</p>
-                        <a href="tech-column-21.html" class="link-text">자세히 보기 &rarr;</a>
-                    </div>
-                </article>
-                <article class="card" data-category="tech">
-                    <div class="card-content">
                         <h3>[제19회] 엣지에서의 추론: TinyML과 경량화 기술이 만드는 '사물 지능(AIoT)'의 세계</h3>
                         <p>AI-ALL 기술 분석팀 | 2026. 02. 19</p>
                         <a href="tech-column-20.html" class="link-text">자세히 보기 &rarr;</a>
@@ -439,31 +403,7 @@
                         <a href="tech-column-16.html" class="link-text">자세히 보기 &rarr;</a>
                     </div>
                 </article>
-                
-                
-                
-                
-                <article class="card" data-category="tech">
-                    <div class="card-content">
-                        <h3>[제10회] 보는 눈에서 생각하는 눈으로: VLM의 시각적 문해력과 인과관계 추론의 실체</h3>
-                        <p>전문 에디터 J | 2026. 02. 17</p>
-                        <a href="tech-column-18.html" class="link-text">자세히 보기 &rarr;</a>
-                    </div>
-                </article>
-                <article class="card" data-category="tech">
-                    <div class="card-content">
-                        <h3>[제9회] 지능의 새로운 차원: 양자 컴퓨팅이 딥러닝의 전역 최적화 문제를 해결하는 법</h3>
-                        <p>AI-ALL 기술 분석팀 | 2026. 02. 16</p>
-                        <a href="tech-column-20.html" class="link-text">자세히 보기 &rarr;</a>
-                    </div>
-                </article>
-                <article class="card" data-category="tech">
-                    <div class="card-content">
-                        <h3>[제8회] 클라우드로부터의 독립: NPU 아키텍처 진화가 이끄는 온디바이스 AI 초격차 전략</h3>
-                        <p>AI-ALL 기술 분석팀 | 2026. 02. 16</p>
-                        <a href="tech-column-19.html" class="link-text">자세히 보기 &rarr;</a>
-                    </div>
-                </article>
+
                 <article class="card" data-category="trend">
                     <div class="card-content">
                         <h3>[제7회] 물리적 지능의 완성: 휴머노이드 로봇이 중력과 마찰력을 이기고 '인간답게' 걷는 방법</h3>
