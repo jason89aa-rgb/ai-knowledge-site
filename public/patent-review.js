@@ -571,6 +571,15 @@ function show(report) {
   head.append(identity);
   if (!report.linksOnly && !drafting) head.append(ppt);
   overview.append(head);
+  // The numbers, dates and parties identify the case, so they stay in view under the title.
+  const fields = el("dl", "", "facts");
+  for (const [key, label] of facts) {
+    if (!report[key]) continue;
+    const group = el("div");
+    group.append(el("dt", label), el("dd", report[key]));
+    fields.append(group);
+  }
+  if (fields.childElementCount) overview.append(fields);
   const useHandoff = !report.demo && !report.reviewed && !report.local;
   if (useHandoff) {
     const picker = dossierHandoff(report);
@@ -587,15 +596,7 @@ function show(report) {
   const milestones = reportMilestones(report);
   if (!report.linksOnly && !drafting) overview.append(reportMetrics(report, milestones));
   const metadata = el("details", "", "report-metadata");
-  metadata.append(el("summary", "서지 정보 및 공식 열람처"));
-  const fields = el("dl", "", "facts");
-  for (const [key, label] of facts) {
-    if (!report[key]) continue;
-    const group = el("div");
-    group.append(el("dt", label), el("dd", report[key]));
-    fields.append(group);
-  }
-  if (fields.childElementCount) metadata.append(fields);
+  metadata.append(el("summary", report.abstract ? "초록 및 공식 열람처" : "공식 열람처"));
   if (report.abstract) {
     const abstract = el("details");
     abstract.append(el("summary", "초록"), el("p", report.abstract));
@@ -613,7 +614,8 @@ function show(report) {
   notes.setAttribute("aria-live", "polite");
   notes.setAttribute("aria-label", "보고서 안내");
   metadata.open = Boolean(report.linksOnly || report.local);
-  overview.append(notes, metadata);
+  overview.append(notes);
+  if (report.abstract || report.links.length) overview.append(metadata);
   if (report.local && report.country !== "UPC") overview.append(manualEditor(report));
   area.append(overview);
   showUsage(report);
@@ -730,7 +732,8 @@ async function finishDossierAnalysis(report, signal) {
     "다음 네 제목을 순서대로 정확히 사용하세요. 각 제목은 ## 로 시작하는 별도 줄입니다.",
     resultHeadings.join(", "),
     "각 제목 아래 네 개 이하의 짧은 글머리표로 쓰고, 항목마다 문서의 실제 절차명과 페이지 또는 이력 날짜를 붙이세요.",
-    "심사 결과: 첫 항목은 청구항 처분을 확정한 결정, 이어서 거절 근거별로 '제n항 — 부정된 특허요건·인용문헌 — 보정한 문언 또는 보정 없이 의견서 — 그 뒤의 처분'. 허여 통지와 등록을 구분하고, 불복·등록 후 절차의 결정은 심사 단계의 결과와 나눠 쓰세요.",
+    "네 제목 모두 항목을 날짜가 이른 것부터 시간 순서로 쓰고, 항목마다 첫머리에 날짜(YYYY-MM-DD)와 절차명을 적으세요.",
+    "심사 결과: 통지된 순서에 따라 거절 근거별로 '통지 날짜와 절차명 — 제n항 — 부정된 특허요건·인용문헌 — 답변 날짜와 보정한 문언 또는 보정 없이 의견서 — 그 뒤의 처분', 청구항 처분을 확정한 결정은 그 결정이 나온 날짜의 자리에. 허여 통지와 등록을 구분하고, 불복·등록 후 절차의 결정은 심사 단계의 결과와 나눠 쓰세요.",
     "등록의 핵심 구성: 허여 이유, 마지막 거절을 푼 보정 문언, record의 청구항 대조를 근거로 독립항이 선행기술과 구별된 구성을 청구항 문언 그대로. 문언이 그대로 등록됐으면 그렇다고 쓰고, 허여 이유가 없으면 '허여 이유 미기재'라고 쓰세요.",
     "포기·제한된 범위: 감축 보정으로 추가된 한정, 삭제한 청구항, 인용발명과 구별한 한정 주장, terminal disclaimer의 조건. 없으면 '확인된 감축·한정 없음'.",
     "남은 쟁점과 위험: 보정 없이 주장만으로 극복한 거절, record의 만료일·심판·소송·이의신청, 심사 중인 후속 출원, 제3자 정보제공, 진행 중인 불복·등록 후 절차처럼 확인이 더 필요한 사실. 무효·침해 같은 법적 결론과 자료에 없는 추정은 쓰지 마세요.",
