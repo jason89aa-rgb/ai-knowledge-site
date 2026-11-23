@@ -829,6 +829,107 @@ function issueCard(issue, stage, art, unanswered) {
   return card;
 }
 
+// Where a quoted phrase sits in a claim: the stretch of words that shares the most words with it.
+// A quotation in a notice or a reply is often shortened or reworded slightly, so an exact match is not required.
+function locatePhrase(words, phrase) {
+  const lettered = word => /[\p{L}\p{N}]/u.test(word.key);
+  const keys = claimWords(phrase).filter(lettered).map(word => word.key);
+  const places = words.map((word, index) => index).filter(index => lettered(words[index]));
+  if (keys.length < 2 || !places.length) return null;
+  const want = new Map();
+  for (const key of keys) want.set(key, (want.get(key) || 0) + 1);
+  const size = Math.min(keys.length, places.length);
+  const have = new Map();
+  let hit = 0;
+  let best;
+  places.forEach((place, at) => {
+    const entering = words[place].key;
+    have.set(entering, (have.get(entering) || 0) + 1);
+    if (have.get(entering) <= (want.get(entering) || 0)) hit++;
+    if (at >= size) {
+      const leaving = words[places[at - size]].key;
+      if (have.get(leaving) <= (want.get(leaving) || 0)) hit--;
+      have.set(leaving, have.get(leaving) - 1);
+    }
+    if (at >= size - 1 && (!best || hit > best.hit)) best = { hit, start: places[at - size + 1], end: place + 1 };
+  });
+  return best && best.hit / keys.length >= .7 ? best : null;
+}
+
+// A claim's wording with the located phrases marked. Returns nothing when none of the phrases is found in it.
+function markedClaim(text, phrases, className) {
+  const words = claimWords(text);
+  const marks = new Array(words.length).fill(false);
+  let found = 0;
+  for (const phrase of phrases) {
+    const place = locatePhrase(words, phrase);
+    if (!place) continue;
+    found++;
+    marks.fill(true, place.start, place.end);
+  }
+  if (!found) return null;
+  const body = el("p", "", "claim-text");
+  let run = "";
+  let marked = false;
+  const flush = () => {
+    if (run) body.append(marked ? el("mark", run, className) : run);
+    run = "";
+  };
+  words.forEach((word, index) => {
+    if (marks[index] !== marked) {
+      // The space before a marked stretch stays outside the mark.
+      if (!marked) { run += index ? word.gap : ""; flush(); marked = true; run = word.text; return; }
+      flush();
+      marked = false;
+    }
+    run += (index ? word.gap : "") + word.text;
+  });
+  flush();
+  return body;
+}
+
+// For one stage: the claims as published with the wording the examiner pointed at, beside the claims as granted with the wording
+// this stage's amendment added. Claim numbers in a notice are taken to be the published numbers.
+function stageClaimWording(report, stage) {
+  const all = report.caseRecord?.status === "done" ? report.caseRecord.data.claims.all : undefined;
+  if (!all) return null;
+  const pointed = stage.rows.filter(row => roleOf(row) === "examiner" && row.element);
+  const amended = stage.applicant.filter(row => ["amend", "add"].includes(row.responseType) && row.element);
+  if (!pointed.length && !amended.length) return null;
+  const became = claimNumbering(all).byOriginal;
+  const numbers = [...new Set([...pointed, ...amended].flatMap(row => row.claims))].sort((a, b) => a - b);
+  const view = el("details", "", "stage-claims");
+  view.open = true;
+  view.append(el("summary", "청구항 문언에서 지적·보정된 부분"));
+  const legend = el("p", "", "hint muted");
+  legend.append(el("mark", "심사관이 지적한 구성", "pointed"), " ", el("mark", "이 단계에서 보정된 문언", "amended"),
+    " · 공개공보와 등록공보의 문언에 표시했습니다. 통지의 항 번호를 공개 번호로 보고 맞췄고, 위치는 인용된 문구와 겹치는 단어로 찾았습니다.");
+  view.append(legend);
+  let shown = 0;
+  for (const number of numbers) {
+    if (shown >= 4) break;
+    const original = all.original.find(claim => Number(claim.number) === number);
+    const granted = all.granted.find(claim => Number(claim.number) === became.get(number));
+    const of = rows => [...new Set(rows.filter(row => row.claims.includes(number)).map(row => row.element))];
+    const before = original && markedClaim(original.text, of(pointed), "pointed");
+    const after = granted && markedClaim(granted.text, of(amended), "amended");
+    if (!before && !after) continue;
+    shown++;
+    const block = el("div", "", "stage-claim");
+    const columns = el("div", "", "stage-claim-columns");
+    const left = el("div");
+    left.append(el("h5", "통지 당시 문언 · 공개 제" + number + "항"),
+      before || (original ? Object.assign(el("p", original.text, "claim-text")) : el("p", "공개 청구항에서 이 항을 찾지 못했습니다.", "muted")));
+    const right = el("div");
+    right.append(el("h5", granted ? "등록 문언 · 등록 제" + granted.number + "항" : "등록 문언"),
+      after || (granted ? el("p", granted.text, "claim-text") : el("p", "등록 청구항에 없습니다(삭제 또는 다른 항에 합쳐짐).", "muted")));
+    columns.append(left, right);
+    block.append(columns);
+    view.append(block);
+  }
+  return shown ? view : null;
+}
+
 function roundCard(report, flow, index, selected) {
   const stage = stageIssues(flow, index);
   const { round } = stage;
@@ -856,6 +957,8 @@ function roundCard(report, flow, index, selected) {
   for (const { claim, phrase } of wording) {
     card.append(el("p", `등록 제${claim}항에 남은 문언 “${phrase}”이 이 단계의 보정으로 들어왔습니다.`, "stage-wording"));
   }
+  const markedWording = stageClaimWording(report, stage);
+  if (markedWording) card.append(markedWording);
   const decisionRows = round.decisions.flatMap(group => group.rows);
   const claims = [...new Set([...stage.rows, ...decisionRows].flatMap(row => row.claims))].sort((a, b) => a - b);
   // A docket line for a decision is dropped once the decision document itself was analysed.
