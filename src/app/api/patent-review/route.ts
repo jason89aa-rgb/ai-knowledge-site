@@ -1,5 +1,5 @@
 import {
-  addEpoPublicationPages, askReport, compareFamilyClaims, firstPageDrawing, jointReport, lookup, maxUpload, normalizePatent, officialCandidates, officialPdf, PatentError, selectDocuments, summarizeEvents, summarizePdf, summarizeText, uploadBytes, uploadedPdf,
+  addEpoPublicationPages, askReport, compareFamilyClaims, firstPageDrawing, jointReport, koreanClaimRecord, lookup, maxUpload, normalizePatent, officialCandidates, officialPdf, PatentError, selectDocuments, summarizeEvents, summarizePdf, summarizeText, uploadBytes, uploadedPdf,
 } from "../../../lib/patent-review";
 import {
   wintelipsCandidates, wintelipsCaseRecord, wintelipsConfigured, wintelipsDocument, wintelipsFamily, wintelipsFamilyCitations, wintelipsFamilyMember,
@@ -57,6 +57,19 @@ function streamSummary(summarize: () => Promise<unknown>) {
     cancel() { cancelled = true; clearInterval(beat); },
   });
   return new Response(stream, { headers: { ...headers, "Content-Type": "application/json; charset=utf-8" } });
+}
+
+// WINTELIPS holds the whole case record. KIPO publishes the claims of a Korean application itself, so a Korean case keeps
+// its claims when WINTELIPS cannot be reached; `limited` tells the page why the rest of the record is missing.
+async function caseRecord(body: { skey?: unknown; number?: unknown; country?: unknown; application?: unknown }) {
+  try {
+    return await withWintelips(token => wintelipsCaseRecord(token, body));
+  } catch (error) {
+    if (body.country !== "KR" || (error instanceof PatentError && error.status === 400)) throw error;
+    const record = await koreanClaimRecord(body.application).catch(() => undefined);
+    if (!record) throw error;
+    return { ...record, limited: failure(error).message };
+  }
 }
 
 const sessionName = "patent_review_session";
@@ -119,7 +132,7 @@ export async function POST(request: Request) {
     if (body?.action === "family") return json(await withWintelips(token => wintelipsFamily(token, body)));
     if (body?.action === "family-member") return json(await withWintelips(token => wintelipsFamilyMember(token, body)));
     if (body?.action === "family-citations") return json(await withWintelips(token => wintelipsFamilyCitations(token, body)));
-    if (body?.action === "case-record") return json(await withWintelips(token => wintelipsCaseRecord(token, body)));
+    if (body?.action === "case-record") return json(await caseRecord(body));
     if (body?.action === "search") {
       const result = json(await search(body));
       if (request.headers.get("X-Patent-Access")) {

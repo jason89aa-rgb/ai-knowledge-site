@@ -1,4 +1,4 @@
-import { all, first, nodeText, parseXml, value } from "./patent-xml";
+import { all, decode, first, nodeText, parseXml, value } from "./patent-xml";
 
 type Country = "KR" | "US" | "EP" | "CN" | "UPC" | "WO" | "JP" | "CA" | "AU" | "GB" | "DE" | "FR";
 type Patent = { country: Country; number: string; kind: string; type: "application" | "publication" | "grant" | "gazette" | "case" };
@@ -180,6 +180,10 @@ function kiprisKey() {
 // Set once an unencoded key has been accepted, so later calls in this worker skip the rejected form.
 let krRawKey = false;
 
+// The text of a KIPRISPlus reply, kept beside its parsed form. Claim wording is read from the text, because markup
+// inside a claim loses its place among the words once parsed.
+const krReplies = new WeakMap<XmlNode, string>();
+
 async function krXml(path: string, params: Record<string, string>, modern = false): Promise<XmlNode> {
   try {
     return await krXmlOnce(path, params, modern, krRawKey);
@@ -225,7 +229,8 @@ async function krXmlOnce(path: string, params: Record<string, string>, modern: b
     const reason = res.status === 401 || res.status === 403 ? "인증키 또는 상품 이용 권한을 확인해 주세요." : "기관 서버 응답을 확인해 주세요.";
     throw new PatentError(`KIPRISPlus 응답 오류 (HTTP ${res.status}) · ${reason}`, 424);
   }
-  const xml = parseXml(await res.text());
+  const reply = await res.text();
+  const xml = parseXml(reply);
   const code = value(xml, "resultCode") || value(xml, "returnReasonCode");
   if (code && !/^(?:0+|SUCCESS)$/i.test(code) && code !== "03") {
     const detail = /^\d{1,3}$/.test(code) ? ` (${service}, 코드 ${code})` : ` (${service})`;
@@ -246,6 +251,7 @@ async function krXmlOnce(path: string, params: Record<string, string>, modern: b
     throw problem;
   }
   if (!first(xml, "response") && !first(xml, "OpenAPI_ServiceResponse")) throw new PatentError("KIPRISPlus 응답을 해석하지 못했습니다.", 424);
+  krReplies.set(xml, reply);
   return xml;
 }
 
@@ -334,6 +340,57 @@ async function korean(p: Patent) {
   });
   r.notes.push("의견서·보정서 등 추가 원문은 KIPRIS 통합행정정보에서 열람할 수 있습니다.");
   return r;
+}
+
+// A claim arrives as its number followed by paragraphs in layout tags, sent as markup, as escaped text or inside CDATA.
+function krClaims(xml: XmlNode | undefined) {
+  const reply = (xml && krReplies.get(xml)) ?? "";
+  return [...reply.matchAll(/<claim(?:\s[^>]*)?>([\s\S]*?)<\/claim>/gi)].map((match, index) => {
+    const text = decode(match[1].replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1"))
+      .replace(/<\/?(?:p|br|div|li|tr)\b[^<>]*>/gi, "\n")
+      .replace(/<\/?(?:span|sub|sup|b|i|u|em|strong|font|table|tbody|td|th|ul|ol|img|a)\b[^<>]*>/gi, "")
+      .split("\n").map(line => line.replace(/\s+/g, " ").trim()).filter(Boolean).join("\n");
+    // "2.5 중량%" at the head of a claim is wording, not a claim number.
+    const numbered = /^(\d{1,3})\s*[.．](?!\d)\s*/.exec(text);
+    return { number: numbered?.[1] ?? String(index + 1), text: (numbered ? text.slice(numbered[0].length) : text).slice(0, 8000) };
+  }).filter(claim => claim.text);
+}
+
+// What KIPRISPlus holds of a Korean case record: the claims as KIPO last published them, taken here to be the granted claims
+// once the patent is registered. It gives one wording only, so the claims cannot be compared with an earlier version.
+export async function koreanClaimRecord(input: unknown) {
+  const application = typeof input === "string" ? input.replace(/\D/g, "") : "";
+  if (!/^[12]0\d{11}$/.test(application)) throw new PatentError("한국 출원번호를 확인해 주세요.", 400);
+  const biblio = await krXml(`/kipo-api/kipi/${krPublications}/getBibliographyDetailInfoSearch`, { applicationNumber: application }, true);
+  const b = all(biblio, "biblioSummaryInfo").find(node => value(node, "applicationNumber").replace(/[\s-]/g, "") === application);
+  if (!b) throw fail("KIPRISPlus", 404);
+  let claims = krClaims(biblio);
+  // The claims also have an operation of their own, for replies whose bibliography carries none.
+  if (!claims.length) claims = krClaims(await krXml(`/openapi/rest/${krPublications}/patentClaimInfo`, { applicationNumber: application }));
+  const live = claims.filter(claim => !/^\(?삭제\)?\.?$/.test(claim.text));
+  // A dependent claim opens by naming the claim it depends on: "제1항에 있어서", "청구항 1 내지 3 중 어느 한 항에 있어서".
+  const independent = live.filter(claim => !/^(?:상기\s*)?(?:제\s*\d+\s*항|청구항\s*제?\s*\d+)[^,.]{0,80}있어서/.test(claim.text));
+  const shown = (independent.length ? independent : live.slice(0, 1)).slice(0, 12);
+  if (!shown.length) throw fail("KIPRISPlus", 404);
+  const digits = (tag: string) => value(b, tag).replace(/\D/g, "");
+  const registered = digits("registerNumber");
+  const opened = digits("openNumber");
+  const grant = /^\d{13}$/.test(registered) ? `${registered.slice(0, 2)}-${registered.slice(2, 9)}` : registered;
+  const publication = /^\d{13}$/.test(opened) ? `${opened.slice(0, 2)}-${opened.slice(2, 6)}-${opened.slice(6)}` : opened;
+  const granted = registered ? { number: grant, date: date(value(b, "registerDate")) || undefined } : undefined;
+  const published = opened ? { number: publication, date: date(value(b, "openDate")) || undefined } : undefined;
+  const version = { label: "KR " + (grant || publication || application), date: (granted ?? published)?.date, language: "KR", claims: shown };
+  return {
+    retrieved: new Date().toISOString().slice(0, 10), source: "KIPRISPlus",
+    subject: {
+      country: "KR", application, filed: date(value(b, "applicationDate")) || undefined,
+      status: value(b, "registerStatus") || value(b, "finalDisposal") || undefined, granted, published,
+    },
+    claims: { scope: "independent", granted: granted && version, original: granted ? undefined : version },
+    term: { fees: [], owners: [] },
+    postGrant: {},
+    notes: [],
+  };
 }
 
 let opsSession: { token: string; expires: number } | undefined;
