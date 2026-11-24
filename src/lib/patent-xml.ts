@@ -1,6 +1,6 @@
 type Xml = { tag: string; attrs: Record<string, string>; children: Xml[]; text: string };
 
-function decode(value: string) {
+export function decode(value: string) {
   const entities: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'" };
   return value.replace(/&(#x[\da-f]+|#\d+|amp|lt|gt|quot|apos);/gi, (entity, name: string) => {
     if (!name.startsWith("#")) return entities[name] ?? entity;

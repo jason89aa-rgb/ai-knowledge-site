@@ -17,7 +17,7 @@ function loadCaseRecord(report) {
   const load = (async () => {
     try {
       state.data = await (await api({ action: "case-record", skey: report.skey, country: report.country,
-        number: report.grant || report.publication || report.application || report.query })).json();
+        number: report.grant || report.publication || report.application || report.query, application: report.application })).json();
       state.status = "done";
     } catch (error) {
       state.status = "error";
@@ -141,13 +141,15 @@ function recordPanel(id, title, hint) {
   return panel;
 }
 
-// Returns the loaded record, or explains in the panel why there is none yet.
-function recordData(panel, report, what) {
+// Returns the loaded record, or explains in the panel why there is none yet. A record that holds only the claims, which
+// KIPRISPlus supplies for a Korean case when WINTELIPS cannot be reached, is a record only to the panel that shows claims.
+function recordData(panel, report, what, claimsSuffice = false) {
   const state = report.caseRecord;
-  if (state?.status === "done") return state.data;
+  const limited = state?.status === "done" ? state.data.limited : undefined;
+  if (state?.status === "done" && (!limited || claimsSuffice)) return state.data;
   const text = !state ? `자동 조회 모드에서만 WINTELIPS로 ${what} 조회합니다.` : state.status === "loading" ? `WINTELIPS에서 ${what} 조회하고 있습니다.`
-    : `WINTELIPS에서 ${what} 불러오지 못했습니다 · ${state.error}`;
-  panel.append(el("p", text, state?.status === "error" ? "analysis-notice" : "muted"));
+    : `WINTELIPS에서 ${what} 불러오지 못했습니다 · ${limited || state.error}`;
+  panel.append(el("p", text, state && state.status !== "loading" ? "analysis-notice" : "muted"));
   return null;
 }
 
@@ -201,7 +203,9 @@ function fillFrame(report) {
   add("예상 만료일", data?.term.expiry, "WINTELIPS 산정 · 연차료 납부 전제");
   panel.append(facts);
   if (state?.status === "loading") panel.append(el("p", "WINTELIPS에서 권리 기록을 조회하고 있습니다.", "muted"));
-  const problem = state?.status === "error" ? "WINTELIPS 권리 기록을 불러오지 못했습니다 · " + state.error : data?.notes?.length ? "일부 WINTELIPS 조회 실패 · " + data.notes.join(", ") : "";
+  const problem = state?.status === "error" ? "WINTELIPS 권리 기록을 불러오지 못했습니다 · " + state.error
+    : data?.limited ? "WINTELIPS 권리 기록을 불러오지 못해 청구항만 KIPRISPlus에서 가져왔습니다 · " + data.limited
+      : data?.notes?.length ? "일부 WINTELIPS 조회 실패 · " + data.notes.join(", ") : "";
   if (problem) {
     const notice = el("p", problem + " ", "analysis-notice");
     if (recordLive(report)) notice.append(button("다시 조회", () => {
@@ -211,7 +215,7 @@ function fillFrame(report) {
     }));
     panel.append(notice);
   }
-  if (data) panel.append(el("p", `WINTELIPS · ${data.retrieved} 조회`, "hint muted"));
+  if (data) panel.append(el("p", `${data.source || "WINTELIPS"} · ${data.retrieved} 조회`, "hint muted"));
 }
 
 // Every published claim against the granted claim it became, dependent claims included. A dependent claim is matched without
@@ -305,20 +309,23 @@ function fillClaims(report, rows) {
   if (!report.caseRecord && !recordLive(report)) { slot.hidden = true; return; }
   const panel = recordPanel("claim-evolution", "2 · 등록 청구항과 출원 당시 청구항",
     "청구항을 구성요소별로 줄을 나누고, 출원 공개 당시 문언과 달라진 곳을 표시했습니다. 밑줄은 등록 과정에서 추가된 문언, 취소선은 삭제된 문언입니다.");
-  const data = recordData(panel, report, "청구항을");
+  const data = recordData(panel, report, "청구항을", true);
   if (!data) return;
   const { granted, original, scope } = data.claims;
   const kind = scope === "independent" ? "독립항" : "대표청구항";
+  const provider = data.source || "WINTELIPS";
   if (!granted && !original) {
-    panel.append(el("p", "WINTELIPS가 이 문헌의 청구항 문언을 제공하지 않았습니다.", "muted"));
+    panel.append(el("p", `${provider}가 이 문헌의 청구항 문언을 제공하지 않았습니다.`, "muted"));
     return;
   }
   const versions = [granted && `등록 ${granted.label}${granted.date ? ` (${granted.date})` : ""}`, original && `공개 ${original.label}${original.date ? ` (${original.date})` : ""}`];
-  panel.append(el("p", versions.filter(Boolean).join(" ↔ ") + ` · ${kind} · WINTELIPS ${data.retrieved} 조회`, "family-overview"));
+  panel.append(el("p", versions.filter(Boolean).join(" ↔ ") + ` · ${kind} · ${provider} ${data.retrieved} 조회`, "family-overview"));
   const compared = comparedClaims(data.claims);
   if (!granted) panel.append(el("p", "등록 문헌이 없어 공개 청구항만 표시합니다.", "analysis-notice"));
+  else if (data.limited) panel.append(el("p", "KIPRISPlus는 청구항을 한 가지 문언으로만 제공합니다. 등록된 사건이어서 등록 청구항으로 표시했고, 출원 공개 당시 문언과는 대조하지 못했습니다. 문언이 바뀐 경위는 4단계의 보정 기록에서, 등록 문언은 등록공보에서 확인하세요.", "analysis-notice"));
   else if (!original) panel.append(el("p", "공개 문헌이 없어 출원 당시 문언과 대조하지 못했습니다. 문언이 바뀐 경위는 4단계의 보정 기록에서 확인하세요.", "analysis-notice"));
   else if (!compared.comparable) panel.append(el("p", "등록 문언과 공개 문언의 언어가 달라 대조하지 않았습니다.", "analysis-notice"));
+  if (data.limited) panel.append(el("p", "독립항은 다른 청구항을 인용하며 시작하지 않는 청구항(“제N항에 있어서”로 열리지 않는 항)으로 가려냈습니다.", "hint muted"));
   const list = granted ? compared.rows : original.claims.map(claim => ({ claim }));
   for (const row of list) {
     const card = el("article", "", "claim-card");
@@ -377,7 +384,7 @@ function fillClaims(report, rows) {
       el("p", "항의 대응과 합쳐진 항은 문언 유사도로 추정했습니다. 경위는 4단계의 보정 기록에서 확인하세요.", "hint muted"));
     panel.append(map);
   }
-  panel.append(el("p", "공개공보는 보통 출원 당시 청구항을 싣지만, 공개 전에 보정했다면 보정된 문언일 수 있습니다. 종속항은 문언을 대조하지 않고 번호 대응표에만 넣었습니다.", "hint muted"));
+  if (!data.limited) panel.append(el("p", "공개공보는 보통 출원 당시 청구항을 싣지만, 공개 전에 보정했다면 보정된 문언일 수 있습니다. 종속항은 문언을 대조하지 않고 번호 대응표에만 넣었습니다.", "hint muted"));
 }
 
 const allowanceStages = new Set(["NoA · 허여 통지", "허여 가능 통지", "등록 결정·예고", "Appeal · 불복 결정", "심사관 보정", "면담 기록"]);
@@ -605,7 +612,8 @@ const formalGround = /신규사항|new matter|기재불비|written description|e
 function rightsEntries(report, rows) {
   const data = report.caseRecord?.data;
   const entries = [];
-  if (data) {
+  // A claims-only record says nothing about the term: "no record" would be wrong where the record was never read.
+  if (data && !data.limited) {
     const term = data.term;
     entries.push(["예상 만료일", term.expiry ? term.expiry + " · WINTELIPS 산정" : "WINTELIPS 기록 없음"]);
     if (term.adjustment) entries.push(["존속기간 조정 (PTA)", `${term.adjustment.total}일` + (term.adjustment.applicantDelay ? ` · 출원인 지연 ${term.adjustment.applicantDelay}일` : "")]);
@@ -625,7 +633,7 @@ function fillRights(report, rows) {
   const entries = rightsEntries(report, rows);
   if (!report.caseRecord && !recordLive(report) && !entries.length && !formal.length) { slot.hidden = true; return; }
   const panel = recordPanel("rights-record", "8 · 존속기간과 권리 상태", "권리가 언제까지 살아 있는지와, 기록에 남은 기재·형식 문제입니다.");
-  if (!report.caseRecord || report.caseRecord.status !== "done") recordData(panel, report, "권리 정보를");
+  if (!report.caseRecord || report.caseRecord.status !== "done" || report.caseRecord.data.limited) recordData(panel, report, "권리 정보를");
   if (entries.length) {
     const facts = el("dl", "", "frame-facts");
     for (const [label, value] of entries) {
@@ -779,14 +787,17 @@ function caseContext(report) {
   const after = data.postGrant;
   return {
     claims: list.length ? {
-      note: !granted ? "공개 청구항 (등록 문헌 없음)" : original ? "등록 독립항과, 출원 공개 당시 문언 대비 달라진 부분" : "등록 독립항 (공개 문헌 없음)",
+      note: !granted ? "공개 청구항 (등록 문헌 없음)" : original ? "등록 독립항과, 출원 공개 당시 문언 대비 달라진 부분"
+        : data.limited ? "등록 독립항 (KIPRISPlus 제공 문언 · 출원 공개 당시 문언과 대조하지 못함)" : "등록 독립항 (공개 문헌 없음)",
       items: list.slice(0, 4).map(row => ({
         claim: row.claim.number, text: row.claim.text.slice(0, 1200), comparedWith: row.source ? "공개 제" + row.source.number + "항" : undefined,
         added: row.added?.slice(0, 4).map(text => text.slice(0, 240)), removed: row.removed?.slice(0, 4).map(text => text.slice(0, 240)),
         unchanged: row.source && row.runs && !row.added.length && !row.removed.length ? true : undefined,
       })),
     } : undefined,
-    record: {
+    record: data.limited ? {
+      source: "KIPRISPlus " + data.retrieved, unavailable: "WINTELIPS 권리 기록을 조회하지 못해 예상 만료일, 현재 권리자, 인용문헌, 등록 후 절차는 확인하지 못함",
+    } : {
       source: "WINTELIPS " + data.retrieved, expectedExpiry: data.term.expiry, termAdjustmentDays: data.term.adjustment?.total, owners: data.term.owners,
       citations: data.citations ? { total: data.citations.total, byStep: steps } : undefined,
       trials: after.trials?.slice(0, 14).map(item => ({ number: item.number, type: item.type, forum: item.forum, decided: item.decided, result: item.result, finality: item.finality })),
@@ -807,7 +818,7 @@ function recordSheets(report) {
     const list = data.claims.granted ? comparedClaims(data.claims).rows : data.claims.original.claims.map(claim => ({ claim }));
     sheets.push({ title: "등록 청구항과 출원 당시 청구항", headers: ["청구항", "문언", "출원 당시 대비"], widths: [1.2, 7.3, 3.54],
       rows: list.map(row => [row.claim.number ? `제${row.claim.number}항` : "대표청구항", row.claim.text,
-        !data.claims.granted ? "공개 청구항" : [row.source ? claimChange(row) : data.claims.original ? claimChange(row) : "공개 문헌 없음",
+        !data.claims.granted ? "공개 청구항" : [row.source ? claimChange(row) : data.claims.original ? claimChange(row) : data.limited ? "대조할 공개 문언 없음" : "공개 문헌 없음",
           row.added?.length && "추가: " + row.added.join(" / "), row.removed?.length && "삭제: " + row.removed.join(" / ")].filter(Boolean).join("\n")]) });
   }
   if (data?.claims.all) {
